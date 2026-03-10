@@ -12,4 +12,9 @@
     <Folder Include="Service\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ExpRepositoryHelper\ExpRepositoryHelper.csproj" />
+    <ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
+  </ItemGroup>
+
 </Project>
