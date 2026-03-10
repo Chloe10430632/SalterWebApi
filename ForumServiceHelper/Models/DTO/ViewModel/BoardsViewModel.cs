@@ -7,5 +7,7 @@
         public string? BoardImgUrl { get; set; }
         public int BoardSort { get; set; }
         public int ViewCount { get; set; }
+        public int FollowCount { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

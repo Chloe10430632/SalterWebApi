@@ -10,12 +10,9 @@ namespace ForumServiceHelper.IService
 {
     public interface IBoardsService
     {
-        public Task<IList<BoardsViewModel>> GetAllBoardsAsync();
+        public Task<IList<BoardsViewModel>> GetAllBoardsAsync(string sortBy);
+        public Task<BoardsViewModel?> GetDetailsAsync(int id);
         //public IQueryable<BoardListItemViewModel> GetAllOrSearch(string searchKeyWord);
-        //public BoardCreateViewModel? GetDetails(int id);
-        public bool CheckAndDelete(int id);
-        public bool CheckAndCreate(ForumBoardCategory data);
-        public bool CheckAndUpdate(ForumBoardCategory data);
 
         //public BoardStatsViewModel GetBoardsStatus(); //看板管理數據統計資料
 

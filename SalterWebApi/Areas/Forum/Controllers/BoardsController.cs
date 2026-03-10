@@ -23,26 +23,34 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
         // GET: api/<BoardsController>
         [HttpGet]
-        public async Task<ActionResult<IList<BoardsViewModel>>> Get()
+        public async Task<ActionResult<IList<BoardsViewModel>>> Get([FromQuery] string sortBy = "DEFAULT")
         {
             // 1. 調用 Service 的非同步方法
-            var data = await _boardsService.GetAllBoardsAsync();
+            var allBoardsList = await _boardsService.GetAllBoardsAsync(sortBy);
 
             // 2. 如果沒資料，回傳空的陣列或 NoContent (204)
-            if (data == null)
+            if (allBoardsList == null)
             {
                 return NoContent();
             }
 
             // 3. 回傳 200 OK 與 JSON 格式的資料
-            return Ok(data);
+            return Ok(allBoardsList);
         }
 
         // GET api/<BoardsController>/5
         [HttpGet("{id}")]
-        public string Get(int id)
+        public async Task<ActionResult<BoardsViewModel>> GetForumBoardCategory(int id)
         {
-            return "value";
+
+             var boardData = await _boardsService.GetDetailsAsync(id);
+
+            if(boardData == null)
+            {
+                return NotFound();
+            }
+
+            return boardData;
         }
 
         // POST api/<BoardsController>

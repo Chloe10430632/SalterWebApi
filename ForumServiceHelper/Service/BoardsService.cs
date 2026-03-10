@@ -19,22 +19,8 @@ namespace ForumServiceHelper.Service
         {
             _dbBoards = dbBoards;
         }
-        public bool CheckAndCreate(ForumBoardCategory data)
-        {
-            throw new NotImplementedException();
-        }
 
-        public bool CheckAndDelete(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool CheckAndUpdate(ForumBoardCategory data)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<IList<BoardsViewModel>> GetAllBoardsAsync()
+        public async Task<IList<BoardsViewModel>> GetAllBoardsAsync(string sortBy = "DEFAULT")
         {
             var boards = await _dbBoards.GetAllAsync();
             var boardsViewCount = _dbBoards.GetDbContext().ForumBoardInteractions
@@ -42,7 +28,12 @@ namespace ForumServiceHelper.Service
                 .GroupBy(p => p.BoardId)
                 .Select(g => new { BoardId = g.Key, Count = g.Count() });
 
-            var board = boards
+            var boardsFollowCount = _dbBoards.GetDbContext().ForumBoardInteractions
+                .Where(bi => bi.Type == BoardInteractionTypes.Follow)
+                .GroupBy(p => p.BoardId)
+                .Select(g => new { BoardId = g.Key, Count = g.Count() });
+
+            var boardList = boards
                 .Select(b => new BoardsViewModel
                 {
                     BoardId = b.BoardId,
@@ -51,14 +42,68 @@ namespace ForumServiceHelper.Service
                     BoardSort = b.SortOrder,
                     ViewCount = boardsViewCount
                     .Where(v => v.BoardId == b.BoardId)
-                    .Select(v=>v.Count)
-                    .FirstOrDefault()
-                })
-                .OrderBy(bv => bv.BoardSort)
-               // .OrderByDescending(bv => bv.ViewCount)
-                .ToList();
+                    .Select(v => v.Count)
+                    .FirstOrDefault(),
+                    FollowCount = boardsFollowCount
+                     .Where(f => f.BoardId == b.BoardId)
+                    .Select(f => f.Count)
+                    .FirstOrDefault(),
+                });
 
-            return board;
+            sortBy = sortBy.Trim().ToUpper();
+
+            if(sortBy == SortTypes.Default)
+            {
+                boardList = boardList.OrderBy(bv => bv.BoardSort);
+            }
+            
+            if (sortBy == SortTypes.View)
+            {
+                boardList = boardList.OrderByDescending(bv => bv.ViewCount);
+            }
+
+            if (sortBy == SortTypes.Follow)
+            {
+                boardList = boardList.OrderByDescending(bv => bv.FollowCount);
+            }
+
+            return boardList.ToList();
+
+        }
+
+        public async Task<BoardsViewModel?> GetDetailsAsync(int id)
+        {
+            var board = await _dbBoards
+                .GetTableByIDAsync(id);
+            var boardsViewCount = _dbBoards.GetDbContext().ForumBoardInteractions
+               .Where(bi => bi.Type == BoardInteractionTypes.View)
+               .GroupBy(p => p.BoardId)
+               .Select(g => new { BoardId = g.Key, Count = g.Count() });
+            var boardsFollowCount = _dbBoards.GetDbContext().ForumBoardInteractions
+               .Where(bi => bi.Type == BoardInteractionTypes.Follow)
+               .GroupBy(p => p.BoardId)
+               .Select(g => new { BoardId = g.Key, Count = g.Count() });
+
+            if (board == null)
+                return  null;
+
+            var boardData = new BoardsViewModel
+            {
+                BoardId = board.BoardId,
+                BoardImgUrl = board.ImageUrl,
+                BoardSort = board.SortOrder,
+                BoardTitle = board.Title,
+                ViewCount = boardsViewCount
+                    .Where(v => v.BoardId == board.BoardId)
+                    .Select(v => v.Count)
+                    .FirstOrDefault(),
+                FollowCount = boardsFollowCount
+                     .Where(f => f.BoardId == board.BoardId)
+                    .Select(f => f.Count)
+                    .FirstOrDefault()
+            };
+
+            return boardData;
         }
     }
 }
