@@ -19,9 +19,13 @@ namespace ExpRepositoryHelper
                 
                 }
 
-        public Task<string> CoachDistrict()
+        public async Task<string> CoachDistrict(int coachID)
         {
-            throw new NotImplementedException();
+            //return await _dbContext.ExpCoaches
+            //    .Where(c => c.Id == coachID)
+            //    .Select(c => c.TripDistricts)
+            //    .FirstOrDefaultAsync();
+                
         }
 
         public Task<string> CoachSpeciality()

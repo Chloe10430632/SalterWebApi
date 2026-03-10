@@ -16,7 +16,7 @@ namespace ExpRepositoryHelper.IRepository
         /**教練建立時間*/
         Task<DateTime?> CoachCreateTime(int coachID);
         /**地區*/
-        Task<string> CoachDistrict();
+        Task<string> CoachDistrict(int coachID);
         /**專業*/
         Task<string> CoachSpeciality();
         /**收藏*/
