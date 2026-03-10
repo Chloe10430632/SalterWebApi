@@ -27,6 +27,9 @@ builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, Generic
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
 
+//Home功能：泛型資料存取層 DAL DI
+
+
 // Add services to the container.
 
 builder.Services.AddControllers();

@@ -11,9 +11,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\ForumRepositoryHelper\ForumRepositoryHelper.csproj" />
 		<ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
 	</ItemGroup>
 
 </Project>
-
