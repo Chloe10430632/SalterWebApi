@@ -14,7 +14,7 @@ namespace ExpRepositoryHelper.IRepository
         /**評論則數*/
         Task<int> CommentCount();
         /**教練建立時間*/
-        Task<DateTime> CoachCreateTime();
+        Task<DateTime?> CoachCreateTime(int coachID);
         /**地區*/
         Task<string> CoachDistrict();
         /**專業*/

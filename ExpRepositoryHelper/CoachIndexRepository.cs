@@ -9,10 +9,15 @@ namespace ExpRepositoryHelper
     {
         private readonly SalterEFModels.EFModels.SalterDbContext _dbContext;
         public CoachIndexRepository(SalterDbContext dbContext) { _dbContext = dbContext; }
-        public async Task<DateTime> CoachCreateTime()
+        
+        public async Task<DateTime?> CoachCreateTime(int coachID)
         {
-           var ct = _dbContext.ExpCoaches.
-        }
+            return await _dbContext.ExpCoaches
+                .Where(c => c.Id == coachID)
+                .Select(c => c.CreatedAt)
+                .FirstOrDefaultAsync();
+                
+                }
 
         public Task<string> CoachDistrict()
         {
@@ -38,5 +43,7 @@ namespace ExpRepositoryHelper
         {
             throw new NotImplementedException();
         }
+
+        
     }
 }
