@@ -9,6 +9,12 @@ using Scalar.AspNetCore;
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
 
+
+using UserRepositoryHelper.IRepository; 
+using UserRepositoryHelper.Repository;
+using UserServiceHelper.Service;
+using UserServiceHelper.IService;
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -26,6 +32,16 @@ builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, Generic
 
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
+
+
+//User功能：泛型資料存取層 DAL DI
+builder.Services.AddScoped(typeof(IGenericUserRepository<>), typeof(GenericUserRepository<>));
+builder.Services.AddScoped<IGenericUserRepository<UserUser>, GenericUserRepository<UserUser>>();
+
+//User功能：商業邏輯層 BLL DI
+builder.Services.AddScoped<IUserService, UserService>();
+
+
 
 // Add services to the container.
 

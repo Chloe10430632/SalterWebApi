@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ForumServiceHelper\ForumServiceHelper.csproj" />
     <ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
+    <ProjectReference Include="..\UserServiceHelper\UserServiceHelper.csproj" />
   </ItemGroup>
 
 </Project>

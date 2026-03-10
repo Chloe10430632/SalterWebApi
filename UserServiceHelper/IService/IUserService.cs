@@ -3,10 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UserServiceHelper.Models.DTO.ViewModel;
 
 namespace UserServiceHelper.IService
 {
-    internal interface IUserService
+    public interface IUserService
     {
+        Task<UserProfileViewModel?> GetUserProfileAsync(int userId);
+
+        Task<bool> UpdateProfileAsync(UserEditViewModel model);
+
     }
 }
