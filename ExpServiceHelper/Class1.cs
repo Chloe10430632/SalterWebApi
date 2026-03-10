@@ -1,7 +1,9 @@
-﻿namespace ExpServiceHelper
+﻿
+
+namespace ExpServiceHelper
 {
     public class Class1
     {
-
+        
     }
 }
