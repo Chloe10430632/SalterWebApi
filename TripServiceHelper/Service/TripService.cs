@@ -1,0 +1,440 @@
+﻿using SalterEFModels.EFModels;
+using TripRepositoryHelper.IRepository;
+using TripServiceHelper.IService;
+using TripServiceHelper.Models.DTOs;
+
+namespace TripServiceHelper.Service;
+
+public class TripService : ITripService
+{
+    private readonly ITripRepository _repo;
+
+    public TripService(ITripRepository repo)
+    {
+        _repo = repo;
+    }
+
+    #region 行程
+
+    public async Task<TripListResultDto> GetTripListAsync(TripQueryDto query)
+    {
+        var (trips, totalCount) = await _repo.GetTripsAsync(
+            query.Keyword, query.TripType, query.Status, query.CityId,
+            query.StartFrom, query.StartTo,
+            query.MinCapacity, query.MaxCapacity,
+            query.SortBy, query.Page, query.PageSize);
+
+        return new TripListResultDto
+        {
+            Trips = trips.Select(ToSummaryDto).ToList(),
+            TotalCount = totalCount,
+            Page = query.Page,
+            PageSize = query.PageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize)
+        };
+    }
+
+    public async Task<TripDetailDto?> GetTripDetailAsync(int tripId)
+    {
+        var trip = await _repo.GetTripByIdAsync(tripId);
+        if (trip == null) return null;
+
+        return new TripDetailDto
+        {
+            Id = trip.Id,
+            Title = trip.Title,
+            TripType = trip.TripType,
+            Description = trip.Description,
+            StartAt = trip.StartAt,
+            EndAt = trip.EndAt,
+            Capacity = trip.Capacity,
+            Status = trip.Status,
+            CoverImageUrl = trip.CoverImageUrl,
+            OrganizerUserId = trip.OrganizerUserId,
+            OrganizerName = trip.OrganizerUser?.UserName ?? "未知",
+            OrganizerEmail = trip.OrganizerUser?.Email,
+            LockedAt = trip.LockedAt,
+            CreatedAt = trip.CreatedAt,
+            UpdatedAt = trip.UpdatedAt,
+            MemberCount = trip.TripMembers?.Count ?? 0,
+            FavoriteCount = trip.TripFavorites?.Count ?? 0,
+            AnnouncementCount = trip.TripAnnouncements?.Count ?? 0,
+            GearItemCount = trip.TripGearItems?.Count ?? 0,
+            Members = trip.TripMembers?.Select(m => new TripMemberDto
+            {
+                UserId = m.UserId,
+                UserName = m.User?.UserName ?? "未知",
+                Email = m.User?.Email,
+                Role = m.Role,
+                JoinedAt = m.JoinedAt
+            }).ToList() ?? new(),
+            Locations = trip.TripTripLocations?
+                .OrderBy(ttl => ttl.SortOrder)
+                .Select(ttl => new TripLocationDto
+                {
+                    Id = ttl.Id,
+                    LocationName = ttl.Location?.Name ?? "",
+                    CityName = ttl.Location?.District?.City?.Name ?? "",
+                    DistrictName = ttl.Location?.District?.Name ?? "",
+                    LocationRole = ttl.LocationRole,
+                    Note = ttl.Note,
+                    SortOrder = ttl.SortOrder
+                }).ToList() ?? new()
+        };
+    }
+
+    public async Task<ServiceResult> CreateTripAsync(TripRequestDto dto, int organizerUserId)
+    {
+        try
+        {
+            var trip = new TripTrip
+            {
+                Title = dto.Title,
+                TripType = dto.TripType,
+                Description = dto.Description,
+                StartAt = dto.StartAt,
+                EndAt = dto.EndAt,
+                Capacity = dto.Capacity,
+                Status = "active",
+                OrganizerUserId = organizerUserId,
+                CoverImageUrl = dto.CoverImageUrl,
+                CoverImagePublicId = dto.CoverImagePublicId,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            await _repo.CreateTripAsync(trip);
+            await _repo.AddMemberAsync(trip.Id, organizerUserId, "organizer");
+
+            return ServiceResult.Success("行程建立成功");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail($"建立失敗：{ex.InnerException?.Message ?? ex.Message}");
+        }
+    }
+
+    public async Task<ServiceResult> UpdateTripAsync(int tripId, TripRequestDto dto)
+    {
+        var trip = await _repo.GetTripByIdAsync(tripId);
+        if (trip == null) return ServiceResult.Fail("找不到行程");
+
+        trip.Title = dto.Title;
+        trip.TripType = dto.TripType;
+        trip.Description = dto.Description;
+        trip.StartAt = dto.StartAt;
+        trip.EndAt = dto.EndAt;
+        trip.Capacity = dto.Capacity;
+        trip.CoverImageUrl = dto.CoverImageUrl;
+        trip.CoverImagePublicId = dto.CoverImagePublicId;
+        trip.UpdatedAt = DateTime.Now;
+
+        await _repo.UpdateTripAsync(trip);
+        return ServiceResult.Success("行程更新成功");
+    }
+
+    public async Task<ServiceResult> DeleteTripAsync(int tripId)
+    {
+        var result = await _repo.DeleteTripAsync(tripId);
+        return result ? ServiceResult.Success("行程刪除成功") : ServiceResult.Fail("找不到行程");
+    }
+
+    #endregion
+
+    #region 成員
+
+    public async Task<ServiceResult> JoinTripAsync(int tripId, int userId)
+    {
+        var result = await _repo.AddMemberAsync(tripId, userId, "member");
+        return result ? ServiceResult.Success("加入成功") : ServiceResult.Fail("已經是成員");
+    }
+
+    public async Task<ServiceResult> LeaveTripAsync(int tripId, int userId)
+    {
+        var result = await _repo.RemoveMemberAsync(tripId, userId);
+        return result ? ServiceResult.Success("退出成功") : ServiceResult.Fail("不是成員");
+    }
+
+    #endregion
+
+    #region 收藏
+
+    public async Task<List<TripSummaryDto>> GetFavoritesAsync(int userId)
+    {
+        var favorites = await _repo.GetFavoritesAsync(userId);
+        return favorites
+            .Where(f => f.Trip != null)
+            .Select(f => ToSummaryDto(f.Trip!))
+            .ToList();
+    }
+
+    public async Task<ServiceResult> AddFavoriteAsync(int tripId, int userId)
+    {
+        var result = await _repo.AddFavoriteAsync(tripId, userId);
+        return result ? ServiceResult.Success("收藏成功") : ServiceResult.Fail("已收藏過");
+    }
+
+    public async Task<ServiceResult> RemoveFavoriteAsync(int tripId, int userId)
+    {
+        var result = await _repo.RemoveFavoriteAsync(tripId, userId);
+        return result ? ServiceResult.Success("取消收藏成功") : ServiceResult.Fail("尚未收藏");
+    }
+
+    #endregion
+
+    #region 公告
+
+    public async Task<List<TripAnnouncementDto>> GetAnnouncementsAsync(int tripId)
+    {
+        var list = await _repo.GetAnnouncementsAsync(tripId);
+        return list.Select(a => new TripAnnouncementDto
+        {
+            Id = a.Id,
+            Title = a.Title,
+            Content = a.Content,
+            IsPinned = a.IsPinned,
+            CreatedByUserId = a.CreatedByUserId,
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt
+        }).ToList();
+    }
+
+    public async Task<ServiceResult> CreateAnnouncementAsync(int tripId, TripAnnouncementRequestDto dto, int userId)
+    {
+        var entity = new TripAnnouncement
+        {
+            TripId = tripId,
+            Title = dto.Title,
+            Content = dto.Content,
+            IsPinned = false,
+            CreatedByUserId = userId,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+        await _repo.CreateAnnouncementAsync(entity);
+        return ServiceResult.Success("公告新增成功");
+    }
+
+    public async Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementRequestDto dto)
+    {
+        var announcements = await _repo.GetAnnouncementsAsync(0);
+        var entity = announcements.FirstOrDefault(a => a.Id == announcementId);
+        if (entity == null) return ServiceResult.Fail("找不到公告");
+
+        entity.Title = dto.Title;
+        entity.Content = dto.Content;
+        entity.UpdatedAt = DateTime.Now;
+
+        await _repo.UpdateAnnouncementAsync(entity);
+        return ServiceResult.Success("公告更新成功");
+    }
+
+    public async Task<ServiceResult> DeleteAnnouncementAsync(int announcementId)
+    {
+        var result = await _repo.DeleteAnnouncementAsync(announcementId);
+        return result ? ServiceResult.Success("公告刪除成功") : ServiceResult.Fail("找不到公告");
+    }
+
+    public async Task<ServiceResult> TogglePinAsync(int announcementId)
+    {
+        var result = await _repo.TogglePinAnnouncementAsync(announcementId);
+        return result ? ServiceResult.Success("置頂狀態已更新") : ServiceResult.Fail("找不到公告");
+    }
+
+    #endregion
+
+    #region 裝備
+
+    public async Task<List<TripGearItemDto>> GetGearItemsAsync(int tripId)
+    {
+        var list = await _repo.GetGearItemsAsync(tripId);
+        return list.Select(g => new TripGearItemDto
+        {
+            Id = g.Id,
+            ItemName = g.ItemName,
+            IsRequired = g.IsRequired,
+            CheckedCount = g.TripGearChecks?.Count(c => c.IsChecked) ?? 0
+        }).ToList();
+    }
+
+    public async Task<ServiceResult> CreateGearItemAsync(int tripId, TripGearItemRequestDto dto, int userId)
+    {
+        var entity = new TripGearItem
+        {
+            TripId = tripId,
+            ItemName = dto.ItemName,
+            IsRequired = dto.IsRequired,
+            CreatedByUserId = userId
+        };
+        await _repo.CreateGearItemAsync(entity);
+        return ServiceResult.Success("裝備新增成功");
+    }
+
+    public async Task<ServiceResult> UpdateGearItemAsync(int gearItemId, TripGearItemRequestDto dto)
+    {
+        var list = await _repo.GetGearItemsAsync(0);
+        var entity = list.FirstOrDefault(g => g.Id == gearItemId);
+        if (entity == null) return ServiceResult.Fail("找不到裝備");
+
+        entity.ItemName = dto.ItemName;
+        entity.IsRequired = dto.IsRequired;
+
+        await _repo.UpdateGearItemAsync(entity);
+        return ServiceResult.Success("裝備更新成功");
+    }
+
+    public async Task<ServiceResult> DeleteGearItemAsync(int gearItemId)
+    {
+        var result = await _repo.DeleteGearItemAsync(gearItemId);
+        return result ? ServiceResult.Success("裝備刪除成功") : ServiceResult.Fail("找不到裝備");
+    }
+
+    public async Task<ServiceResult> ToggleGearCheckAsync(int gearItemId, int userId)
+    {
+        var result = await _repo.ToggleGearCheckAsync(gearItemId, userId);
+        return result ? ServiceResult.Success("勾選狀態已更新") : ServiceResult.Fail("操作失敗");
+    }
+
+    #endregion
+
+    #region 地點
+
+    public async Task<List<TripLocationDto>> GetLocationsAsync(int tripId)
+    {
+        var list = await _repo.GetLocationsAsync(tripId);
+        return list.Select(ttl => new TripLocationDto
+        {
+            Id = ttl.Id,
+            LocationName = ttl.Location?.Name ?? "",
+            CityName = ttl.Location?.District?.City?.Name ?? "",
+            DistrictName = ttl.Location?.District?.Name ?? "",
+            LocationRole = ttl.LocationRole,
+            Note = ttl.Note,
+            SortOrder = ttl.SortOrder
+        }).ToList();
+    }
+
+    public async Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto)
+    {
+        var entity = new TripTripLocation
+        {
+            TripId = tripId,
+            LocationId = dto.LocationId,
+            LocationRole = dto.LocationRole,
+            Note = dto.Note,
+            SortOrder = dto.SortOrder,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+        await _repo.CreateLocationAsync(entity);
+        return ServiceResult.Success("地點新增成功");
+    }
+
+    public async Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationRequestDto dto)
+    {
+        var list = await _repo.GetLocationsAsync(0);
+        var entity = list.FirstOrDefault(l => l.Id == locationId);
+        if (entity == null) return ServiceResult.Fail("找不到地點");
+
+        entity.LocationRole = dto.LocationRole;
+        entity.Note = dto.Note;
+        entity.SortOrder = dto.SortOrder;
+        entity.UpdatedAt = DateTime.Now;
+
+        await _repo.UpdateLocationAsync(entity);
+        return ServiceResult.Success("地點更新成功");
+    }
+
+    public async Task<ServiceResult> DeleteLocationAsync(int locationId)
+    {
+        var result = await _repo.DeleteLocationAsync(locationId);
+        return result ? ServiceResult.Success("地點刪除成功") : ServiceResult.Fail("找不到地點");
+    }
+
+    #endregion
+
+    #region 提醒
+
+    public async Task<List<TripReminderDto>> GetRemindersAsync(int tripId, int userId)
+    {
+        var list = await _repo.GetRemindersAsync(tripId, userId);
+        return list.Select(r => new TripReminderDto
+        {
+            Id = r.Id,
+            RemindOffsetMinutes = r.RemindOffsetMinutes,
+            IsEnabled = r.IsEnabled,
+            LastSentAt = r.LastSentAt
+        }).ToList();
+    }
+
+    public async Task<ServiceResult> CreateReminderAsync(int tripId, TripReminderRequestDto dto, int userId)
+    {
+        var entity = new TripReminder
+        {
+            TripId = tripId,
+            UserId = userId,
+            RemindOffsetMinutes = dto.RemindOffsetMinutes,
+            IsEnabled = dto.IsEnabled
+        };
+        await _repo.CreateReminderAsync(entity);
+        return ServiceResult.Success("提醒新增成功");
+    }
+
+    public async Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto)
+    {
+        var entity = await _repo.GetRemindersAsync(0, 0)
+            .ContinueWith(t => t.Result.FirstOrDefault(r => r.Id == reminderId));
+        if (entity == null) return ServiceResult.Fail("找不到提醒");
+
+        entity.RemindOffsetMinutes = dto.RemindOffsetMinutes;
+        entity.IsEnabled = dto.IsEnabled;
+
+        await _repo.UpdateReminderAsync(entity);
+        return ServiceResult.Success("提醒更新成功");
+    }
+
+    public async Task<ServiceResult> ToggleReminderAsync(int reminderId)
+    {
+        var result = await _repo.ToggleReminderAsync(reminderId);
+        return result ? ServiceResult.Success("提醒狀態已更新") : ServiceResult.Fail("找不到提醒");
+    }
+
+    #endregion
+
+    #region 城市
+
+    public async Task<List<TripCityDto>> GetCitiesAsync()
+    {
+        var list = await _repo.GetCitiesAsync();
+        return list.Select(c => new TripCityDto { Id = c.Id, Name = c.Name }).ToList();
+    }
+
+    public async Task<List<TripDistrictDto>> GetDistrictsAsync(int cityId)
+    {
+        var list = await _repo.GetDistrictsAsync(cityId);
+        return list.Select(d => new TripDistrictDto { Id = d.Id, Name = d.Name }).ToList();
+    }
+
+    #endregion
+
+    #region 私有方法
+
+    private static TripSummaryDto ToSummaryDto(TripTrip t) => new()
+    {
+        Id = t.Id,
+        Title = t.Title,
+        TripType = t.TripType,
+        Description = t.Description,
+        StartAt = t.StartAt,
+        EndAt = t.EndAt,
+        Capacity = t.Capacity,
+        MemberCount = t.TripMembers?.Count ?? 0,
+        Status = t.Status,
+        CoverImageUrl = t.CoverImageUrl,
+        OrganizerName = t.OrganizerUser?.UserName ?? "未知",
+        FavoriteCount = t.TripFavorites?.Count ?? 0,
+        CreatedAt = t.CreatedAt
+    };
+
+    #endregion
+}

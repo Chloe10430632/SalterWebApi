@@ -1,13 +1,15 @@
 using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-
-using SalterEFModels.EFModels;
-using Scalar.AspNetCore;
-
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using SalterEFModels.EFModels;
+using Scalar.AspNetCore;
+using TripRepositoryHelper.IRepository;
+using TripRepositoryHelper.Repository;
+using TripServiceHelper.IService;
+using TripServiceHelper.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +28,10 @@ builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, Generic
 
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
+
+//Trip功能 : DAL BLL DI
+builder.Services.AddScoped<ITripRepository, TripRepository>();
+builder.Services.AddScoped<ITripService, TripService>();
 
 // Add services to the container.
 

@@ -1,0 +1,13 @@
+﻿namespace TripServiceHelper.Models.DTOs;
+
+public class ServiceResult
+{
+    public bool IsSuccess { get; set; }
+    public string Message { get; set; } = "";
+
+    public static ServiceResult Success(string message = "成功")
+        => new() { IsSuccess = true, Message = message };
+
+    public static ServiceResult Fail(string message)
+        => new() { IsSuccess = false, Message = message };
+}
