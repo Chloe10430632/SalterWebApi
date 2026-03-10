@@ -1743,6 +1743,13 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.CoverImageUrl)
+    .HasMaxLength(500)
+    .HasColumnName("cover_image_url");
+
+            entity.Property(e => e.CoverImagePublicId)
+                .HasMaxLength(200)
+                .HasColumnName("cover_image_public_id");
 
             entity.HasOne(d => d.OrganizerUser).WithMany(p => p.TripTrips)
                 .HasForeignKey(d => d.OrganizerUserId)
