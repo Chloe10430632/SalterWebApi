@@ -5,11 +5,13 @@ using SalterEFModels.EFModels;
 
 namespace ExpRepositoryHelper
 {
-    public class CoachIndexRepository : ICoachIndexR
+    public class RCoachIndex : IRCoachIndex
     {
         private readonly SalterEFModels.EFModels.SalterDbContext _dbContext;
-        public CoachIndexRepository(SalterDbContext dbContext) { _dbContext = dbContext; }
+        public RCoachIndex(SalterDbContext dbContext) { _dbContext = dbContext; }
+
         
+
         public async Task<DateTime?> CoachCreateTime(int coachID)
         {
             return await _dbContext.ExpCoaches
@@ -39,15 +41,13 @@ namespace ExpRepositoryHelper
                              .Select(s => s.SportsName)
                              .ToListAsync();
             return string.Join("," , speciallity);
-
-
         }
 
         public async Task<int> CommentCount(int coachID)
         {
-            var ccount = await _dbContext.ExpCoaches
-                         .Where(c => c.Id == coachID)
-                         .Select(c => c.ExpReviews)
+            var ccount = await _dbContext.ExpReviews
+                         .Where(r => r.CoachId == coachID)
+                         .Select(r => r.ReviewContent)
                          .CountAsync();
             return ccount;
         }
@@ -59,8 +59,8 @@ namespace ExpRepositoryHelper
                          .Select(r => r.Rating ?? 0) //如果回傳是null 就變成0
                          .ToListAsync();
         }
-
-        public async Task<int> FavoriteCoach(int coachID)
+       
+        public async Task<int> FavoriteCoachCount(int coachID)
         {
            var favcount = await _dbContext.ExpFavorites
                  .Where(f => f.CoachId == coachID)
@@ -70,6 +70,10 @@ namespace ExpRepositoryHelper
             return favcount;
         }
 
-        
+        public async Task AddFavCoach(ExpFavorites favEntity)
+        {
+            await _dbContext.ExpFavorites.AddAsync(favEntity);
+            await _dbContext.SaveChangesAsync();
+        }
     }
 }

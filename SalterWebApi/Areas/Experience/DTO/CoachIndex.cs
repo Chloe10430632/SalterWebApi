@@ -2,6 +2,14 @@
 {
     public class CoachIndex
     {
+        public class FavCoachCreateDto
+        {
+            public int MemberId { get; set; }
+            public int CoachId { get; set; }
+        }
+
+
+
         /**評論*/
         public int? CoachId { get; set; }
         public int? Rating { get; set; }
