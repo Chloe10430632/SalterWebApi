@@ -22,4 +22,6 @@ public partial class TripNote
     public virtual TripTimeline? Timeline { get; set; }
 
     public virtual TripTrip Trip { get; set; } = null!;
+
+    public virtual UserUser UpdatedByUser { get; set; } = null!;
 }

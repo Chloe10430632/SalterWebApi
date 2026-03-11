@@ -12,13 +12,13 @@ namespace ExpRepositoryHelper.IRepository
         /**評分數*/
         Task<int> CommentPoint();
         /**評論則數*/
-        Task<int> CommentCount();
+        Task<int> CommentCount(int coachID);
         /**教練建立時間*/
         Task<DateTime?> CoachCreateTime(int coachID);
         /**地區*/
         Task<string> CoachDistrict(int coachID);
         /**專業*/
-        Task<string> CoachSpeciality();
+        Task<string> CoachSpeciallity(int coachID);
         /**收藏*/
         Task<int> FavoriteCoach();
 

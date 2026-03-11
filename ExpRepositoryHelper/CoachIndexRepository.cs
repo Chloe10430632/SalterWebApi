@@ -31,14 +31,25 @@ namespace ExpRepositoryHelper
             return string.Join(", ", districts);
         }
 
-        public Task<string> CoachSpeciality()
+        public async Task<string?> CoachSpeciallity(int coachID)
         {
-            throw new NotImplementedException();
+            var speciallity = await _dbContext.ExpCoaches
+                             .Where(c => c.Id == coachID)
+                             .SelectMany(c => c.Specialities)
+                             .Select(s => s.SportsName)
+                             .ToListAsync();
+            return string.Join("," , speciallity);
+
+
         }
 
-        public Task<int> CommentCount()
+        public async Task<int> CommentCount(int coachID)
         {
-            throw new NotImplementedException();
+            var ccount = await _dbContext.ExpCoaches
+                         .Where(c => c.Id == coachID)
+                         .Select(c => c.ExpReviews)
+                         .CountAsync();
+            return ccount;
         }
 
         public Task<int> CommentPoint()

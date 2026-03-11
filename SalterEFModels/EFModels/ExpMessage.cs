@@ -14,4 +14,8 @@ public partial class ExpMessage
     public string? MessageContent { get; set; }
 
     public DateTime? SentAt { get; set; }
+
+    public virtual ExpCoach? ReceiverCoach { get; set; }
+
+    public virtual UserUser? SenderUser { get; set; }
 }

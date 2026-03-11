@@ -11,7 +11,7 @@ public partial class TripTimeline
 
     public string Title { get; set; } = null!;
 
-    public DateTime? StartAt { get; set; }
+    public DateTime StartAt { get; set; }
 
     public DateTime? EndAt { get; set; }
 

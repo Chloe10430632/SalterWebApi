@@ -41,8 +41,6 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<ExpCoach> ExpCoaches { get; set; }
 
-    public virtual DbSet<ExpCoachSpeciallityMapping> ExpCoachSpeciallityMappings { get; set; }
-
     public virtual DbSet<ExpCourseOrder> ExpCourseOrders { get; set; }
 
     public virtual DbSet<ExpCoursePhoto> ExpCoursePhotos { get; set; }
@@ -64,6 +62,8 @@ public partial class SalterDbContext : DbContext
     public virtual DbSet<ExpReport> ExpReports { get; set; }
 
     public virtual DbSet<ExpReview> ExpReviews { get; set; }
+
+    public virtual DbSet<ExpShoppingCart> ExpShoppingCarts { get; set; }
 
     public virtual DbSet<ExpSpeciality> ExpSpecialities { get; set; }
 
@@ -165,14 +165,15 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=123.192.123.82,1433;Initial Catalog=Salter;User ID=sa;Password=DX9Qu!3wKWXrbyk;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.UseCollation("SQL_Latin1_General_CP1_CI_AS");
-
         modelBuilder.Entity<CardActivityType>(entity =>
         {
-            entity.HasKey(e => e.ActivityTypeId).HasName("PK__CardActi__3893A583F0644A6F");
+            entity.HasKey(e => e.ActivityTypeId).HasName("PK__CardActi__3893A5837F59F4C8");
 
             entity.ToTable("CardActivityType");
 
@@ -184,7 +185,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardAlbum>(entity =>
         {
-            entity.HasKey(e => e.AlbumId).HasName("PK__CardAlbu__75BF3EEF693E5854");
+            entity.HasKey(e => e.AlbumId).HasName("PK__CardAlbu__75BF3EEFBDAD1394");
 
             entity.ToTable("CardAlbum");
 
@@ -207,7 +208,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardChatMessage>(entity =>
         {
-            entity.HasKey(e => e.MessageId).HasName("PK__CardChat__4808B873458E9E65");
+            entity.HasKey(e => e.MessageId).HasName("PK__CardChat__4808B87375C579A5");
 
             entity.ToTable("CardChatMessage");
 
@@ -229,7 +230,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardChatRoom>(entity =>
         {
-            entity.HasKey(e => e.ChatRoomId).HasName("PK__CardChat__CB58B4729DDC9A84");
+            entity.HasKey(e => e.ChatRoomId).HasName("PK__CardChat__CB58B472339D0BFA");
 
             entity.ToTable("CardChatRoom");
 
@@ -284,7 +285,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardFriendship>(entity =>
         {
-            entity.HasKey(e => e.FriendshipId).HasName("PK__CardFrie__1E39AD128B1FB417");
+            entity.HasKey(e => e.FriendshipId).HasName("PK__CardFrie__1E39AD123DAB5D1B");
 
             entity.ToTable("CardFriendship");
 
@@ -302,7 +303,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardMonitorRecord>(entity =>
         {
-            entity.HasKey(e => e.MonitorRecordId).HasName("PK__CardMoni__8A0480DABF0E325F");
+            entity.HasKey(e => e.MonitorRecordId).HasName("PK__CardMoni__8A0480DA4C4B88BC");
 
             entity.ToTable("CardMonitorRecord");
 
@@ -339,7 +340,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardMonitorSession>(entity =>
         {
-            entity.HasKey(e => e.MonitorSessionId).HasName("PK__CardMoni__06475CC4AB999FBD");
+            entity.HasKey(e => e.MonitorSessionId).HasName("PK__CardMoni__06475CC414CCE81F");
 
             entity.ToTable("CardMonitorSession");
 
@@ -362,7 +363,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardPhoto>(entity =>
         {
-            entity.HasKey(e => e.PhotoId).HasName("PK__CardPhot__547C32CD2DDDF716");
+            entity.HasKey(e => e.PhotoId).HasName("PK__CardPhot__547C32CD25D9D587");
 
             entity.ToTable("CardPhoto");
 
@@ -390,11 +391,11 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardProfile>(entity =>
         {
-            entity.HasKey(e => e.CardProfileId).HasName("PK__CardProf__F787936D66AA39F1");
+            entity.HasKey(e => e.CardProfileId).HasName("PK__CardProf__F787936DBA1FDA93");
 
             entity.ToTable("CardProfile");
 
-            entity.HasIndex(e => e.UserId, "UQ__CardProf__CB9A1CDEBB3C09F6").IsUnique();
+            entity.HasIndex(e => e.UserId, "UQ__CardProf__CB9A1CDEB7751B77").IsUnique();
 
             entity.Property(e => e.CardProfileId).HasColumnName("card_ProfileID");
             entity.Property(e => e.AllowFriendRequest)
@@ -421,7 +422,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardSocialActivity>(entity =>
         {
-            entity.HasKey(e => e.CardActivityId).HasName("PK__CardSoci__C27540E43DF93116");
+            entity.HasKey(e => e.CardActivityId).HasName("PK__CardSoci__C27540E4C4DD4A1A");
 
             entity.ToTable("CardSocialActivity");
 
@@ -449,7 +450,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<CardSportStat>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__CardSpor__CB9A1CDF9449C335");
+            entity.HasKey(e => e.UserId).HasName("PK__CardSpor__CB9A1CDF6F8C40E3");
 
             entity.Property(e => e.UserId)
                 .ValueGeneratedNever()
@@ -493,10 +494,33 @@ public partial class SalterDbContext : DbContext
                 .HasForeignKey(d => d.CityId)
                 .HasConstraintName("FK_ExpCoaches_TripCities");
 
+            entity.HasOne(d => d.District).WithMany(p => p.ExpCoaches)
+                .HasForeignKey(d => d.DistrictId)
+                .HasConstraintName("FK_ExpCoaches_TripDistricts");
+
             entity.HasOne(d => d.User).WithMany(p => p.ExpCoaches)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ExpCoaches_UserUsers");
+
+            entity.HasMany(d => d.Specialities).WithMany(p => p.Coaches)
+                .UsingEntity<Dictionary<string, object>>(
+                    "ExpCoachSpeciallityMapping",
+                    r => r.HasOne<ExpSpeciality>().WithMany()
+                        .HasForeignKey("SpecialitiesId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_expCoachSpeciallityMapping_ExpSpecialities"),
+                    l => l.HasOne<ExpCoach>().WithMany()
+                        .HasForeignKey("CoachId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_expCoachSpeciallityMapping_ExpCoaches"),
+                    j =>
+                    {
+                        j.HasKey("CoachId", "SpecialitiesId");
+                        j.ToTable("ExpCoachSpeciallityMapping");
+                        j.IndexerProperty<int>("CoachId").HasColumnName("coach_id");
+                        j.IndexerProperty<int>("SpecialitiesId").HasColumnName("specialities_id");
+                    });
 
             entity.HasMany(d => d.TripDistricts).WithMany(p => p.CoachDists)
                 .UsingEntity<Dictionary<string, object>>(
@@ -516,29 +540,9 @@ public partial class SalterDbContext : DbContext
                     });
         });
 
-        modelBuilder.Entity<ExpCoachSpeciallityMapping>(entity =>
-        {
-            entity
-                .HasNoKey()
-                .ToTable("ExpCoachSpeciallityMapping");
-
-            entity.Property(e => e.CoachId).HasColumnName("coach_id");
-            entity.Property(e => e.SpecialitiesId).HasColumnName("specialities_id");
-
-            entity.HasOne(d => d.Coach).WithMany()
-                .HasForeignKey(d => d.CoachId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_expCoachSpeciallityMapping_ExpCoaches");
-
-            entity.HasOne(d => d.Specialities).WithMany()
-                .HasForeignKey(d => d.SpecialitiesId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_expCoachSpeciallityMapping_ExpSpecialities");
-        });
-
         modelBuilder.Entity<ExpCourseOrder>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F0C591EFA");
+            entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F192872B6");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -564,7 +568,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpCoursePhoto>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F7AF391AA");
+            entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F882674AC");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -580,7 +584,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpCourseSession>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83FC24F3E9C");
+            entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83FEE318725");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -603,7 +607,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpCourseTemplate>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F4351C0E4");
+            entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F4ACBE606");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -679,7 +683,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpEquipmentOrder>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpEquip__3213E83F6504CC0D");
+            entity.HasKey(e => e.Id).HasName("PK__ExpEquip__3213E83FC30DC748");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -707,7 +711,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpEquipmentPicture>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpEquip__3213E83F4FEE6627");
+            entity.HasKey(e => e.Id).HasName("PK__ExpEquip__3213E83FFEA2E948");
 
             entity.ToTable("ExpEquipmentPicture");
 
@@ -742,7 +746,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpMessage>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpMessa__3213E83F2A6144BB");
+            entity.HasKey(e => e.Id).HasName("PK__ExpMessa__3213E83FFC1A4F93");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -751,11 +755,19 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.ReceiverCoachId).HasColumnName("receiver_coach_id");
             entity.Property(e => e.SenderUserId).HasColumnName("sender_user_id");
             entity.Property(e => e.SentAt).HasColumnName("sent_at");
+
+            entity.HasOne(d => d.ReceiverCoach).WithMany(p => p.ExpMessages)
+                .HasForeignKey(d => d.ReceiverCoachId)
+                .HasConstraintName("FK_ExpMessages_ExpCoaches");
+
+            entity.HasOne(d => d.SenderUser).WithMany(p => p.ExpMessages)
+                .HasForeignKey(d => d.SenderUserId)
+                .HasConstraintName("FK_ExpMessages_UserUsers");
         });
 
         modelBuilder.Entity<ExpReport>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpRepor__3213E83FE0D24723");
+            entity.HasKey(e => e.Id).HasName("PK__ExpRepor__3213E83F0B1DE74A");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -783,7 +795,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpReview>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpRevie__3213E83F698A2025");
+            entity.HasKey(e => e.Id).HasName("PK__ExpRevie__3213E83F70B6B9A2");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -809,6 +821,28 @@ public partial class SalterDbContext : DbContext
                 .HasConstraintName("FK_expReviews_UserUsers");
         });
 
+        modelBuilder.Entity<ExpShoppingCart>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("ExpShoppingCart");
+
+            entity.Property(e => e.CourseSessionId).HasColumnName("courseSession_id");
+            entity.Property(e => e.ExpEquipmentId1).HasColumnName("ExpEquipment_id1");
+            entity.Property(e => e.ExpEquipmentId2).HasColumnName("ExpEquipment_id2");
+            entity.Property(e => e.ExpEquipmentId3).HasColumnName("ExpEquipment_id3");
+            entity.Property(e => e.ExpEquipmentId4).HasColumnName("ExpEquipment_id4");
+            entity.Property(e => e.Quantity1).HasColumnName("quantity1");
+            entity.Property(e => e.Quantity2).HasColumnName("quantity2");
+            entity.Property(e => e.Quantity3).HasColumnName("quantity3");
+            entity.Property(e => e.Quantity4).HasColumnName("quantity4");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_ExpShoppingCart_UserUsers");
+        });
+
         modelBuilder.Entity<ExpSpeciality>(entity =>
         {
             entity.Property(e => e.Id).HasColumnName("id");
@@ -819,7 +853,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpTransaction>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpTrans__3213E83FEEE0AF38");
+            entity.HasKey(e => e.Id).HasName("PK__ExpTrans__3213E83F43C30E73");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -850,7 +884,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpTransactionsType>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ExpTrans__3213E83FDA37E7B9");
+            entity.HasKey(e => e.Id).HasName("PK__ExpTrans__3213E83FCD7F43F4");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -1034,7 +1068,7 @@ public partial class SalterDbContext : DbContext
                         .HasConstraintName("FK_ForumPostTagDetails_ForumPosts"),
                     j =>
                     {
-                        j.HasKey("PostId", "TagId").HasName("PK__ForumPos__4AFEED4D69092F77");
+                        j.HasKey("PostId", "TagId").HasName("PK__ForumPos__4AFEED4D107A0FBD");
                         j.ToTable("ForumPostTagDetails");
                         j.IndexerProperty<int>("PostId").HasColumnName("post_id");
                         j.IndexerProperty<int>("TagId").HasColumnName("tag_id");
@@ -1459,12 +1493,12 @@ public partial class SalterDbContext : DbContext
             entity.HasOne(d => d.City).WithMany(p => p.TripDistricts)
                 .HasForeignKey(d => d.CityId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TripDistr__city___65F62111");
+                .HasConstraintName("FK__TripDistr__city___7814D14C");
         });
 
         modelBuilder.Entity<TripFavorite>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TripFavo__3213E83F952CD30F");
+            entity.HasKey(e => e.Id).HasName("PK__TripFavo__3213E83F4766FD43");
 
             entity.HasIndex(e => new { e.TripId, e.UserId }, "UX_TripFavorites").IsUnique();
 
@@ -1480,11 +1514,16 @@ public partial class SalterDbContext : DbContext
                 .HasForeignKey(d => d.TripId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TripFavorites_Trips");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TripFavorites)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TripFavorites_User");
         });
 
         modelBuilder.Entity<TripGearCheck>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TripGear__3213E83FB0002839");
+            entity.HasKey(e => e.Id).HasName("PK__TripGear__3213E83F2F7429CF");
 
             entity.HasIndex(e => new { e.TripGearItemId, e.UserId }, "UX_TripGearChecks").IsUnique();
 
@@ -1517,6 +1556,7 @@ public partial class SalterDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+            entity.Property(e => e.EquipmentId).HasColumnName("equipment_id");
             entity.Property(e => e.IsRequired).HasColumnName("is_required");
             entity.Property(e => e.ItemName)
                 .HasMaxLength(200)
@@ -1525,6 +1565,7 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.CreatedByUser).WithMany(p => p.TripGearItems)
                 .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TripGearItems_CreatedByUser");
 
             entity.HasOne(d => d.Trip).WithMany(p => p.TripGearItems)
@@ -1610,7 +1651,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<TripNote>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TripNote__3213E83F8CFDAAFB");
+            entity.HasKey(e => e.Id).HasName("PK__TripNote__3213E83FF7197CE4");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Content).HasColumnName("content");
@@ -1633,6 +1674,11 @@ public partial class SalterDbContext : DbContext
                 .HasForeignKey(d => d.TripId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TripNotes_Trips");
+
+            entity.HasOne(d => d.UpdatedByUser).WithMany(p => p.TripNotes)
+                .HasForeignKey(d => d.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TripNotes_User");
         });
 
         modelBuilder.Entity<TripReminder>(entity =>
@@ -1701,7 +1747,7 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.TripLocation).WithMany(p => p.TripTimelines)
                 .HasForeignKey(d => d.TripLocationId)
-                .HasConstraintName("FK_TripTimeline_TripTripLocations");
+                .HasConstraintName("FK_TripTimeline_TripLocation");
         });
 
         modelBuilder.Entity<TripTrip>(entity =>
@@ -1718,6 +1764,12 @@ public partial class SalterDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Capacity).HasColumnName("capacity");
+            entity.Property(e => e.CoverImagePublicId)
+                .HasMaxLength(200)
+                .HasColumnName("cover_image_public_id");
+            entity.Property(e => e.CoverImageUrl)
+                .HasMaxLength(500)
+                .HasColumnName("cover_image_url");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
@@ -1777,7 +1829,7 @@ public partial class SalterDbContext : DbContext
             entity.HasOne(d => d.Location).WithMany(p => p.TripTripLocations)
                 .HasForeignKey(d => d.LocationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TripTripLocations_Locations");
+                .HasConstraintName("FK_TripTripLocations_Location");
 
             entity.HasOne(d => d.Trip).WithMany(p => p.TripTripLocations)
                 .HasForeignKey(d => d.TripId)
@@ -1858,7 +1910,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<UserAdminRole>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserAdmi__3213E83F4AF3A96B");
+            entity.HasKey(e => e.Id).HasName("PK__UserAdmi__3213E83FE31D13E6");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
@@ -1868,7 +1920,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<UserFaqAnswer>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserFaqA__3213E83F016CC9C2");
+            entity.HasKey(e => e.Id).HasName("PK__UserFaqA__3213E83FEA6384AF");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Answer).HasColumnName("answer");
@@ -1892,7 +1944,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<UserPicture>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserPict__3213E83F83A3FF36");
+            entity.HasKey(e => e.Id).HasName("PK__UserPict__3213E83FAFB95D81");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
@@ -1950,7 +2002,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<UserStatus>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserStat__3213E83FE850C0B4");
+            entity.HasKey(e => e.Id).HasName("PK__UserStat__3213E83F6FC46315");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
@@ -2115,7 +2167,7 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<UserUserRole>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserUser__3213E83F668C6C59");
+            entity.HasKey(e => e.Id).HasName("PK__UserUser__3213E83F4ED27973");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
