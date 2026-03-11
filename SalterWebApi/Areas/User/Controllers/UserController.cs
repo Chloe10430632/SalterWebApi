@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Logging.Abstractions;
 using UserServiceHelper.IService;
 using UserServiceHelper.Models.DTO.ViewModel;
 
@@ -7,8 +8,10 @@ using UserServiceHelper.Models.DTO.ViewModel;
 
 namespace SalterWebApi.Areas.User.Controllers
 {
-    [Route("api/[controller]")]
+    [Area("User")]
+    [Route("api/[area]/[controller]")]
     [ApiController]
+    [Tags("會員相關")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -32,7 +35,7 @@ namespace SalterWebApi.Areas.User.Controllers
             var profile = await _userService.GetUserProfileAsync(id);
 
             if (profile == null)
-                return null;
+                return NotFound(new { message = "找不到該會員資料" });
 
             return Ok(profile);
         }
@@ -69,5 +72,25 @@ namespace SalterWebApi.Areas.User.Controllers
         public void Delete(int id)
         {
         }
+
+        [HttpPost("Register")]
+        public async Task<IActionResult> Register([FromBody] UserRegisterViewModel Rmodel)
+        {
+            if (Rmodel == null)
+                return BadRequest(new { message = "資料格式錯誤" });
+
+            var result = await _userService.RegisterAsync(Rmodel);
+
+            if (!result)
+            {
+                return BadRequest(new { message = "註冊失敗，該 Email 已被使用" });
+            }
+
+            return Ok(new { message = "註冊成功" });
+                
+
+
+        }
+
     }
 }

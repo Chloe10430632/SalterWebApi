@@ -13,5 +13,7 @@ namespace UserServiceHelper.IService
 
         Task<bool> UpdateProfileAsync(UserEditViewModel model);
 
+        Task<bool> RegisterAsync(UserRegisterViewModel Rmodel);
+
     }
 }

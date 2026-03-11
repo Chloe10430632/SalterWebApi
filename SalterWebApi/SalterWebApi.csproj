@@ -22,6 +22,7 @@
     <Folder Include="Areas\Trip\" />
     <Folder Include="Controllers\" />
     <Folder Include="Models\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
   <ItemGroup>

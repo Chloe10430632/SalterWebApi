@@ -1,4 +1,6 @@
-﻿using SalterEFModels.EFModels;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,6 +48,7 @@ namespace UserServiceHelper.Service
             if (userInDb == null)
                 return false;
 
+            userInDb.UserName = model.UserName;
             userInDb.Phone = model.Phone;
             userInDb.Gender = model.Gender;
             userInDb.Birthday = model.Birthday;
@@ -56,6 +59,39 @@ namespace UserServiceHelper.Service
 
             return await _dbUser.SaveChangesAsync();
 
+        }
+
+        public async Task<bool> RegisterAsync(UserRegisterViewModel Rmodel)
+        {
+            var dbContext = _dbUser.GetDbContext();
+            if (await dbContext.UserUsers.AnyAsync(u => u.Email == Rmodel.Email))
+                return false;
+
+            var newUser = new UserUser
+            {
+                UserName = Rmodel.UserName,
+                Email = Rmodel.Email,
+                Phone = Rmodel.Phone,
+                Gender = Rmodel.Gender,
+                Birthday = Rmodel.Birthday,              
+                ProfilePicture = Rmodel.ProfilePicture ?? "/admin/imgs/default-avatar.png",
+
+                UserRoleId = 1,
+                StatusId = 1,
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+
+                
+
+            };
+
+            var hasher = new PasswordHasher<UserUser>();
+            newUser.PasswordHash = hasher.HashPassword(newUser, Rmodel.Password);
+
+            await _dbUser.CreateAsync(newUser);
+
+            return await _dbUser.SaveChangesAsync();
         }
     }
 }
