@@ -21,7 +21,7 @@ namespace ForumServiceHelper.Service
             _dbPosts = dbPosts;
         }
 
-        public async Task<IList<PostsViewModel>> GetAllPostsAsync(int postId)
+        public async Task<IList<PostsViewModel>> GetAllPostsAsync()
         {
             // 1. 從 Repository 取得 EF Models 貼文的所有關聯表
             var posts = _dbPosts.GetDbContext().ForumPosts
