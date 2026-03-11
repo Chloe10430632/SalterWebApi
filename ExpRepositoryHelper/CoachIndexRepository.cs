@@ -52,9 +52,12 @@ namespace ExpRepositoryHelper
             return ccount;
         }
 
-        public Task<int> CommentPoint()
+        public async Task<List<int>> CommentScore(int coachID)
         {
-            throw new NotImplementedException();
+            return await _dbContext.ExpReviews
+                         .Where(r =>r.CoachId == coachID)
+                         .Select(r => r.Rating ?? 0) //如果回傳是null 就變成0
+                         .ToListAsync();
         }
 
         public Task<int> FavoriteCoach()

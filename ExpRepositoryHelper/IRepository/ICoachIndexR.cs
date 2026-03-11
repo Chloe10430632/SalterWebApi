@@ -10,7 +10,7 @@ namespace ExpRepositoryHelper.IRepository
     public interface ICoachIndexR
     {
         /**評分數*/
-        Task<int> CommentPoint();
+        Task<List<int>> CommentScore(int coachID);
         /**評論則數*/
         Task<int> CommentCount(int coachID);
         /**教練建立時間*/
