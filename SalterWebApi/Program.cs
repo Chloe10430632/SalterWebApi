@@ -23,9 +23,11 @@ builder.Services.AddDbContext<SalterDbContext>(options =>
 //Forum功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericSalterRepository<>), typeof(GenericSalterRepository<>));
 builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, GenericSalterRepository<ForumBoardCategory>>();
+builder.Services.AddScoped<IGenericSalterRepository<ForumPost>, GenericSalterRepository<ForumPost>>();
 
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
+builder.Services.AddScoped<IPostsService, PostsService>();
 
 // Add services to the container.
 

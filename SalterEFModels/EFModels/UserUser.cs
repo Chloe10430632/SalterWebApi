@@ -49,6 +49,8 @@ public partial class UserUser
 
     public virtual ICollection<ExpEquipmentOrder> ExpEquipmentOrders { get; set; } = new List<ExpEquipmentOrder>();
 
+    public virtual ICollection<ExpMessage> ExpMessages { get; set; } = new List<ExpMessage>();
+
     public virtual ICollection<ExpReview> ExpReviews { get; set; } = new List<ExpReview>();
 
     public virtual ICollection<ExpTransaction> ExpTransactionReceiveUsers { get; set; } = new List<ExpTransaction>();
@@ -71,11 +73,15 @@ public partial class UserUser
 
     public virtual ICollection<TripAnnouncement> TripAnnouncements { get; set; } = new List<TripAnnouncement>();
 
+    public virtual ICollection<TripFavorite> TripFavorites { get; set; } = new List<TripFavorite>();
+
     public virtual ICollection<TripGearCheck> TripGearChecks { get; set; } = new List<TripGearCheck>();
 
     public virtual ICollection<TripGearItem> TripGearItems { get; set; } = new List<TripGearItem>();
 
     public virtual ICollection<TripMember> TripMembers { get; set; } = new List<TripMember>();
+
+    public virtual ICollection<TripNote> TripNotes { get; set; } = new List<TripNote>();
 
     public virtual ICollection<TripTrip> TripTrips { get; set; } = new List<TripTrip>();
 

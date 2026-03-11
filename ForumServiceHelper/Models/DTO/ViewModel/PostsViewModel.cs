@@ -28,8 +28,11 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         public int BookmarkCount { get; set; }
         public int ShareCount { get; set; }
 
-        // 留言預覽 (通常只取最新或熱門的一兩則)
+        // 留言
         public List<CommentPreviewDto> LatestComments { get; set; } = new();
+
+        //標籤
+        public List<string> PostTags { get; set; } = new();
     }
     public class CommentPreviewDto
     {
@@ -37,5 +40,8 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         public string Content { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+
+        //用來存放該留言底下的子回覆
+        public List<CommentPreviewDto> Replies { get; set; } = new();
     }
 }

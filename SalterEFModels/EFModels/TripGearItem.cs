@@ -13,11 +13,13 @@ public partial class TripGearItem
 
     public bool IsRequired { get; set; }
 
-    public int? CreatedByUserId { get; set; }
+    public int CreatedByUserId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    public virtual UserUser? CreatedByUser { get; set; }
+    public int? EquipmentId { get; set; }
+
+    public virtual UserUser CreatedByUser { get; set; } = null!;
 
     public virtual TripTrip Trip { get; set; } = null!;
 

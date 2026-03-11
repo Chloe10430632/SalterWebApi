@@ -9,5 +9,5 @@ public partial class ForumTag
 
     public string TagName { get; set; } = null!;
 
-    public virtual ICollection<ForumPost> Posts { get; set; } = new List<ForumPost>();
+    public virtual ICollection<ForumPostTagDetail> ForumPostTagDetails { get; set; } = new List<ForumPostTagDetail>();
 }

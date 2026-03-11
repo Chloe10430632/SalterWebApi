@@ -31,11 +31,11 @@ public partial class ForumPost
 
     public virtual ICollection<ForumPostInteraction> ForumPostInteractions { get; set; } = new List<ForumPostInteraction>();
 
+    public virtual ICollection<ForumPostTagDetail> ForumPostTagDetails { get; set; } = new List<ForumPostTagDetail>();
+
     public virtual ICollection<ForumPostsImage> ForumPostsImages { get; set; } = new List<ForumPostsImage>();
 
     public virtual TripLocation? Location { get; set; }
 
     public virtual UserUser User { get; set; } = null!;
-
-    public virtual ICollection<ForumTag> Tags { get; set; } = new List<ForumTag>();
 }

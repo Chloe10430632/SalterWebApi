@@ -29,6 +29,10 @@ public partial class TripTrip
 
     public DateTime UpdatedAt { get; set; }
 
+    public string? CoverImageUrl { get; set; }
+
+    public string? CoverImagePublicId { get; set; }
+
     public virtual UserUser OrganizerUser { get; set; } = null!;
 
     public virtual ICollection<TripAnnouncement> TripAnnouncements { get; set; } = new List<TripAnnouncement>();
