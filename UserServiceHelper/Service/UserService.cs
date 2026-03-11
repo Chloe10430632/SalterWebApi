@@ -15,10 +15,12 @@ namespace UserServiceHelper.Service
     public class UserService : IUserService
     {
         private readonly IGenericUserRepository<UserUser> _dbUser;
-        
-        public UserService(IGenericUserRepository<UserUser> dbUser)
+        private readonly PasswordHasher<UserUser> _passwordHasher;
+
+        public UserService(IGenericUserRepository<UserUser> dbUser, PasswordHasher<UserUser> passwordHasher)
         {
             _dbUser = dbUser;
+            _passwordHasher = passwordHasher;
         }
         
         public async Task<UserProfileViewModel?> GetUserProfileAsync(int userId)
@@ -86,12 +88,30 @@ namespace UserServiceHelper.Service
 
             };
 
-            var hasher = new PasswordHasher<UserUser>();
-            newUser.PasswordHash = hasher.HashPassword(newUser, Rmodel.Password);
+            
+            newUser.PasswordHash = _passwordHasher.HashPassword(newUser, Rmodel.Password);
 
             await _dbUser.CreateAsync(newUser);
 
             return await _dbUser.SaveChangesAsync();
+        }
+
+        public async Task<string?> LoginAsync(UserLoginViewModel model)
+        {
+            var dbContext =  _dbUser.GetDbContext();
+
+            var User = await dbContext.UserUsers.FirstOrDefaultAsync(u => u.Email == model.Email);
+
+            if (User == null)
+                return null;
+
+            var result = _passwordHasher.VerifyHashedPassword(User, User.PasswordHash, model.Password);
+
+            if (result == PasswordVerificationResult.Failed)
+                return null;
+
+            return "LoginSuccess_Token_Placeholder";
+
         }
     }
 }

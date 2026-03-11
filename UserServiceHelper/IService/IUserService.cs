@@ -15,5 +15,7 @@ namespace UserServiceHelper.IService
 
         Task<bool> RegisterAsync(UserRegisterViewModel Rmodel);
 
+        Task<string?> LoginAsync(UserLoginViewModel model);
+
     }
 }

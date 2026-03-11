@@ -1,19 +1,16 @@
 using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-
-using SalterEFModels.EFModels;
-using Scalar.AspNetCore;
-
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
-
-
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SalterEFModels.EFModels;
+using Scalar.AspNetCore;
 using UserRepositoryHelper.IRepository; 
 using UserRepositoryHelper.Repository;
-using UserServiceHelper.Service;
 using UserServiceHelper.IService;
+using UserServiceHelper.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,10 +35,11 @@ builder.Services.AddScoped<IBoardsService, BoardsService>();
 builder.Services.AddScoped(typeof(IGenericUserRepository<>), typeof(GenericUserRepository<>));
 builder.Services.AddScoped<IGenericUserRepository<UserUser>, GenericUserRepository<UserUser>>();
 
+
 //User功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IUserService, UserService>();
-
-
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<PasswordHasher<UserUser>>();
 
 // Add services to the container.
 

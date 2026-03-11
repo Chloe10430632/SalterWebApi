@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging.Abstractions;
 using UserServiceHelper.IService;
 using UserServiceHelper.Models.DTO.ViewModel;
+using UserServiceHelper.Service;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -15,21 +16,24 @@ namespace SalterWebApi.Areas.User.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IFileService _fileService;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IFileService fileService)
         {
             _userService = userService;
+            _fileService = fileService;
         }
 
         // GET: api/<UserController>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
+        //[HttpGet]
+        //public IEnumerable<string> Get()
+        //{
+        //    return new string[] { "value1", "value2" };
+        //}
 
         // GET api/<UserController>/5
-        [HttpGet("{id}")]
+
+        [HttpGet("GetUserProfile/{id}")]
         public async Task<ActionResult<UserProfileViewModel>> Get(int id)
         {
             var profile = await _userService.GetUserProfileAsync(id);
@@ -41,13 +45,14 @@ namespace SalterWebApi.Areas.User.Controllers
         }
 
         // POST api/<UserController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
+        //[HttpPost]
+        //public void Post([FromBody] string value)
+        //{
+        //}
 
         // PUT api/<UserController>/5
-        [HttpPut("{id}")]
+
+        [HttpPut("UpdateUserProfile/{id}")]
         public async Task<IActionResult> Put(int id, [FromBody] UserEditViewModel model)
         {
             if(id != model.Id)
@@ -72,6 +77,22 @@ namespace SalterWebApi.Areas.User.Controllers
         public void Delete(int id)
         {
         }
+
+        [HttpPost("UploadUserPicture")]
+        public async Task<IActionResult> Upload(IFormFile file)
+        {
+            // 呼叫 Service，指定存到 admin/imgs，它會回傳像 "/admin/imgs/20260311_xxx.jpg" 的路徑
+            var path = await _fileService.UploadImageAsync(file, "admin/imgs");
+
+            if (string.IsNullOrEmpty(path))
+            {
+                return BadRequest(new { message = "請選擇有效的檔案進行上傳" });
+            }
+
+            // 回傳路徑給前端 (Angular)，前端之後註冊時再把這個 path 帶入 RegisterViewModel
+            return Ok(new { path });
+        }
+
 
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] UserRegisterViewModel Rmodel)
