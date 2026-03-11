@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SalterEFModels.EFModels;
 
-public partial class ExpFavorite
+public partial class ExpFavorites
 {
     public int UserId { get; set; }
 

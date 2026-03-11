@@ -1,4 +1,5 @@
 ﻿using ExpRepositoryHelper.Repository;
+using static ExpServiceHelper.DTO.DCoachIndex;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace ExpServiceHelper.IService
     public interface ISCoachIndex
     {
         /**收藏教練*/
-        Task<RCoachIndex?> MyFavCoach();
+        Task<string?> MyFavCoach(FavCoachCreateDto a);
         /**搜尋-地區*/
         Task<(List<RCoachIndex> Items, int TotalCount)> DistrictAsync(
          string? dist,

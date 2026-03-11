@@ -55,7 +55,7 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<ExpEquipmentPicture> ExpEquipmentPictures { get; set; }
 
-    public virtual DbSet<ExpFavorite> ExpFavorites { get; set; }
+    public virtual DbSet<ExpFavorites> ExpFavorites { get; set; }
 
     public virtual DbSet<ExpMessage> ExpMessages { get; set; }
 
@@ -729,7 +729,7 @@ public partial class SalterDbContext : DbContext
                 .HasConstraintName("FK__expEquipm__expEq__37C5420D");
         });
 
-        modelBuilder.Entity<ExpFavorite>(entity =>
+        modelBuilder.Entity<ExpFavorites>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_ExpFavorites_1");
 
