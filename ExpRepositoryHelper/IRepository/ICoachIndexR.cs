@@ -20,7 +20,7 @@ namespace ExpRepositoryHelper.IRepository
         /**專業*/
         Task<string> CoachSpeciallity(int coachID);
         /**收藏*/
-        Task<int> FavoriteCoach();
+        Task<int> FavoriteCoach(int coachID);
 
     }
 }

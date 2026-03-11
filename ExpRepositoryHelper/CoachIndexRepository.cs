@@ -60,9 +60,14 @@ namespace ExpRepositoryHelper
                          .ToListAsync();
         }
 
-        public Task<int> FavoriteCoach()
+        public async Task<int> FavoriteCoach(int coachID)
         {
-            throw new NotImplementedException();
+           var favcount = await _dbContext.ExpFavorites
+                 .Where(f => f.CoachId == coachID)
+                 .Select(f => f.FavoritedAt)
+                 .CountAsync();
+
+            return favcount;
         }
 
         
