@@ -1,5 +1,7 @@
 using ExpRepositoryHelper;
 using ExpRepositoryHelper.IRepository;
+using ExpRepositoryHelper.Repository;
+using ExpServiceHelper.IService;
 using ExpServiceHelper.IService;
 using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
@@ -28,6 +30,9 @@ builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, Generic
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
 
+//Experience 注入
+builder.Services.AddScoped<IRCoachIndex, RCoachIndex>();
+builder.Services.AddScoped<ISCoachIndex, SCoachIndex>();
 
 
 

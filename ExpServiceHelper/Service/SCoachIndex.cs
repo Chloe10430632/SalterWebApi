@@ -7,7 +7,6 @@ using ExpRepositoryHelper;
 using ExpRepositoryHelper.IRepository;
 using ExpServiceHelper.IService;
 using SalterEFModels.EFModels;
-using ExpServiceHelper.DTO;
 using static ExpServiceHelper.DTO.DCoachIndex;
 using ExpRepositoryHelper.Repository;
 
