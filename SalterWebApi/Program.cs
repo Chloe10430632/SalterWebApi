@@ -1,13 +1,14 @@
+using ExpRepositoryHelper;
+using ExpRepositoryHelper.IRepository;
+using ExpServiceHelper.IService;
 using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-
-using SalterEFModels.EFModels;
-using Scalar.AspNetCore;
-
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using SalterEFModels.EFModels;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,9 @@ builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, Generic
 
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
+
+
+
 
 // Add services to the container.
 

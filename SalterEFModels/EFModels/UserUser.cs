@@ -49,6 +49,8 @@ public partial class UserUser
 
     public virtual ICollection<ExpEquipmentOrder> ExpEquipmentOrders { get; set; } = new List<ExpEquipmentOrder>();
 
+    public virtual ICollection<ExpFavorite> ExpFavorites { get; set; } = new List<ExpFavorite>();
+
     public virtual ICollection<ExpMessage> ExpMessages { get; set; } = new List<ExpMessage>();
 
     public virtual ICollection<ExpReview> ExpReviews { get; set; } = new List<ExpReview>();

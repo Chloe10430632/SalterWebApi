@@ -55,7 +55,7 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<ExpEquipmentPicture> ExpEquipmentPictures { get; set; }
 
-    public virtual DbSet<ExpFavorites> ExpFavorites { get; set; }
+    public virtual DbSet<ExpFavorite> ExpFavorites { get; set; }
 
     public virtual DbSet<ExpMessage> ExpMessages { get; set; }
 
@@ -84,6 +84,8 @@ public partial class SalterDbContext : DbContext
     public virtual DbSet<ForumPost> ForumPosts { get; set; }
 
     public virtual DbSet<ForumPostInteraction> ForumPostInteractions { get; set; }
+
+    public virtual DbSet<ForumPostTagDetail> ForumPostTagDetails { get; set; }
 
     public virtual DbSet<ForumPostsImage> ForumPostsImages { get; set; }
 
@@ -727,20 +729,25 @@ public partial class SalterDbContext : DbContext
                 .HasConstraintName("FK__expEquipm__expEq__37C5420D");
         });
 
-        modelBuilder.Entity<ExpFavorites>(entity =>
+        modelBuilder.Entity<ExpFavorite>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => e.Id).HasName("PK_ExpFavorites_1");
 
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
             entity.Property(e => e.FavoritedAt).HasColumnName("favorited_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Coach).WithMany()
+            entity.HasOne(d => d.Coach).WithMany(p => p.ExpFavorites)
                 .HasForeignKey(d => d.CoachId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_expFavorites_expCoaches");
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.HasOne(d => d.User).WithMany(p => p.ExpFavorites)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_expFavorites_UserUsers");
         });
 
@@ -1054,25 +1061,6 @@ public partial class SalterDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ForumPosts_UserUsers");
-
-            entity.HasMany(d => d.Tags).WithMany(p => p.Posts)
-                .UsingEntity<Dictionary<string, object>>(
-                    "ForumPostTagDetail",
-                    r => r.HasOne<ForumTag>().WithMany()
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_forumPostTagDetail_forumTags"),
-                    l => l.HasOne<ForumPost>().WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_ForumPostTagDetails_ForumPosts"),
-                    j =>
-                    {
-                        j.HasKey("PostId", "TagId").HasName("PK__ForumPos__4AFEED4D107A0FBD");
-                        j.ToTable("ForumPostTagDetails");
-                        j.IndexerProperty<int>("PostId").HasColumnName("post_id");
-                        j.IndexerProperty<int>("TagId").HasColumnName("tag_id");
-                    });
         });
 
         modelBuilder.Entity<ForumPostInteraction>(entity =>
@@ -1102,6 +1090,23 @@ public partial class SalterDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ForumPostInteractions_UserUsers");
+        });
+
+        modelBuilder.Entity<ForumPostTagDetail>(entity =>
+        {
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.TagId).HasColumnName("tag_id");
+
+            entity.HasOne(d => d.Post).WithMany(p => p.ForumPostTagDetails)
+                .HasForeignKey(d => d.PostId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ForumPostTagDetails_ForumPosts");
+
+            entity.HasOne(d => d.Tag).WithMany(p => p.ForumPostTagDetails)
+                .HasForeignKey(d => d.TagId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_forumPostTagDetail_forumTags");
         });
 
         modelBuilder.Entity<ForumPostsImage>(entity =>
