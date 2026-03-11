@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using HomeServiceHelper.IService;
+using HomeServiceHelper.Models.DTO.ViewModels;
+using HomeServiceHelper.Service;
+using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -8,36 +11,42 @@ namespace SalterWebApi.Areas.House.Controllers
     [ApiController]
     public class HomeController : ControllerBase
     {
-        // GET: api/<Home2Controller>
+        private readonly IHomService _homService;
+
+        public HomeController(IHomService homeService)
+        {
+            _homService = homeService;
+        }
+
+        
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<IActionResult> GetAll()
         {
-            return new string[] { "value1", "value2" };
+            var results = await _homService.GetAllHousesAsync();
+            return Ok(results);
         }
 
-        // GET api/<Home2Controller>/5
+        
+        [HttpPost("search")]
+        public async Task<IActionResult> Search([FromBody] HouseSearchDTO search)
+        {
+            var results = await _homService.SearchHousesAsync(search);
+            return Ok(results);
+        }
+
         [HttpGet("{id}")]
-        public string Get(int id)
+        public async Task<IActionResult> GetDetail(int id)
         {
-            return "value";
+            var result = await _homService.SerchHouseDetailAsync(id);
+
+            if (result == null)
+            {
+                return NotFound(new { message = $"找不到 ID 為 {id} 的房間" });
+            }
+
+            return Ok(result);
         }
 
-        // POST api/<Home2Controller>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<Home2Controller>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<Home2Controller>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+        
     }
 }
