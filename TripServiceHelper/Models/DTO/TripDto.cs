@@ -1,6 +1,6 @@
 ﻿namespace TripServiceHelper.Models.DTOs;
 
-// 列表用
+#region 列表用
 public class TripSummaryDto
 {
     public int Id { get; set; }
@@ -17,8 +17,9 @@ public class TripSummaryDto
     public int FavoriteCount { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+#endregion
 
-// 詳情用
+#region 詳情用
 public class TripDetailDto : TripSummaryDto
 {
     public int OrganizerUserId { get; set; }
@@ -30,8 +31,9 @@ public class TripDetailDto : TripSummaryDto
     public int AnnouncementCount { get; set; }
     public int GearItemCount { get; set; }
 }
+#endregion
 
-// 建立／編輯用
+#region 建立／編輯用
 public class TripRequestDto
 {
     public string Title { get; set; } = null!;
@@ -43,8 +45,9 @@ public class TripRequestDto
     public string? CoverImageUrl { get; set; }
     public string? CoverImagePublicId { get; set; }
 }
+#endregion
 
-// 成員
+#region 成員
 public class TripMemberDto
 {
     public int UserId { get; set; }
@@ -53,8 +56,9 @@ public class TripMemberDto
     public string Role { get; set; } = null!;
     public DateTime JoinedAt { get; set; }
 }
+#endregion
 
-// 地點
+#region 地點
 public class TripLocationDto
 {
     public int Id { get; set; }
@@ -65,8 +69,9 @@ public class TripLocationDto
     public string? Note { get; set; }
     public int SortOrder { get; set; }
 }
+#endregion
 
-// 列表結果（含分頁）
+#region 列表結果（含分頁）
 public class TripListResultDto
 {
     public List<TripSummaryDto> Trips { get; set; } = new();
@@ -75,9 +80,10 @@ public class TripListResultDto
     public int PageSize { get; set; }
     public int TotalPages { get; set; }
 }
+#endregion
 
-// 公告
-public class TripAnnouncementDto
+#region 公告
+public class TripAnnouncementDto //後端回傳給前端
 {
     public int Id { get; set; }
     public string Title { get; set; } = null!;
@@ -88,13 +94,14 @@ public class TripAnnouncementDto
     public DateTime UpdatedAt { get; set; }
 }
 
-public class TripAnnouncementRequestDto
+public class TripAnnouncementRequestDto //前端送到後端
 {
     public string Title { get; set; } = null!;
     public string? Content { get; set; }
 }
+#endregion
 
-// 裝備
+#region 裝備
 public class TripGearItemDto
 {
     public int Id { get; set; }
@@ -109,8 +116,9 @@ public class TripGearItemRequestDto
     public string ItemName { get; set; } = null!;
     public bool IsRequired { get; set; }
 }
+#endregion
 
-// 提醒
+#region 提醒
 public class TripReminderDto
 {
     public int Id { get; set; }
@@ -124,8 +132,9 @@ public class TripReminderRequestDto
     public int RemindOffsetMinutes { get; set; }
     public bool IsEnabled { get; set; }
 }
+#endregion
 
-// 地點 Request
+#region 地點 Request
 public class TripLocationRequestDto
 {
     public int LocationId { get; set; }
@@ -133,8 +142,9 @@ public class TripLocationRequestDto
     public string? Note { get; set; }
     public int SortOrder { get; set; }
 }
+#endregion
 
-// 城市／行政區
+#region 城市／行政區
 public class TripCityDto
 {
     public int Id { get; set; }
@@ -146,3 +156,4 @@ public class TripDistrictDto
     public int Id { get; set; }
     public string Name { get; set; } = null!;
 }
+#endregion

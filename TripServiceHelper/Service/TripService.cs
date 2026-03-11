@@ -417,7 +417,7 @@ public class TripService : ITripService
 
     #endregion
 
-    #region 私有方法
+    #region Manual Mappings方法
 
     private static TripSummaryDto ToSummaryDto(TripTrip t) => new()
     {

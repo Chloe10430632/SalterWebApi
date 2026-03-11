@@ -19,8 +19,12 @@ var builder = WebApplication.CreateBuilder(args);
 //    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContext")));
 
 //地端資料庫連接字串DI
+//builder.Services.AddDbContext<SalterDbContext>(options =>
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextMac")));
+
+//本機資料庫連接字串DI
 builder.Services.AddDbContext<SalterDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextMac")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextLocal")));
 
 //Forum功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericSalterRepository<>), typeof(GenericSalterRepository<>));
