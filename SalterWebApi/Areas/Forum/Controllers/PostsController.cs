@@ -1,46 +1,109 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using Microsoft.EntityFrameworkCore;
+using SalterEFModels.EFModels;
 
 namespace SalterWebApi.Areas.Forum.Controllers
 {
     [Area("Forum")]
     [Route("api/[area]/[controller]")] // 路由 api/Forum/Posts
     [ApiController]
-    [Tags("社群討論版")] // Scalar 會用這個名字當分類標題
+    [Tags("社群討論版")]
     public class PostsController : ControllerBase
     {
-        // GET: api/<PostsController>
+        private readonly SalterDbContext _context;
+
+        public PostsController(SalterDbContext context)
+        {
+            _context = context;
+        }
+
+        // GET: api/Posts
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<ActionResult<IEnumerable<ForumPost>>> GetForumPosts()
         {
-            return new string[] { "value1", "value2" };
+            return await _context.ForumPosts.ToListAsync();
         }
 
-        // GET api/<PostsController>/5
+        // GET: api/Posts/5
         [HttpGet("{id}")]
-        public string Get(int id)
+        public async Task<ActionResult<ForumPost>> GetForumPost(int id)
         {
-            return "value";
+            var forumPost = await _context.ForumPosts.FindAsync(id);
+
+            if (forumPost == null)
+            {
+                return NotFound();
+            }
+
+            return forumPost;
         }
 
-        // POST api/<PostsController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<PostsController>/5
+        // PUT: api/Posts/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<IActionResult> PutForumPost(int id, ForumPost forumPost)
         {
+            if (id != forumPost.PostId)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(forumPost).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ForumPostExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
-        // DELETE api/<PostsController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        // POST: api/Posts
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPost]
+        public async Task<ActionResult<ForumPost>> PostForumPost(ForumPost forumPost)
         {
+            _context.ForumPosts.Add(forumPost);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetForumPost", new { id = forumPost.PostId }, forumPost);
+        }
+
+        // DELETE: api/Posts/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteForumPost(int id)
+        {
+            var forumPost = await _context.ForumPosts.FindAsync(id);
+            if (forumPost == null)
+            {
+                return NotFound();
+            }
+
+            _context.ForumPosts.Remove(forumPost);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool ForumPostExists(int id)
+        {
+            return _context.ForumPosts.Any(e => e.PostId == id);
         }
     }
 }
