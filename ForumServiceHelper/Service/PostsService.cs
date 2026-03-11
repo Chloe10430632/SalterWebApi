@@ -21,7 +21,7 @@ namespace ForumServiceHelper.Service
             _dbPosts = dbPosts;
         }
 
-        public async Task<IList<PostsViewModel>> GetAllPostsAsync()
+        public async Task<IList<PostsViewModel>> GetAllPostsAsync(int postId)
         {
             // 1. 從 Repository 取得 EF Models 貼文的所有關聯表
             var posts = _dbPosts.GetDbContext().ForumPosts
@@ -61,24 +61,39 @@ namespace ForumServiceHelper.Service
                 BookmarkCount = p.ForumPostInteractions
                  .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.Collect)
                  .Count(),
+
                 ShareCount = p.ForumPostInteractions
                  .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.Share)
                  .Count(),
 
-                //處理父子留言結構
-                LatestComments = p.ForumComments
-                 .OrderByDescending(c => c.CreatedAt)
-                 //.Take(1) // 根據 UI 需求取前兩則
-                 .Select(c => new CommentPreviewDto
-                 {
-                     UserName = c.User.UserName,
-                     Content = c.Content,
-                     AvatarUrl = c.User.ProfilePicture,
-                     CreatedAt = c.CreatedAt
-                 }).ToList(),
+                // 處理父子留言結構
+                Comments = p.ForumComments
+            .Where(c => c.ParentCommentId == null) // 1. 先過濾出「父留言」
+            .OrderByDescending(c => c.CreatedAt)
+            // .Take(2) // 如果只要顯示最新兩則大標留言
+            .Select(c => new CommentPreviewDto
+            {
+                CommentId = c.CommentId,
+                UserName = c.User.UserName,
+                Content = c.Content,
+                AvatarUrl = c.User.ProfilePicture,
+                CreatedAt = c.CreatedAt,
 
+                // 2. 找出屬於這個父留言的子留言
+                Replies = p.ForumComments
+                    .Where(reply => reply.ParentCommentId == c.CommentId)
+                    .OrderBy(reply => reply.CreatedAt) // 子留言通常由舊到新排
+                    .Select(reply => new CommentPreviewDto
+                    {
+                        CommentId = reply.CommentId,
+                        UserName = reply.User.UserName,
+                        Content = reply.Content,
+                        AvatarUrl = reply.User.ProfilePicture,
+                        CreatedAt = reply.CreatedAt
+                    }).ToList()
+            }).ToList(),
 
-                PostTags = _dbPosts.GetDbContext().ForumPostTagDetails
+            PostTags = _dbPosts.GetDbContext().ForumPostTagDetails
                  .Include(pt => pt.Tag)
                  .Where(pt => pt.PostId == p.PostId)
                  .Select(pt =>  pt.Tag.TagName )

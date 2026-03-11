@@ -29,13 +29,14 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         public int ShareCount { get; set; }
 
         // 留言
-        public List<CommentPreviewDto> LatestComments { get; set; } = new();
+        public List<CommentPreviewDto> Comments { get; set; } = new();
 
         //標籤
         public List<string> PostTags { get; set; } = new();
     }
     public class CommentPreviewDto
     {
+        public int CommentId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;

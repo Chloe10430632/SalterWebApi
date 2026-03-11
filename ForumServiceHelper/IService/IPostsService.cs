@@ -10,7 +10,7 @@ namespace ForumServiceHelper.IService
 {
     public interface IPostsService
     {
-       public Task<IList<PostsViewModel>> GetAllPostsAsync();
+       public Task<IList<PostsViewModel>> GetAllPostsAsync(int postId);
 
     }
 }
