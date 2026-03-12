@@ -17,6 +17,6 @@ namespace ExpServiceHelper.IService
         /**排序-最新*/
         Task<List<DCoachInfo>> GetCoachNewest();
         /**排序-熱門*/
-
+        Task<List<DCoachInfo>> GetCoachHottest();
     }
 }

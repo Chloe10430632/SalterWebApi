@@ -1,12 +1,14 @@
 ﻿using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
-using SalterEFModels.EFModels;
 using Microsoft.EntityFrameworkCore;
+using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ExpServiceHelper.Service
 {
@@ -75,8 +77,19 @@ namespace ExpServiceHelper.Service
                   return await q.ToListAsync();
         }
 
-
+        Task<List<DCoachInfo>> ISCoachMethods.GetCoachHottest()
+        {
+            throw new NotImplementedException();
+        }
 
         /**排序-熱門*/
+        //public async Task<List<DCoachInfo>> GetCoachHottest()
+        // {
+        //     //算平均
+
+
+        //     return;
+        // }
+
     }
 }
