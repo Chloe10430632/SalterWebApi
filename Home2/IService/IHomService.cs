@@ -12,5 +12,8 @@ namespace HomeServiceHelper.IService
         Task<IEnumerable<HouseDetailViewDTO>> GetAllHousesAsync();
         Task<IEnumerable<HouseDetailViewDTO>> SearchHousesAsync(HouseSearchDTO search);
         Task <HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId);
+        Task<IEnumerable<string?>> GetAllCityAsync();
+        Task<IEnumerable<HouseDetailViewDTO>> GetTopRoomsAsync(int count);
+        Task<bool> AddReviewAsync(ReviewCreateDTO dto);
     }
 }

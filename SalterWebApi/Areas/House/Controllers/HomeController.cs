@@ -18,7 +18,7 @@ namespace SalterWebApi.Areas.House.Controllers
             _homService = homeService;
         }
 
-        
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -26,7 +26,7 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(results);
         }
 
-        
+
         [HttpPost("search")]
         public async Task<IActionResult> Search([FromBody] HouseSearchDTO search)
         {
@@ -47,6 +47,34 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(result);
         }
 
-        
+        [HttpGet("cities")]
+        public async Task<IActionResult> GetCities()
+        {
+            return Ok(await _homService.GetAllCityAsync());
+        }
+
+        [HttpGet("top/{count}")]
+        public async Task<IActionResult> GetTop(int count = 6)
+        {
+            return Ok(await _homService.GetTopRoomsAsync(count));
+        }
+
+        [HttpPost("reviews")]
+        public async Task<IActionResult> AddReview([FromBody] ReviewCreateDTO dto)
+        {
+            if (dto.Rating < 1 || dto.Rating > 5)
+            {
+                return BadRequest("評分必須在 1 到 5 之間");
+            }
+
+            var result = await _homService.AddReviewAsync(dto);
+
+            if (result)
+            {
+                return Ok(new { message = "評論新增成功！" });
+            }
+
+            return StatusCode(500, "新增評論時發生錯誤");
+        }
     }
 }

@@ -11,7 +11,7 @@ namespace HomeRepositoryHelper.IRepository
     {
         public Task<IEnumerable<Table>> GetAllHouse();
         public  Task<Table?> GetByIdAsync(int id);
-        public Task<Table> Add(Table entity);
+        public Task<Table> AddAsync(Table entity);
         public Task DeleteByIdAsync(int id);
         public  Task UpdateAsync(Table entity);
         public  Task SaveAsync();

@@ -22,7 +22,7 @@ namespace HomeRepositoryHelper.Repository
             _entity = _dbContext.Set<Table>();
         }
 
-        public async Task<Table> Add(Table entity)
+        public async Task<Table> AddAsync(Table entity)
         {
             
             _entity.Add(entity);

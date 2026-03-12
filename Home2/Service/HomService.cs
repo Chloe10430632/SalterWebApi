@@ -5,6 +5,7 @@ using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,7 +18,7 @@ namespace HomeServiceHelper.Service
         private readonly IGenericHomeRepository<HomRoomImage> _houseImageRepo;
         private readonly IGenericHomeRepository<HomReview> _reviewRepo;
         public HomService
-            (IGenericHomeRepository<HomHouse> houseRepo, 
+            (IGenericHomeRepository<HomHouse> houseRepo,
             IGenericHomeRepository<HomRoomType> roomTypeRepo,
             IGenericHomeRepository<HomRoomImage> houseImageRepo,
             IGenericHomeRepository<HomReview> reviewRepo
@@ -29,6 +30,7 @@ namespace HomeServiceHelper.Service
             _reviewRepo = reviewRepo;
         }
 
+        //取得所有房子及其房型的基本資訊
         public async Task<IEnumerable<HouseDetailViewDTO>> GetAllHousesAsync()
         {
             var rooms = await _roomTypeRepo.GetAllHouse();
@@ -51,6 +53,7 @@ namespace HomeServiceHelper.Service
             return result.ToList();
         }
 
+        // 根據搜尋條件（城市、可容納人數）篩選房子及其房型的基本資訊
         public async Task<IEnumerable<HouseDetailViewDTO>> SearchHousesAsync(HouseSearchDTO search)
         {
             var rooms = await _roomTypeRepo.GetAllHouse();
@@ -65,7 +68,7 @@ namespace HomeServiceHelper.Service
             {
                 query = query.Where(x => x.h.Citie.Contains(search.Citie));
             }
-            if(search.PeopleCount.HasValue)
+            if (search.PeopleCount.HasValue)
             {
                 query = query.Where(x => x.r.Capacity <= search.PeopleCount.Value);
             }
@@ -84,7 +87,8 @@ namespace HomeServiceHelper.Service
             return result.ToList();
         }
 
-        public async Task <HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId)
+        // 根據房型ID取得該房型的詳細資訊（包含房子資訊、所有圖片、評論等）
+        public async Task<HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId)
         {
             // 先取得該房型的基本資訊
             var rooms = await _roomTypeRepo.GetAllHouse();
@@ -127,5 +131,60 @@ namespace HomeServiceHelper.Service
                 Reviews = roomReviews
             };
         }
+
+        // 取得所有房子所在的城市列表（去重復後）
+        public async Task<IEnumerable<string?>> GetAllCityAsync()
+        {
+            var houses = await _houseRepo.GetAllHouse();
+
+            return houses.Where(h => !string.IsNullOrEmpty(h.Citie)).
+                Select(h => h.Citie)
+                .Distinct()
+                .ToList();
+        }
+
+        // 取得瀏覽次數最高的前幾個房型的基本資訊
+        public async Task<IEnumerable<HouseDetailViewDTO>> GetTopRoomsAsync(int count)
+        {
+            var rooms = await _roomTypeRepo.GetAllHouse();
+            var houses = await _houseRepo.GetAllHouse();
+
+            var query = from h in houses
+                        join r in rooms
+                        on h.HouseId equals r.HouseId
+                        orderby r.ViewCount descending
+                        select new HouseDetailViewDTO
+                        {
+                            RoomTypeId = r.RoomTypeId,
+                            Name = r.Name,
+                            PricePerNight = r.PricePerNight,
+                            Capacity = r.Capacity,
+                            Location = h.Location,
+                            Citie = h.Citie,
+                            District = h.District,
+                            Description = r.Description
+                        };
+            return query.Take(count).ToList();
+        }
+
+        // 新增評論到指定的房型(要有預約訂單的使用者才能評論!!)
+        public async Task<bool> AddReviewAsync(ReviewCreateDTO dto)
+        {
+            var newReview = new HomReview
+            {
+                RoomTypeId = dto.RoomTypeId,
+                Rating = dto.Rating,
+                Comment = dto.Comment,
+                UserId = dto.MemberId,
+                CreatedTime = DateTime.Now,
+                BookingId =1001
+            };
+            
+            await _reviewRepo.AddAsync(newReview);
+            
+            return true;
+        }
+
+
     }
 }
