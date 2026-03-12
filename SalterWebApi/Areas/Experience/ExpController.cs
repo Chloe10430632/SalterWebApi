@@ -2,7 +2,7 @@
 using ExpServiceHelper.IService;
 using ExpServiceHelper.Service;
 using Microsoft.AspNetCore.Mvc;
-using static ExpServiceHelper.DTO.DCoachIndex;
+using static ExpServiceHelper.DTO.DFavCoach;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -17,7 +17,7 @@ namespace SalterWebApi.Areas.Experience
         private readonly ISCoachIndex _sCoachIndex;
         public ExpController(ISCoachIndex sCoachIndex) {_sCoachIndex = sCoachIndex;}
         [HttpPost("Favorites")]
-        public async Task<IActionResult> MyFavCoach(FavCoachCreateDto dto) { 
+        public async Task<IActionResult> MyFavCoach(DFavCoach dto) { 
             var result = await _sCoachIndex.MyFavCoach(dto);
             return Ok(result);
         }

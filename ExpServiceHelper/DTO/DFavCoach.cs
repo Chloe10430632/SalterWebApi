@@ -6,13 +6,9 @@ using System.Threading.Tasks;
 
 namespace ExpServiceHelper.DTO
 {
-    public class DCoachIndex
+    public class DFavCoach
     {
-        public class FavCoachCreateDto
-        {
             public int UserId { get; set; }
             public int CoachId { get; set; }
-        }
-
     }
 }

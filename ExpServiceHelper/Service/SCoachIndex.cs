@@ -1,14 +1,15 @@
-﻿using System;
+﻿using ExpRepositoryHelper;
+using ExpRepositoryHelper.IRepository;
+using ExpRepositoryHelper.Repository;
+using ExpServiceHelper.DTO;
+using ExpServiceHelper.IService;
+using SalterEFModels.EFModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ExpRepositoryHelper;
-using ExpRepositoryHelper.IRepository;
-using ExpServiceHelper.IService;
-using SalterEFModels.EFModels;
-using static ExpServiceHelper.DTO.DCoachIndex;
-using ExpRepositoryHelper.Repository;
+using static ExpServiceHelper.DTO.DFavCoach;
 
 
 namespace ExpServiceHelper.Service
@@ -18,7 +19,7 @@ namespace ExpServiceHelper.Service
         private readonly IRCoachIndex _rCoachIndex;
         public SCoachIndex(IRCoachIndex rCoachIndex) { _rCoachIndex = rCoachIndex; }
         
-        public async Task<string?> MyFavCoach(FavCoachCreateDto a)
+        public async Task<string?> MyFavCoach(DFavCoach a)
         {
             // 1.先檢查
             var isExistde = await _rCoachIndex.ExistAsync(a.UserId, a.CoachId);
@@ -41,16 +42,5 @@ namespace ExpServiceHelper.Service
                 return "收藏！";
             }
         }
-        public Task<(List<RCoachIndex> Items, int TotalCount)> DistrictAsync(string? dist, string? sortBy, int page, int pageSize)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<(List<RCoachIndex> Items, int TotalCount)> HOTAsync(string? Hot, string? sortBy, int page, int pageSize)
-        {
-            throw new NotImplementedException();
-        }
-
-       
     }
 }

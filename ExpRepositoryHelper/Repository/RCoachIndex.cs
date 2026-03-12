@@ -19,7 +19,7 @@ namespace ExpRepositoryHelper.Repository
                 .Select(c => c.CreatedAt)
                 .FirstOrDefaultAsync();
                 
-                }
+        }
 
         public async Task<string> CoachDistrict(int coachID)
         {
