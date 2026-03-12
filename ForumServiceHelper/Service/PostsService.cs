@@ -19,14 +19,14 @@ namespace ForumServiceHelper.Service
     public class PostsService:IPostsService
     {
         private readonly IGenericSalterRepository<ForumPost> _dbPosts;
-        private readonly string _cloudinaryName;
-        private readonly string _cloudinaryApiKey;
-        private readonly string _cloudinaryApiSecret;
+        private readonly string? _cloudinaryName;
+        private readonly string? _cloudinaryApiKey;
+        private readonly string? _cloudinaryApiSecret;
 
         public PostsService(IGenericSalterRepository<ForumPost> dbPosts,IConfiguration config)
         {
             _dbPosts = dbPosts;
-            _cloudinaryName = config["Cloudinary:CloudName"];
+            _cloudinaryName = config["Cloudinary:CloudName"];  
             _cloudinaryApiKey = config["Cloudinary:ApiKey"];
             _cloudinaryApiSecret = config["Cloudinary:ApiSecret"];
         }
@@ -52,12 +52,6 @@ namespace ForumServiceHelper.Service
                 posts = posts.Where(p => p.PostId == postId.Value);
             }
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                keyword = keyword.Trim();
-                posts = posts.Where(p => p.Content.Contains(keyword) || p.Board.Title.Contains(keyword));
-            }
-
             if (userId.HasValue && sortBy == SortTypes.Follow)
             {
                 //先找出userId追蹤的所有看板
@@ -69,8 +63,14 @@ namespace ForumServiceHelper.Service
                 posts = posts.Where(p => userFollowBoards.Contains(p.BoardId));
             }
 
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                keyword = keyword.Trim();
+                posts = posts.Where(p => p.Content.Contains(keyword) || p.Board.Title.Contains(keyword));
+            }
+
             // 計算貼文距離現在的發佈時間 (先以基準日呈現)
-            DateTime now = new DateTime(2026, 2, 12, 12, 35, 0); //DateTime.Now
+            DateTime now = DateTime.Now; //new DateTime(2026, 2, 12, 12, 35, 0); //DateTime.Now
             var postDetails = posts.Select(p => new PostsViewModel
             {
                 PostId = p.PostId,
@@ -155,7 +155,7 @@ namespace ForumServiceHelper.Service
             return await postDetails.ToListAsync();
         }
 
-        public async Task<int> CheckAndCreate(PostCreateModel data)
+        public async Task<int> CheckAndCreateAsync(PostCreateModel data)
         {
             List<string> finalImageUrls = new List<string>();
 
@@ -182,6 +182,7 @@ namespace ForumServiceHelper.Service
                     // 2. 處理圖片
                     if (data.Images.Any())
                     {
+                        int fileIndex = 1;
                         foreach (var file in data.Images)
                         {
                             if (file.Length > 0)
@@ -212,59 +213,86 @@ namespace ForumServiceHelper.Service
                                     var postImage = new ForumPostsImage
                                     {
                                         PostId = newPost.PostId,
-                                        ImageUrl = uploadedUrl
+                                        ImageUrl = uploadedUrl,
+                                        SortIndex = fileIndex
                                     };
-                                    _dbPosts.GetDbContext().Add(postImage);
-                                    await _dbPosts.SaveChangesAsync();
-
-
+                                    _dbPosts.GetDbContext().ForumPostsImages.Add(postImage);
                                 }
                                 else
                                 {
                                     return -1;
                                 }
                             }
+                            fileIndex++;
                         }
                     }
 
-                    // 3. 處理標籤關聯 (假設標籤表已經存在標籤)
-                    if (data.TagNames.Any())
+                    // 3. 處理標籤關聯 (有標籤才做動作)
+                    if (data.Tags.Any())
                     {
-                        foreach (var tagName in data.TagNames)
+                        foreach (var tag in data.Tags)
                         {
-                            // 找出或新增標籤 (視你的業務邏輯而定)
-                            //if(_dbPosts.GetDbContext().ForumTags.Any(t=>t.TagName == tagName))
-                            //{
+                            // 找出標籤文字是否已存在?不存在就新增標籤
+                            tag.TagName = tag.TagName.Trim();
 
-                            //}
-                            // 這裡簡單示範：直接存入細節表
-                            // 需要先確認 Tag 表裡有沒有這個 TagName...
+                            //Tag不存在
+                            if (!_dbPosts.GetDbContext().ForumTags.Any(t => t.TagName == tag.TagName))
+                            {
+                                //不存在，新增貼文標籤
+                                var newTag = new ForumTag
+                                {
+                                    TagName = tag.TagName
+                                };
+                                _dbPosts.GetDbContext().ForumTags.Add(newTag);
+                                bool isTagSaved = await _dbPosts.SaveChangesAsync();
+                                if (isTagSaved)
+                                {
+                                    //已存在，直接新增貼文標籤明細表
+                                    var newPostnewTagsDetail = new ForumPostTagDetail
+                                    {
+                                        PostId = newPost.PostId,
+                                        TagId = newTag.TagId
+                                    };
+                                    _dbPosts.GetDbContext().ForumPostTagDetails.Add(newPostnewTagsDetail);
+                                }
+                            }
+                            else
+                            {
+                                //Tag已存在，直接新增貼文標籤明細表
+                                var newPostTagsDetail = new ForumPostTagDetail
+                                {
+                                    PostId = newPost.PostId,
+                                    TagId = tag.TagId
+                                };
+                                _dbPosts.GetDbContext().ForumPostTagDetails.Add(newPostTagsDetail);
+                            }
+
                         }
                     }
 
-                    //await db.SaveChangesAsync();
-
-                    return newPost.PostId; // 回傳 ID 讓前端可以跳轉
+                  
+                   
                 }
 
 
 
-                // 先 SaveChanges 一次，EF 會自動幫 newPost 填入生成的 PostId
-                await _dbPosts.SaveChangesAsync();
+               
 
 
 
 
+                        bool allSaved = await _dbPosts.SaveChangesAsync();
+                        if (allSaved)
+                            return newPost.PostId; // 回傳 ID 讓前端可以跳轉
+                        else
+                            return -1;
 
 
 
             }
 
 
-
-            return 1;
-
-
+            return -1; //失敗了就回傳-1，成功了回傳˙貼文Id
         }
 
     }

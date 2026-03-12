@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,13 @@ namespace ForumServiceHelper.Models.DTO.CreateModel
         public List<IFormFile>? Images { get; set; }
 
         // 標籤：前端傳入標籤 ID
-        public List<int> TagNames { get; set; } = new();
+        public List<TagCreateModel>? Tags { get; set; }
 
+    }
+
+    public class TagCreateModel
+    {
+        public int TagId { get; set; }
+        public string TagName { get; set; } = null!;
     }
 }

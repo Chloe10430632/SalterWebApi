@@ -13,7 +13,7 @@ namespace ForumServiceHelper.IService
     {
        public Task<IList<PostsViewModel>> GetAllPostsAsync(int? postId = null, string? keyword = null, string? sortBy = null, int? userId = null);
 
-        public Task<int> CheckAndCreate(PostCreateModel data);
+        public Task<int> CheckAndCreateAsync(PostCreateModel data);
 
     }
 }

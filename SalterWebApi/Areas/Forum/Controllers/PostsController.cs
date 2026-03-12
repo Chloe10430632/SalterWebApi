@@ -1,15 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ForumServiceHelper.IService;
+﻿using ForumServiceHelper.IService;
 using ForumServiceHelper.Models.DTO.Const;
+using ForumServiceHelper.Models.DTO.CreateModel;
 using ForumServiceHelper.Models.DTO.ErrorMessage;
 using ForumServiceHelper.Models.DTO.ViewModel;
+using Humanizer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalterEFModels.EFModels;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SalterWebApi.Areas.Forum.Controllers
 {
@@ -54,7 +56,7 @@ namespace SalterWebApi.Areas.Forum.Controllers
                 return NotFound(new ErrorResponse
                 {
                     Code = 404,
-                    Message = $"目前尚無追蹤中的內容喔 !"
+                    Message = $"搜尋條件查無相關內容!"
                 });
             }
 
@@ -110,16 +112,40 @@ namespace SalterWebApi.Areas.Forum.Controllers
             //return NoContent();
         }
 
-        // POST: api/Posts
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: api/Posts 有檔案上傳
         [HttpPost]
-        public async Task<ActionResult<ForumPost>> PostForumPost(ForumPost forumPost)
+        public async Task<ActionResult<ForumPost>> PostForumPost([FromForm]PostCreateModel data)
         {
-            return Ok();
-            //_context.ForumPosts.Add(forumPost);
-            //await _context.SaveChangesAsync();
+            //先檢查有資料
+            if (string.IsNullOrEmpty(data.Content))
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Code = 400,
+                        Message = "貼文資料不完整",
+                    });
+                }
+            //有資料開始處理後端邏輯
+            try
+            {
+                    int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data);
+                    if (postIdOrErrorResult == -1)
+                    {
+                            return StatusCode(500, new ErrorResponse
+                            {
+                                Code = 500,
+                                Message = "伺服器處理貼文失敗"
+                            });
+                     }
 
-            //return CreatedAtAction("GetForumPost", new { id = forumPost.PostId }, forumPost);
+                // return CreatedAtAction(nameof(GetForumPost), new { id = postIdOrErrorResult },data);
+                return Ok(new { isSuccess = true, PostId = postIdOrErrorResult });
+
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, "系統繁忙中，請稍後再試");
+            }
         }
 
         // DELETE: api/Posts/5

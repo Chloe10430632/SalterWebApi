@@ -81,6 +81,8 @@ if (app.Environment.IsDevelopment())
 //使用開放其他來源的自定義政策
 app.UseCors("Allow5500");
 app.UseCors("Allow4200");
+//存取靜態圖片
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
