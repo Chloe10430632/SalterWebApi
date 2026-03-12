@@ -17,5 +17,7 @@ namespace UserServiceHelper.IService
 
         Task<string?> LoginAsync(UserLoginViewModel model);
 
+        Task<string?> GoogleLoginAsync(string idToken);
+
     }
 }

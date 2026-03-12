@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Google.Apis.Auth;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -161,5 +162,52 @@ namespace UserServiceHelper.Service
 
         }
 
+        public async Task<string?> GoogleLoginAsync(string idToken)
+        {
+            try
+            {
+                // 驗證設定：確保這張票是發給我們專案的 (ClientId)
+                var settings = new GoogleJsonWebSignature.ValidationSettings()
+                {
+                    Audience = new List<string> { _configuration["Google:ClientId"]! }
+                };
+
+                // 核心驗證：這行會幫你擋掉變造、過期的 Token
+                var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+
+                var dbContext = _dbUser.GetDbContext();
+                var user = await dbContext.UserUsers
+                    .Include(u => u.UserRole)
+                    .FirstOrDefaultAsync(u => u.Email == payload.Email);
+
+                // 如果資料庫沒這個人，就地註冊
+                if (user == null)
+                {
+                    user = new UserUser
+                    {
+                        UserName = payload.Name,
+                        Email = payload.Email,
+                        ProfilePicture = payload.Picture,
+                        UserRoleId = 1, // 預設會員
+                        StatusId = 1,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                        PasswordHash = _passwordHasher.HashPassword(null!, Guid.NewGuid().ToString())
+                    };
+                    await _dbUser.CreateAsync(user);
+                    await _dbUser.SaveChangesAsync();
+
+                    // 重新載入以包含 UserRole 資訊
+                    user = await dbContext.UserUsers.Include(u => u.UserRole).FirstOrDefaultAsync(u => u.Id == user.Id);
+                }
+
+                return GenerateJwtToken(user!);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
 }
