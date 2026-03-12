@@ -15,28 +15,29 @@ namespace ExpServiceHelper.Service
         private readonly SalterDbContext _context;
         public SCoachMethods(SalterDbContext dbContext) { _context = dbContext; }
 
-        public Task<DCoachInfo> GetCoachDist(string keyDistrict)
-        {
-            throw new NotImplementedException();
-        }
-
-        //public async Task<DCoachInfo> GetCoachDist(string keyDistrict)
+        //public Task<DCoachInfo> GetCoachDist(string keyDistrict)
         //{
-        //    //var q = await _context.ExpCoaches
-        //    //    .Where(c => c.TripDistricts.Any(w => w.Name.Contains(keyDistrict)))
-        //    //    .Select(c => new DCoachInfo {
-        //    //        CoachId = c.Id,
-        //    //        CoachName = c.Name,
-        //    //        AvatarUrl = c.AvatarUrl,
-        //    //        //District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
-        //    //        ReviewCount = c.ExpReviews.Count(),
-        //    //       // AverageRating = c.ExpReviews.
-        //    //          Specialities = c.Specialities.Select(s => s.SportsName).ToList()
-        //    //    }
-        //    //    );
-        //    //   return await q.ToListAsync();
-
+        //    throw new NotImplementedException();
         //}
+
+        public async Task<List<DCoachInfo>> GetCoachDist(string keyDistrict)
+        {
+            var q =  _context.ExpCoaches
+                .Where(c => c.TripDistricts.Any(w => w.Name.Contains(keyDistrict)))
+                .Select(c => new DCoachInfo
+                {
+                    CoachId = c.Id,
+                    CoachName = c.Name,
+                    AvatarUrl = c.AvatarUrl,
+                    District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
+                    ReviewCount = c.ExpReviews.Count(),
+                     AverageRating = c.ExpReviews.Any()?Math.Round(c.ExpReviews.Average(r => (double)r.Rating),1):0,
+                    Specialities = c.Specialities.Select(s => s.SportsName).ToList()
+                }
+                );
+            return await q.ToListAsync();
+
+        }
 
         /**搜尋-地區*/
 

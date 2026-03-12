@@ -10,7 +10,7 @@ namespace ExpServiceHelper.IService
     public interface ISCoachMethods
     {
         /**搜尋-地區*/
-        Task<DCoachInfo> GetCoachDist(string keyDistrict);
+        Task<List<DCoachInfo>> GetCoachDist(string keyDistrict);
 
         /**搜尋-專業*/
 
