@@ -1,4 +1,5 @@
 ﻿using ExpServiceHelper.DTO;
+using ExpServiceHelper.IService;
 using ExpServiceHelper.Service;
 using Microsoft.AspNetCore.Mvc;
 using static ExpServiceHelper.DTO.DCoachIndex;
@@ -13,8 +14,8 @@ namespace SalterWebApi.Areas.Experience
     [Tags("行程裝備預約")] // Scalar 會用這個名字當分類標題
     public class ExpController : ControllerBase
     {
-        private readonly SCoachIndex _sCoachIndex;
-        public ExpController(SCoachIndex sCoachIndex) {_sCoachIndex = sCoachIndex;}
+        private readonly ISCoachIndex _sCoachIndex;
+        public ExpController(ISCoachIndex sCoachIndex) {_sCoachIndex = sCoachIndex;}
         [HttpPost("Favorites")]
         public async Task<IActionResult> MyFavCoach(FavCoachCreateDto dto) { 
             var result = await _sCoachIndex.MyFavCoach(dto);
