@@ -24,7 +24,7 @@ public interface ITripService
     #endregion
 
    # region 公告
-    Task<List<TripAnnouncementDto>> GetAnnouncementsAsync(int tripId);
+    Task<ServiceResult<List<TripAnnouncementDto>>> GetAnnouncementsAsync(int tripId, int userId);
     Task<ServiceResult> CreateAnnouncementAsync(int tripId, TripAnnouncementRequestDto dto, int userId);
     Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementRequestDto dto);
     Task<ServiceResult> DeleteAnnouncementAsync(int announcementId);
@@ -32,7 +32,7 @@ public interface ITripService
     #endregion
 
     # region 裝備
-    Task<List<TripGearItemDto>> GetGearItemsAsync(int tripId);
+    Task<ServiceResult<List<TripGearItemDto>>> GetGearItemsAsync(int tripId, int userId);
     Task<ServiceResult> CreateGearItemAsync(int tripId, TripGearItemRequestDto dto, int userId);
     Task<ServiceResult> UpdateGearItemAsync(int gearItemId, TripGearItemRequestDto dto);
     Task<ServiceResult> DeleteGearItemAsync(int gearItemId);
@@ -40,14 +40,14 @@ public interface ITripService
     #endregion
 
     # region 地點
-    Task<List<TripLocationDto>> GetLocationsAsync(int tripId);
+    Task<ServiceResult<List<TripLocationDto>>> GetLocationsAsync(int tripId, int userId);
     Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto);
     Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationRequestDto dto);
     Task<ServiceResult> DeleteLocationAsync(int locationId);
     #endregion
 
-    # region 提醒
-    Task<List<TripReminderDto>> GetRemindersAsync(int tripId, int userId);
+    #region 提醒
+    Task<ServiceResult<List<TripReminderDto>>> GetRemindersAsync(int tripId, int userId);
     Task<ServiceResult> CreateReminderAsync(int tripId, TripReminderRequestDto dto, int userId);
     Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto);
     Task<ServiceResult> ToggleReminderAsync(int reminderId);

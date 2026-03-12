@@ -137,8 +137,11 @@ public class TripController : ControllerBase
     [HttpGet("{id}/announcements")]
     public async Task<IActionResult> GetAnnouncements(int id)
     {
-        var data = await _service.GetAnnouncementsAsync(id);
-        return Ok(ApiResponse<List<TripAnnouncementDto>>.Ok(data));
+        var userId = 1; // TODO: 從 JWT 取得
+        var result = await _service.GetAnnouncementsAsync(id, userId);
+        if (!result.IsSuccess)
+            return BadRequest(ApiResponse<string>.Fail(result.Message));
+        return Ok(ApiResponse<List<TripAnnouncementDto>>.Ok(result.Data!));
     }
 
     // POST api/trip/trip/5/announcements
@@ -190,8 +193,11 @@ public class TripController : ControllerBase
     [HttpGet("{id}/gearitems")]
     public async Task<IActionResult> GetGearItems(int id)
     {
-        var data = await _service.GetGearItemsAsync(id);
-        return Ok(ApiResponse<List<TripGearItemDto>>.Ok(data));
+        var userId = 1; // TODO: 從 JWT 取得
+        var result = await _service.GetGearItemsAsync(id, userId);
+        if (!result.IsSuccess)
+            return BadRequest(ApiResponse<string>.Fail(result.Message));
+        return Ok(ApiResponse<List<TripGearItemDto>>.Ok(result.Data!));
     }
 
     // POST api/trip/trip/5/gearitems
@@ -244,8 +250,11 @@ public class TripController : ControllerBase
     [HttpGet("{id}/locations")]
     public async Task<IActionResult> GetLocations(int id)
     {
-        var data = await _service.GetLocationsAsync(id);
-        return Ok(ApiResponse<List<TripLocationDto>>.Ok(data));
+        var userId = 1; // TODO: 從 JWT 取得
+        var result = await _service.GetLocationsAsync(id, userId);
+        if (!result.IsSuccess)
+            return BadRequest(ApiResponse<string>.Fail(result.Message));
+        return Ok(ApiResponse<List<TripLocationDto>>.Ok(result.Data!));
     }
 
     // POST api/trip/trip/5/locations
@@ -287,8 +296,10 @@ public class TripController : ControllerBase
     public async Task<IActionResult> GetReminders(int id)
     {
         var userId = 1; // TODO: 從 JWT 取得
-        var data = await _service.GetRemindersAsync(id, userId);
-        return Ok(ApiResponse<List<TripReminderDto>>.Ok(data));
+        var result = await _service.GetRemindersAsync(id, userId);
+        if (!result.IsSuccess)
+            return BadRequest(ApiResponse<string>.Fail(result.Message));
+        return Ok(ApiResponse<List<TripReminderDto>>.Ok(result.Data!));
     }
 
     // POST api/trip/trip/5/reminders

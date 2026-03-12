@@ -34,6 +34,7 @@ public interface ITripRepository
     Task<List<TripAnnouncement>> GetAnnouncementsAsync(int tripId);
     Task<TripAnnouncement> CreateAnnouncementAsync(TripAnnouncement entity);
     Task<TripAnnouncement?> UpdateAnnouncementAsync(TripAnnouncement entity);
+    Task<TripAnnouncement?> GetAnnouncementByIdAsync(int announcementId);
     Task<bool> DeleteAnnouncementAsync(int announcementId);
     Task<bool> TogglePinAnnouncementAsync(int announcementId);
     #endregion
@@ -43,6 +44,7 @@ public interface ITripRepository
     Task<List<TripGearItem>> GetGearItemsAsync(int tripId);
     Task<TripGearItem> CreateGearItemAsync(TripGearItem entity);
     Task<TripGearItem?> UpdateGearItemAsync(TripGearItem entity);
+    Task<TripGearItem?> GetGearItemByIdAsync(int gearItemId);
     Task<bool> DeleteGearItemAsync(int gearItemId);
     Task<bool> ToggleGearCheckAsync(int gearItemId, int userId);
     #endregion
@@ -60,6 +62,7 @@ public interface ITripRepository
     Task<List<TripReminder>> GetRemindersAsync(int tripId, int userId);
     Task<TripReminder> CreateReminderAsync(TripReminder entity);
     Task<TripReminder?> UpdateReminderAsync(TripReminder entity);
+    Task<TripReminder?> GetReminderByIdAsync(int reminderId);
     Task<bool> ToggleReminderAsync(int reminderId);
     #endregion
 
@@ -67,5 +70,13 @@ public interface ITripRepository
     // 城市
     Task<List<TripCity>> GetCitiesAsync();
     Task<List<TripDistrict>> GetDistrictsAsync(int cityId);
-#endregion
+    #endregion
+
+    #region 權限控管
+    // 確認是否為主辦人
+    Task<bool> IsOrganizerAsync(int tripId, int userId);
+
+    // 確認是否為成員
+    Task<bool> IsMemberAsync(int tripId, int userId);
+    #endregion
 }

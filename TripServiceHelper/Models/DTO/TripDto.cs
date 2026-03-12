@@ -1,4 +1,6 @@
-﻿namespace TripServiceHelper.Models.DTOs;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace TripServiceHelper.Models.DTOs;
 
 #region 列表用
 public class TripSummaryDto
@@ -36,12 +38,24 @@ public class TripDetailDto : TripSummaryDto
 #region 建立／編輯用
 public class TripRequestDto
 {
+    [Required(ErrorMessage = "標題不能為空")]
+    [MaxLength(200, ErrorMessage = "標題最多 200 字")]
     public string Title { get; set; } = null!;
+
+    [Required(ErrorMessage = "行程類型不能為空")]
+    [MaxLength(50, ErrorMessage = "行程類型最多 50 字")]
     public string TripType { get; set; } = null!;
+
     public string? Description { get; set; }
+
+    [Required(ErrorMessage = "開始日期不能為空")]
     public DateTime StartAt { get; set; }
+
     public DateTime? EndAt { get; set; }
+
+    [Range(1, 9999, ErrorMessage = "人數至少 1 人")]
     public int Capacity { get; set; }
+
     public string? CoverImageUrl { get; set; }
     public string? CoverImagePublicId { get; set; }
 }
@@ -94,9 +108,12 @@ public class TripAnnouncementDto //後端回傳給前端
     public DateTime UpdatedAt { get; set; }
 }
 
-public class TripAnnouncementRequestDto //前端送到後端
+public class TripAnnouncementRequestDto //前端送到後端的資料格式
 {
+    [Required(ErrorMessage = "標題不能為空")]
+    [MaxLength(200, ErrorMessage = "標題最多 200 字")]
     public string Title { get; set; } = null!;
+
     public string? Content { get; set; }
 }
 #endregion
@@ -113,7 +130,10 @@ public class TripGearItemDto
 
 public class TripGearItemRequestDto
 {
+    [Required(ErrorMessage = "裝備名稱不能為空")]
+    [MaxLength(100, ErrorMessage = "裝備名稱最多 100 字")]
     public string ItemName { get; set; } = null!;
+
     public bool IsRequired { get; set; }
 }
 #endregion
@@ -129,7 +149,9 @@ public class TripReminderDto
 
 public class TripReminderRequestDto
 {
+    [Range(1, 43200, ErrorMessage = "提醒時間需介於 1 分鐘到 30 天")]
     public int RemindOffsetMinutes { get; set; }
+
     public bool IsEnabled { get; set; }
 }
 #endregion

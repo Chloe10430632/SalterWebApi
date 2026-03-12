@@ -198,6 +198,8 @@ public class TripRepository : ITripRepository
         await _db.SaveChangesAsync();
         return entity;
     }
+    public async Task<TripAnnouncement?> GetAnnouncementByIdAsync(int announcementId)
+    => await _db.TripAnnouncements.FindAsync(announcementId);
 
     public async Task<bool> DeleteAnnouncementAsync(int announcementId)
     {
@@ -242,6 +244,8 @@ public class TripRepository : ITripRepository
         await _db.SaveChangesAsync();
         return entity;
     }
+    public async Task<TripGearItem?> GetGearItemByIdAsync(int gearItemId)
+    => await _db.TripGearItems.FindAsync(gearItemId);
 
     public async Task<bool> DeleteGearItemAsync(int gearItemId)
     {
@@ -339,7 +343,8 @@ public class TripRepository : ITripRepository
         await _db.SaveChangesAsync();
         return entity;
     }
-
+    public async Task<TripReminder?> GetReminderByIdAsync(int reminderId)
+    => await _db.TripReminders.FindAsync(reminderId);
     public async Task<bool> ToggleReminderAsync(int reminderId)
     {
         var entity = await _db.TripReminders.FindAsync(reminderId);
@@ -366,5 +371,19 @@ public class TripRepository : ITripRepository
             .ToListAsync();
     }
 
+    #endregion
+
+    #region 權限控管
+    public async Task<bool> IsOrganizerAsync(int tripId, int userId)
+    {
+        return await _db.TripTrips
+            .AnyAsync(t => t.Id == tripId && t.OrganizerUserId == userId);
+    }
+
+    public async Task<bool> IsMemberAsync(int tripId, int userId)
+    {
+        return await _db.TripMembers
+            .AnyAsync(m => m.TripId == tripId && m.UserId == userId);
+    }
     #endregion
 }

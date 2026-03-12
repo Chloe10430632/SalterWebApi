@@ -85,6 +85,14 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> CreateTripAsync(TripRequestDto dto, int organizerUserId)
     {
+        // 日期驗證
+        if (dto.StartAt < DateTime.Now)
+            return ServiceResult.Fail("開始日期不能早於今天");
+
+        if (dto.EndAt.HasValue && dto.EndAt.Value <= dto.StartAt)
+            return ServiceResult.Fail("結束日期必須晚於開始日期");
+
+
         try
         {
             var trip = new TripTrip
@@ -183,11 +191,16 @@ public class TripService : ITripService
     #endregion
 
     #region 公告
-
-    public async Task<List<TripAnnouncementDto>> GetAnnouncementsAsync(int tripId)
+    public async Task<ServiceResult<List<TripAnnouncementDto>>> GetAnnouncementsAsync(int tripId, int userId)
     {
+        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+        var isMember = await _repo.IsMemberAsync(tripId, userId);
+
+        if (!isOrganizer && !isMember)
+            return ServiceResult<List<TripAnnouncementDto>>.Fail("請先加入行程才能查看公告");
+
         var list = await _repo.GetAnnouncementsAsync(tripId);
-        return list.Select(a => new TripAnnouncementDto
+        var result = list.Select(a => new TripAnnouncementDto
         {
             Id = a.Id,
             Title = a.Title,
@@ -197,6 +210,8 @@ public class TripService : ITripService
             CreatedAt = a.CreatedAt,
             UpdatedAt = a.UpdatedAt
         }).ToList();
+
+        return ServiceResult<List<TripAnnouncementDto>>.Success(result);
     }
 
     public async Task<ServiceResult> CreateAnnouncementAsync(int tripId, TripAnnouncementRequestDto dto, int userId)
@@ -217,8 +232,7 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementRequestDto dto)
     {
-        var announcements = await _repo.GetAnnouncementsAsync(0);
-        var entity = announcements.FirstOrDefault(a => a.Id == announcementId);
+        var entity = await _repo.GetAnnouncementByIdAsync(announcementId);
         if (entity == null) return ServiceResult.Fail("找不到公告");
 
         entity.Title = dto.Title;
@@ -245,16 +259,24 @@ public class TripService : ITripService
 
     #region 裝備
 
-    public async Task<List<TripGearItemDto>> GetGearItemsAsync(int tripId)
+    public async Task<ServiceResult<List<TripGearItemDto>>> GetGearItemsAsync(int tripId, int userId)
     {
+        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+        var isMember = await _repo.IsMemberAsync(tripId, userId);
+
+        if (!isOrganizer && !isMember)
+            return ServiceResult<List<TripGearItemDto>>.Fail("請先加入行程才能查看裝備清單");
+
         var list = await _repo.GetGearItemsAsync(tripId);
-        return list.Select(g => new TripGearItemDto
+        var result = list.Select(g => new TripGearItemDto
         {
             Id = g.Id,
             ItemName = g.ItemName,
             IsRequired = g.IsRequired,
             CheckedCount = g.TripGearChecks?.Count(c => c.IsChecked) ?? 0
         }).ToList();
+
+        return ServiceResult<List<TripGearItemDto>>.Success(result);
     }
 
     public async Task<ServiceResult> CreateGearItemAsync(int tripId, TripGearItemRequestDto dto, int userId)
@@ -272,8 +294,7 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> UpdateGearItemAsync(int gearItemId, TripGearItemRequestDto dto)
     {
-        var list = await _repo.GetGearItemsAsync(0);
-        var entity = list.FirstOrDefault(g => g.Id == gearItemId);
+        var entity = await _repo.GetGearItemByIdAsync(gearItemId);
         if (entity == null) return ServiceResult.Fail("找不到裝備");
 
         entity.ItemName = dto.ItemName;
@@ -299,10 +320,16 @@ public class TripService : ITripService
 
     #region 地點
 
-    public async Task<List<TripLocationDto>> GetLocationsAsync(int tripId)
+    public async Task<ServiceResult<List<TripLocationDto>>> GetLocationsAsync(int tripId, int userId)
     {
+        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+        var isMember = await _repo.IsMemberAsync(tripId, userId);
+
+        if (!isOrganizer && !isMember)
+            return ServiceResult<List<TripLocationDto>>.Fail("請先加入行程才能查看地點");
+
         var list = await _repo.GetLocationsAsync(tripId);
-        return list.Select(ttl => new TripLocationDto
+        var result = list.Select(ttl => new TripLocationDto
         {
             Id = ttl.Id,
             LocationName = ttl.Location?.Name ?? "",
@@ -312,6 +339,8 @@ public class TripService : ITripService
             Note = ttl.Note,
             SortOrder = ttl.SortOrder
         }).ToList();
+
+        return ServiceResult<List<TripLocationDto>>.Success(result);
     }
 
     public async Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto)
@@ -355,16 +384,24 @@ public class TripService : ITripService
 
     #region 提醒
 
-    public async Task<List<TripReminderDto>> GetRemindersAsync(int tripId, int userId)
+    public async Task<ServiceResult<List<TripReminderDto>>> GetRemindersAsync(int tripId, int userId)
     {
+        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+        var isMember = await _repo.IsMemberAsync(tripId, userId);
+
+        if (!isOrganizer && !isMember)
+            return ServiceResult<List<TripReminderDto>>.Fail("請先加入行程才能查看提醒");
+
         var list = await _repo.GetRemindersAsync(tripId, userId);
-        return list.Select(r => new TripReminderDto
+        var result = list.Select(r => new TripReminderDto
         {
             Id = r.Id,
             RemindOffsetMinutes = r.RemindOffsetMinutes,
             IsEnabled = r.IsEnabled,
             LastSentAt = r.LastSentAt
         }).ToList();
+
+        return ServiceResult<List<TripReminderDto>>.Success(result);
     }
 
     public async Task<ServiceResult> CreateReminderAsync(int tripId, TripReminderRequestDto dto, int userId)
@@ -382,8 +419,7 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto)
     {
-        var entity = await _repo.GetRemindersAsync(0, 0)
-            .ContinueWith(t => t.Result.FirstOrDefault(r => r.Id == reminderId));
+        var entity = await _repo.GetReminderByIdAsync(reminderId);
         if (entity == null) return ServiceResult.Fail("找不到提醒");
 
         entity.RemindOffsetMinutes = dto.RemindOffsetMinutes;
