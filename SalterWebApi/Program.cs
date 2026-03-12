@@ -2,7 +2,7 @@ using ExpRepositoryHelper;
 using ExpRepositoryHelper.IRepository;
 using ExpRepositoryHelper.Repository;
 using ExpServiceHelper.IService;
-using ExpServiceHelper.IService;
+using ExpServiceHelper.Service;
 using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
 using ForumServiceHelper.IService;

@@ -13,7 +13,7 @@ using ExpRepositoryHelper.Repository;
 
 namespace ExpServiceHelper.Service
 {
-    internal class SCoachIndex : ISCoachIndex
+    public class SCoachIndex : ISCoachIndex
     {
         private readonly IRCoachIndex _rCoachIndex;
         public SCoachIndex(IRCoachIndex rCoachIndex) { _rCoachIndex = rCoachIndex; }
