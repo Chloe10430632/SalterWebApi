@@ -18,6 +18,7 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         // 內容
         public string Content { get; set; } = string.Empty;
         public List<string> ImageUrls { get; set; } = new();
+        public DateTime CreatedAt { get; set; } 
         public int AgoMinuteNumber { get; set; }
         public int AgoHourNumber { get; set; }
         public int AgoDayNumber { get; set; }
@@ -27,6 +28,7 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         public int CommentCount { get; set; }
         public int BookmarkCount { get; set; }
         public int ShareCount { get; set; }
+        public int ViewCount { get; set; }
 
         // 留言
         public List<CommentPreviewDto> Comments { get; set; } = new();

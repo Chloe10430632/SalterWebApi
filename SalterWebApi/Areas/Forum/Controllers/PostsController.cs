@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ForumServiceHelper.IService;
+using ForumServiceHelper.Models.DTO.ErrorMessage;
+using ForumServiceHelper.Models.DTO.ViewModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +27,13 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
         // GET: api/Posts
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ForumPost>>> GetForumPosts()
+        public async Task<ActionResult<IList<PostsViewModel>>> GetForumPosts(
+        [FromQuery] int? id,
+        [FromQuery] string? keyword,
+        [FromQuery] string? sortBy,
+        [FromQuery] int? userId)
         {
-            var allPostList = await _postsService.GetAllPostsAsync();
+            var allPostList = await _postsService.GetAllPostsAsync(id,keyword,sortBy,userId);
 
             if (allPostList == null)
             {
@@ -39,17 +45,19 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
         // GET: api/Posts/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<ForumPost>> GetForumPost(int id)
+        public async Task<ActionResult<PostsViewModel>> GetForumPost(int id)
         {
-            return Ok();
-            //var forumPost = await _postsService.ForumPosts.FindAsync(id);
-
-            //if (forumPost == null)
-            //{
-            //    return NotFound();
-            //}
-
-            //return forumPost;
+            var allPost = await _postsService.GetAllPostsAsync(id);
+            var singlePost = allPost.FirstOrDefault();
+            if (singlePost == null)
+            {
+                return NotFound(new ErrorResponse
+                {
+                    Code = 404,
+                    Message = $"找不到 ID 為 {id} 的貼文"
+                });
+            }
+            return Ok(singlePost);
         }
 
         // PUT: api/Posts/5

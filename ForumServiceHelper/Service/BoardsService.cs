@@ -57,7 +57,7 @@ namespace ForumServiceHelper.Service
                 boardList = boardList.OrderBy(bv => bv.BoardSort);
             }
             
-            if (sortBy == SortTypes.View)
+            if (sortBy == SortTypes.Popular)
             {
                 boardList = boardList.OrderByDescending(bv => bv.ViewCount);
             }

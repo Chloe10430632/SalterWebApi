@@ -9,7 +9,7 @@ namespace ForumServiceHelper.Models.DTO.Const
     public static class SortTypes
     {
         public const string Default = "DEFAULT";
-        public const string View = "VIEW";
+        public const string Popular = "POPULAR";
         public const string Follow = "FOLLOW";
         public const string New = "NEW";
     }
