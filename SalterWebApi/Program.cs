@@ -2,11 +2,14 @@ using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SalterEFModels.EFModels;
 using Scalar.AspNetCore;
+using System.Text;
 using UserRepositoryHelper.IRepository; 
 using UserRepositoryHelper.Repository;
 using UserServiceHelper.IService;
@@ -22,6 +25,23 @@ var builder = WebApplication.CreateBuilder(args);
 //地端資料庫連接字串DI
 builder.Services.AddDbContext<SalterDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextMac")));
+
+// JWT 驗證器註冊開始 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
+// --- JWT
 
 //Forum功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericSalterRepository<>), typeof(GenericSalterRepository<>));
@@ -40,6 +60,7 @@ builder.Services.AddScoped<IGenericUserRepository<UserUser>, GenericUserReposito
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<PasswordHasher<UserUser>>();
+
 
 // Add services to the container.
 
@@ -67,6 +88,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication(); // 認證
+app.UseAuthorization();  // 授權
 
 app.UseAuthorization();
 

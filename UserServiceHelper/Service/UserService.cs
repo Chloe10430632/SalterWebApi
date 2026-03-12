@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using UserRepositoryHelper.IRepository;
@@ -16,16 +20,20 @@ namespace UserServiceHelper.Service
     {
         private readonly IGenericUserRepository<UserUser> _dbUser;
         private readonly PasswordHasher<UserUser> _passwordHasher;
+        private readonly IConfiguration _configuration;
 
-        public UserService(IGenericUserRepository<UserUser> dbUser, PasswordHasher<UserUser> passwordHasher)
+        public UserService(IGenericUserRepository<UserUser> dbUser, PasswordHasher<UserUser> passwordHasher, IConfiguration configuration)
         {
             _dbUser = dbUser;
             _passwordHasher = passwordHasher;
+            _configuration = configuration;
         }
         
         public async Task<UserProfileViewModel?> GetUserProfileAsync(int userId)
         {
-            var user = await _dbUser.GetByIdAsync(userId);
+            var user = await _dbUser.GetDbContext().UserUsers
+                        .Include(u => u.UserRole)
+                        .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
                 return null;
@@ -39,7 +47,7 @@ namespace UserServiceHelper.Service
                 Gender = user.Gender,
                 Birthday = user.Birthday,
                 ProfilePicture = user.ProfilePicture,
-                RoleName = "一般會員"
+                RoleName = user.UserRole?.Name ?? "一般會員"
             };
 
         }
@@ -100,7 +108,8 @@ namespace UserServiceHelper.Service
         {
             var dbContext =  _dbUser.GetDbContext();
 
-            var User = await dbContext.UserUsers.FirstOrDefaultAsync(u => u.Email == model.Email);
+            var User = await dbContext.UserUsers.Include(u => u.UserRole)
+                .FirstOrDefaultAsync(u => u.Email == model.Email);
 
             if (User == null)
                 return null;
@@ -110,8 +119,47 @@ namespace UserServiceHelper.Service
             if (result == PasswordVerificationResult.Failed)
                 return null;
 
-            return "LoginSuccess_Token_Placeholder";
+
+            //驗證成功，產生真正的 JWT 字串
+            return GenerateJwtToken(User);
 
         }
+
+        
+        
+        // --- 核心工具：產生 JWT 憑證 ---
+        private string GenerateJwtToken(UserUser user)
+        {
+            // 1. 從 appsettings.json 讀取密鑰
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            // 2. 準備「通行證」上面的資訊 (Claims)
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("UserId", user.Id.ToString()),
+                new Claim("UserName", user.UserName),
+                // 把你的圖片路徑塞進去
+                new Claim("Avatar", user.ProfilePicture ?? "/admin/imgs/default-avatar.png"),
+                // 塞入角色名稱
+                new Claim(ClaimTypes.Role, user.UserRole?.Name ?? "一般會員")
+            };
+
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])),
+                signingCredentials: creds
+            );
+
+            // 4. 轉換成字串回傳
+            return new JwtSecurityTokenHandler().WriteToken(token);
+
+        }
+
     }
 }

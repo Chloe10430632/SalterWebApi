@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging.Abstractions;
 using UserServiceHelper.IService;
@@ -33,6 +34,8 @@ namespace SalterWebApi.Areas.User.Controllers
 
         // GET api/<UserController>/5
 
+
+        [Authorize]
         [HttpGet("GetUserProfile/{id}")]
         public async Task<ActionResult<UserProfileViewModel>> Get(int id)
         {
@@ -73,10 +76,12 @@ namespace SalterWebApi.Areas.User.Controllers
         }
 
         // DELETE api/<UserController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+        //[HttpDelete("{id}")]
+        //public void Delete(int id)
+        //{
+        //}
+
+
 
         [HttpPost("UploadUserPicture")]
         public async Task<IActionResult> Upload(IFormFile file)
@@ -108,10 +113,31 @@ namespace SalterWebApi.Areas.User.Controllers
             }
 
             return Ok(new { message = "註冊成功" });
-                
-
-
+               
         }
 
+
+        [HttpPost("Login")]
+        public async Task<IActionResult> Login([FromBody] UserLoginViewModel Lmodel)
+        {
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "帳號密碼格是錯誤" });
+            }
+
+            var token = await _userService.LoginAsync(Lmodel);
+
+            if(string.IsNullOrEmpty(token))
+            {
+                return BadRequest(new { message = "帳號密碼錯誤" });
+            }
+
+            return Ok(new
+            {
+                token = token,
+                message = "登入成功"
+            });
+
+        }
     }
 }
