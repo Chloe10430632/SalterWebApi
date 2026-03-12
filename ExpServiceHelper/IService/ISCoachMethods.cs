@@ -13,9 +13,10 @@ namespace ExpServiceHelper.IService
         Task<List<DCoachInfo>> GetCoachDist(string keyDistrict);
 
         /**搜尋-專業*/
-
+        Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial);
         /**排序-最新*/
-
+        Task<List<DCoachInfo>> GetCoachNewest();
         /**排序-熱門*/
+
     }
 }

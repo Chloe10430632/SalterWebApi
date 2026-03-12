@@ -22,6 +22,19 @@ namespace SalterWebApi.Areas.Experience
             _sCoachMethods = sCoachMethods;
         }
 
+        [HttpGet("NewRank")]
+        public async Task<IActionResult> NewRank() {
+            var result = await _sCoachMethods.GetCoachNewest();
+            return Ok(result);
+        }
+
+        [HttpGet("SpeSearch")]
+        public async Task<IActionResult> SpeSearch(string keySpecial) { 
+            var result = await _sCoachMethods.GetCoachSpecial(keySpecial);
+            if (result == null || result.Count == 0)
+                return NotFound("！太難了 教練不會！");
+            return Ok(result);
+        }
         [HttpGet("DistSearch")]
         public async Task<IActionResult> DistSearch(string keyDistrict) {
             var result = await _sCoachMethods.GetCoachDist(keyDistrict);
