@@ -78,6 +78,8 @@ namespace UserServiceHelper.Service
             if (await dbContext.UserUsers.AnyAsync(u => u.Email == Rmodel.Email))
                 return false;
 
+            string otp = new Random().Next(100000, 999999).ToString();
+
             var newUser = new UserUser
             {
                 UserName = Rmodel.UserName,
@@ -89,7 +91,11 @@ namespace UserServiceHelper.Service
 
                 UserRoleId = 1,
                 StatusId = 1,
-                IsActive = true,
+                IsActive = false,
+
+                EmailVerificationOtp = otp,
+                EmailVerificationExpiresAt = DateTime.Now.AddMinutes(5),
+
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
 
@@ -121,13 +127,42 @@ namespace UserServiceHelper.Service
                 return null;
 
 
+
+            if (!User.IsActive) return "WAITING_FOR_EMAIL_VERIFICATION";
+
             //驗證成功，產生真正的 JWT 字串
             return GenerateJwtToken(User);
 
         }
 
-        
-        
+        public async Task<bool> VerifyRegistrationOtpAsync(string email, string otp)
+        {
+            var dbContext = _dbUser.GetDbContext();
+
+            // 找人：比對 Email、比對 OTP 暗號，且確認現在時間還沒過期
+            var user = await dbContext.UserUsers.FirstOrDefaultAsync(u =>
+                u.Email == email &&
+                u.EmailVerificationOtp == otp &&
+                u.EmailVerificationExpiresAt > DateTime.Now);
+
+            // 如果找不到，代表驗證碼錯了、或是過期了
+            if (user == null) return false;
+
+            // 驗證成功：
+            user.IsActive = true;               // 啟用帳號
+            user.EmailVerifiedAt = DateTime.Now; // 紀錄驗證時間
+
+            // 清空驗證碼欄位（用過即作廢，這是資安好習慣）
+            user.EmailVerificationOtp = null;
+            user.EmailVerificationExpiresAt = null;
+
+            _dbUser.Update(user);
+            return await _dbUser.SaveChangesAsync();
+        }
+
+
+
+
         // --- 核心工具：產生 JWT 憑證 ---
         private string GenerateJwtToken(UserUser user)
         {
@@ -175,6 +210,9 @@ namespace UserServiceHelper.Service
                 // 核心驗證：這行會幫你擋掉變造、過期的 Token
                 var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
 
+                // 建議加上：確保 Google 帳號本身是經過 Email 驗證的
+                if (!payload.EmailVerified) return null;
+
                 var dbContext = _dbUser.GetDbContext();
                 var user = await dbContext.UserUsers
                     .Include(u => u.UserRole)
@@ -187,13 +225,13 @@ namespace UserServiceHelper.Service
                     {
                         UserName = payload.Name,
                         Email = payload.Email,
-                        ProfilePicture = payload.Picture,
+                        ProfilePicture = payload.Picture ?? "/admin/imgs/default-avatar.png",
                         UserRoleId = 1, // 預設會員
                         StatusId = 1,
                         IsActive = true,
                         CreatedAt = DateTime.Now,
                         UpdatedAt = DateTime.Now,
-                        PasswordHash = _passwordHasher.HashPassword(null!, Guid.NewGuid().ToString())
+                        PasswordHash = _passwordHasher.HashPassword(user, Guid.NewGuid().ToString())
                     };
                     await _dbUser.CreateAsync(user);
                     await _dbUser.SaveChangesAsync();

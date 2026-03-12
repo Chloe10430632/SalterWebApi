@@ -19,5 +19,7 @@ namespace UserServiceHelper.IService
 
         Task<string?> GoogleLoginAsync(string idToken);
 
+        Task<bool> VerifyRegistrationOtpAsync(string email, string otp);
+
     }
 }

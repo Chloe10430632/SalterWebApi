@@ -36,10 +36,16 @@ namespace SalterWebApi.Areas.User.Controllers
 
 
         [Authorize]
-        [HttpGet("GetUserProfile/{id}")]
-        public async Task<ActionResult<UserProfileViewModel>> Get(int id)
+        [HttpGet("GetUserProfile")]
+        public async Task<ActionResult<UserProfileViewModel>> GetUserProfile()
         {
-            var profile = await _userService.GetUserProfileAsync(id);
+            // 這裡就是你說的「內建屬性」與「暗號」
+            var currentUserId = User.FindFirst("UserId")?.Value;
+
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized(new { message = "無效的憑證" });
+
+            var profile = await _userService.GetUserProfileAsync(int.Parse(currentUserId));
 
             if (profile == null)
                 return NotFound(new { message = "找不到該會員資料" });
@@ -54,22 +60,21 @@ namespace SalterWebApi.Areas.User.Controllers
         //}
 
         // PUT api/<UserController>/5
-
+        [Authorize]
         [HttpPut("UpdateUserProfile/{id}")]
         public async Task<IActionResult> Put(int id, [FromBody] UserEditViewModel model)
         {
-            if(id != model.Id)
-            {
-                return BadRequest(new { message = "資料ID不符" });
-            }
 
+            var currentUserId = User.FindFirst("UserId")?.Value;
+
+            // 檢查：如果傳進來的 id 跟目前登入的人不一樣，就是想偷改別人的資料！
+            if (currentUserId == null || id.ToString() != currentUserId || id != model.Id)
+            {
+                return Forbid("你沒有權限修改此資料");
+            }
 
             var success = await _userService.UpdateProfileAsync(model);
-
-            if (!success)
-            {
-                return BadRequest(new { message = "更新失敗，請檢查資料" });
-            }
+            if (!success) return BadRequest(new { message = "更新失敗" });
 
             return Ok(new { message = "更新成功" });
 
@@ -122,7 +127,7 @@ namespace SalterWebApi.Areas.User.Controllers
         {
             if(!ModelState.IsValid)
             {
-                return BadRequest(new { message = "帳號密碼格是錯誤" });
+                return BadRequest(new { message = "帳號密碼格式錯誤" });
             }
 
             var token = await _userService.LoginAsync(Lmodel);
@@ -132,12 +137,54 @@ namespace SalterWebApi.Areas.User.Controllers
                 return BadRequest(new { message = "帳號密碼錯誤" });
             }
 
+            if (token == "WAITING_FOR_EMAIL_VERIFICATION")
+            {
+                return StatusCode(403, new
+                {
+                    message = "帳號尚未啟用，請先完成 Email 驗證",
+                    status = "NeedVerification" // 讓前端好判斷
+                });
+            }
+
             return Ok(new
             {
                 token = token,
                 message = "登入成功"
             });
 
+        }
+
+        [HttpPost("VerifyRegisterOtp")]
+        public async Task<IActionResult> VerifyOtp([FromBody] UserOtpVerifyViewModel model)
+        {
+            // 這裡的 model 就會包含前端傳來的 Email 和 Otp
+            var success = await _userService.VerifyRegistrationOtpAsync(model.Email, model.Otp);
+
+            if (!success) return BadRequest(new { message = "驗證碼錯誤或已過期" });
+
+            return Ok(new { message = "驗證成功，帳號已啟用" });
+        }
+
+
+
+
+
+        [HttpPost("GoogleLogin")]
+        public async Task<IActionResult> GoogleLogin([FromBody] string idToken)
+        {
+            if (string.IsNullOrEmpty(idToken))
+            {
+                return BadRequest(new { message = "無效的 Google 憑證" });
+            }
+
+            var token = await _userService.GoogleLoginAsync(idToken);
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new { message = "Google 登入驗證失敗" });
+            }
+
+            return Ok(new { token = token, message = "Google 登入成功" });
         }
     }
 }
