@@ -15,7 +15,12 @@ namespace SalterWebApi.Areas.Experience
     public class ExpController : ControllerBase
     {
         private readonly ISCoachIndex _sCoachIndex;
-        public ExpController(ISCoachIndex sCoachIndex) {_sCoachIndex = sCoachIndex;}
+        private readonly ISCoachMethods _sCoachMethods;
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods )
+        {
+            _sCoachIndex = sCoachIndex;
+            _sCoachMethods = sCoachMethods;
+        }
         [HttpPost("Favorites")]
         public async Task<IActionResult> MyFavCoach(DFavCoach dto) { 
             var result = await _sCoachIndex.MyFavCoach(dto);
