@@ -21,6 +21,16 @@ namespace SalterWebApi.Areas.Experience
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
         }
+
+        [HttpGet("DistSearch")]
+        public async Task<IActionResult> DistSearch(string keyDistrict) {
+            var result = await _sCoachMethods.GetCoachDist(keyDistrict);
+            //check
+            if(keyDistrict == null || result.Count == 0)
+                return NotFound("！這裡沒有所謂教練這種生物！");
+            return Ok(result);
+        }
+
         [HttpPost("Favorites")]
         public async Task<IActionResult> MyFavCoach(DFavCoach dto) { 
             var result = await _sCoachIndex.MyFavCoach(dto);

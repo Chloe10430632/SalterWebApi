@@ -33,7 +33,7 @@ builder.Services.AddScoped<IBoardsService, BoardsService>();
 //Experience ª`¤J
 builder.Services.AddScoped<IRCoachIndex, RCoachIndex>();
 builder.Services.AddScoped<ISCoachIndex, SCoachIndex>();
-builder.Services.AddScoped<ISCoachMethods>();
+builder.Services.AddScoped<ISCoachMethods, SCoachMethods>();
 
 
 // Add services to the container.
