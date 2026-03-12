@@ -1,4 +1,7 @@
-﻿using SalterEFModels.EFModels;
+﻿using ExpServiceHelper.DTO;
+using ExpServiceHelper.IService;
+using SalterEFModels.EFModels;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,10 +10,34 @@ using System.Threading.Tasks;
 
 namespace ExpServiceHelper.Service
 {
-    public class SCoachMethods
+    public class SCoachMethods :ISCoachMethods
     {
         private readonly SalterDbContext _context;
         public SCoachMethods(SalterDbContext dbContext) { _context = dbContext; }
+
+        public Task<DCoachInfo> GetCoachDist(string keyDistrict)
+        {
+            throw new NotImplementedException();
+        }
+
+        //public async Task<DCoachInfo> GetCoachDist(string keyDistrict)
+        //{
+        //    //var q = await _context.ExpCoaches
+        //    //    .Where(c => c.TripDistricts.Any(w => w.Name.Contains(keyDistrict)))
+        //    //    .Select(c => new DCoachInfo {
+        //    //        CoachId = c.Id,
+        //    //        CoachName = c.Name,
+        //    //        AvatarUrl = c.AvatarUrl,
+        //    //        //District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
+        //    //        ReviewCount = c.ExpReviews.Count(),
+        //    //       // AverageRating = c.ExpReviews.
+        //    //          Specialities = c.Specialities.Select(s => s.SportsName).ToList()
+        //    //    }
+        //    //    );
+        //    //   return await q.ToListAsync();
+
+        //}
+
         /**搜尋-地區*/
 
         /**搜尋-專業*/
