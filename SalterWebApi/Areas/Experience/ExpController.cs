@@ -11,7 +11,7 @@ namespace SalterWebApi.Areas.Experience
     [Area("Exp")]
     [Route("api/[area]/[controller]")] // 路由 api/Forum/Posts
     [ApiController]
-    [Tags("行程裝備預約")] // Scalar 會用這個名字當分類標題
+    [Tags("行程裝備預約")] // Scalar 會用這個名字當分類標題。
     public class ExpController : ControllerBase
     {
         private readonly ISCoachIndex _sCoachIndex;
