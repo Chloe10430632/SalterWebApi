@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ExpServiceHelper.DTO;
+using ExpServiceHelper.Service;
+using Microsoft.AspNetCore.Mvc;
+using static ExpServiceHelper.DTO.DCoachIndex;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -10,6 +13,14 @@ namespace SalterWebApi.Areas.Experience
     [Tags("行程裝備預約")] // Scalar 會用這個名字當分類標題
     public class ExpController : ControllerBase
     {
+        private readonly SCoachIndex _sCoachIndex;
+        public ExpController(SCoachIndex sCoachIndex) {_sCoachIndex = sCoachIndex;}
+        [HttpPost("Favorites")]
+        public async Task<IActionResult> MyFavCoach(FavCoachCreateDto dto) { 
+            var result = await _sCoachIndex.MyFavCoach(dto);
+            return Ok(result);
+        }
+
         // GET: api/<ExpController>
         [HttpGet]
         public IEnumerable<string> Get()
