@@ -7,12 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ForumRepositoryHelper\ForumRepositoryHelper.csproj" />
-    <ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.28.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\DTO\CreateModel\" />
+    <ProjectReference Include="..\ForumRepositoryHelper\ForumRepositoryHelper.csproj" />
+    <ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
   </ItemGroup>
 
 </Project>

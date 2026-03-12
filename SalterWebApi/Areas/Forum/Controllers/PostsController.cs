@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ForumServiceHelper.IService;
+using ForumServiceHelper.Models.DTO.Const;
 using ForumServiceHelper.Models.DTO.ErrorMessage;
 using ForumServiceHelper.Models.DTO.ViewModel;
 using Microsoft.AspNetCore.Http;
@@ -26,6 +27,7 @@ namespace SalterWebApi.Areas.Forum.Controllers
         }
 
         // GET: api/Posts
+        //GET: api/Posts?sortBy=popular.....(Query)
         [HttpGet]
         public async Task<ActionResult<IList<PostsViewModel>>> GetForumPosts(
         [FromQuery] int? id,
@@ -33,11 +35,27 @@ namespace SalterWebApi.Areas.Forum.Controllers
         [FromQuery] string? sortBy,
         [FromQuery] int? userId)
         {
-            var allPostList = await _postsService.GetAllPostsAsync(id,keyword,sortBy,userId);
-
-            if (allPostList == null)
+            if (!string.IsNullOrWhiteSpace(sortBy))
             {
-                return NoContent();
+                sortBy = sortBy.ToUpper().Trim();
+                if (sortBy== SortTypes.Follow && !userId.HasValue)
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Code = 400,
+                        Message = $"請先登入!"
+                    });
+                }
+            }
+
+            var allPostList = await _postsService.GetAllPostsAsync(id,keyword,sortBy,userId);
+            if (allPostList.Count==0)
+            {
+                return NotFound(new ErrorResponse
+                {
+                    Code = 404,
+                    Message = $"目前尚無追蹤中的內容喔 !"
+                });
             }
 
             return Ok(allPostList);
