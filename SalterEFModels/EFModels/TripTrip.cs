@@ -31,9 +31,7 @@ public partial class TripTrip
     public string? CoverImageUrl { get; set; }
     public string? CoverImagePublicId { get; set; }
 
-    public string? CoverImageUrl { get; set; }
 
-    public string? CoverImagePublicId { get; set; }
 
     public virtual UserUser OrganizerUser { get; set; } = null!;
 
