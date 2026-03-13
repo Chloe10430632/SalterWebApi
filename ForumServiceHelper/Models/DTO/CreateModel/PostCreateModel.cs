@@ -18,13 +18,13 @@ namespace ForumServiceHelper.Models.DTO.CreateModel
 
         public int? LocationId { get; set; }
 
-        public string Status { get; set; } = "NORMAL";  //顯示或隱藏
+        public bool isPosted { get; set; }
 
         // 圖片：前端傳入多張圖片的 URL
-        public List<IFormFile>? Images { get; set; }
+        public List<IFormFile>? Images { get; set; } = new();
 
         // 標籤：前端傳入標籤 ID
-        public List<TagCreateModel>? Tags { get; set; }
+        public List<TagCreateModel>? Tags { get; set; } = new();
 
     }
 

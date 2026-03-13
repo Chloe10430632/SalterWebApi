@@ -13,7 +13,9 @@ namespace ForumServiceHelper.IService
     {
        public Task<IList<PostsViewModel>> GetAllPostsAsync(int? postId = null, string? keyword = null, string? sortBy = null, int? userId = null);
 
-        public Task<int> CheckAndCreateAsync(PostCreateModel data);
+        public Task<int> CheckAndCreateAsync(PostCreateModel data, int? postId = null);
+
+        public Task<bool> CheckAndDeleteAsync(int postId);
 
     }
 }

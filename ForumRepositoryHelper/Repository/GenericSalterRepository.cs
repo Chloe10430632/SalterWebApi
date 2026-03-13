@@ -36,14 +36,9 @@ namespace ForumRepositoryHelper.Repository
             _entity.Add(entity);
         }
 
-        public async Task DeleteAsync<PrimaryKeyType>(PrimaryKeyType id)
+        public void Delete<PrimaryKeyType>(PrimaryKeyType id)
         {
-            // 先非同步找到該筆資料
-            var target = await _entity.FindAsync(id);
-            if (target != null)
-            {
-                _entity.Remove(target);
-            }
+            _entity.Remove(_entity.Find(id));
         }
         public void Update(Table entity)
         {
