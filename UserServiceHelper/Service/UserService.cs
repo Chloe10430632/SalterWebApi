@@ -63,11 +63,11 @@ namespace UserServiceHelper.Service
             if (userInDb == null)
                 return false;
 
-            userInDb.UserName = model.UserName;
-            userInDb.Phone = model.Phone;
-            userInDb.Gender = model.Gender;
-            userInDb.Birthday = model.Birthday;
-            userInDb.ProfilePicture = model.ProfilePicture;
+            userInDb.UserName = !string.IsNullOrWhiteSpace(model.UserName) ? model.UserName : userInDb.UserName;
+            userInDb.Phone = !string.IsNullOrWhiteSpace(model.Phone) ? model.Phone : userInDb.Phone;
+            userInDb.Gender = !string.IsNullOrWhiteSpace(model.Gender) ? model.Gender : userInDb.Gender;
+            userInDb.Birthday = model.Birthday ?? userInDb.Birthday;
+            userInDb.ProfilePicture = !string.IsNullOrWhiteSpace(model.ProfilePicture) ? model.ProfilePicture : userInDb.ProfilePicture;
             userInDb.UpdatedAt = DateTime.Now;
 
             _dbUser.Update(userInDb);
@@ -239,7 +239,7 @@ namespace UserServiceHelper.Service
                 {
                     user = new UserUser
                     {
-                        UserName = payload.Name,
+                        UserName = payload.Name ?? payload.Email.Split('@')[0],
                         Email = payload.Email,
                         ProfilePicture = payload.Picture ?? "/admin/imgs/default-avatar.png",
                         UserRoleId = 1, // 預設會員
@@ -258,14 +258,64 @@ namespace UserServiceHelper.Service
 
                 return GenerateJwtToken(user!);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine("發生錯誤了！原因：" + ex.Message);
+                if (ex.InnerException != null)
+                    Console.WriteLine("內部詳細錯誤：" + ex.InnerException.Message);
                 return null;
             }
         }
 
-        
-        
+        public async Task<bool> SendPasswordResetOtpAsync(string email)
+        {
+            var user = await _dbUser.GetDbContext().UserUsers
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null) return false;
+
+            // 產生 6 位數 OTP
+            string otp = new Random().Next(100000, 999999).ToString();
+
+            // 存入你資料庫原本就有的忘記密碼欄位
+            user.PasswordResetOtp = otp;
+            user.PasswordResetExpiresAt = DateTime.Now.AddMinutes(10); // 設 10 分鐘過期
+
+            _dbUser.Update(user);
+            var saved = await _dbUser.SaveChangesAsync();
+
+            if (saved)
+            {
+                // 沿用你寫好的 SendEmailInternalAsync，稍微改一下主旨就好
+                await SendEmailInternalAsync(user.Email, user.UserName, otp);
+            }
+
+            return saved;
+        }
+
+
+        public async Task<bool> ResetPasswordAsync(string email, string otp, string newPassword)
+        {
+            var user = await _dbUser.GetDbContext().UserUsers
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null || user.PasswordResetOtp != otp || user.PasswordResetExpiresAt < DateTime.Now)
+                return false;
+
+            // 驗證成功，雜湊新密碼
+            user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+
+            // 清空 OTP 確保安全性
+            user.PasswordResetOtp = null;
+            user.PasswordResetExpiresAt = null;
+
+            user.PasswordChangedAt = DateTime.Now;
+            _dbUser.Update(user);
+            return await _dbUser.SaveChangesAsync();
+        }
+
+
+
         // --- 核心工具：產生 JWT 憑證 ---
         private string GenerateJwtToken(UserUser user)
         {
@@ -323,7 +373,7 @@ namespace UserServiceHelper.Service
             // 連接 Gmail SMTP
             await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
             // 使用你的帳號與 16 位應用程式密碼
-            // 既然你說 Configuration 設定過了，可以用 _configuration["Email:Password"] 之類的
+            // Configuration 設定過了，可以用 _configuration["Email:Password"] 
             await client.AuthenticateAsync(_configuration["EmailSettings:SmtpUser"], _configuration["EmailSettings:AppPassword"]);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);

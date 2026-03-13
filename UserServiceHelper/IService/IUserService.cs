@@ -21,6 +21,10 @@ namespace UserServiceHelper.IService
 
         Task<(bool success, string message)> VerifyRegistrationOtpAsync(string email, string otp);
 
+        Task<bool> SendPasswordResetOtpAsync(string email);
+
+        Task<bool> ResetPasswordAsync(string email, string otp, string newPassword);
+
 
 
     }

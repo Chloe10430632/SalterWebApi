@@ -61,19 +61,19 @@ namespace SalterWebApi.Areas.User.Controllers
 
         // PUT api/<UserController>/5
         [Authorize]
-        [HttpPut("UpdateUserProfile/{id}")]
-        public async Task<IActionResult> Put(int id, [FromBody] UserEditViewModel model)
+        [HttpPut("UpdateUserProfile")]
+        public async Task<IActionResult> UpdateUserProfile([FromBody] UserEditViewModel model)
         {
 
             var currentUserId = User.FindFirst("UserId")?.Value;
 
-            // 檢查：如果傳進來的 id 跟目前登入的人不一樣，就是想偷改別人的資料！
-            if (currentUserId == null || id.ToString() != currentUserId || id != model.Id)
-            {
-                return Forbid("你沒有權限修改此資料");
-            }
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized(new { message = "無效的憑證" });
+
+            model.Id = int.Parse(currentUserId);
 
             var success = await _userService.UpdateProfileAsync(model);
+
             if (!success) return BadRequest(new { message = "更新失敗" });
 
             return Ok(new { message = "更新成功" });
@@ -89,7 +89,7 @@ namespace SalterWebApi.Areas.User.Controllers
 
 
         [HttpPost("UploadUserPicture")]
-        public async Task<IActionResult> Upload(IFormFile file)
+        public async Task<IActionResult> UploadUserPicture(IFormFile file)
         {
             // 呼叫 Service，指定存到 admin/imgs，它會回傳像 "/admin/imgs/20260311_xxx.jpg" 的路徑
             var path = await _fileService.UploadImageAsync(file, "admin/imgs");
@@ -155,14 +155,14 @@ namespace SalterWebApi.Areas.User.Controllers
         }
 
         [HttpPost("VerifyRegisterOtp")]
-        public async Task<IActionResult> VerifyOtp([FromBody] UserOtpVerifyViewModel model)
+        public async Task<IActionResult> VerifyRegisterOtp([FromBody] UserOtpVerifyViewModel model)
         {
             // 這裡的 model 就會包含前端傳來的 Email 和 Otp
             var result = await _userService.VerifyRegistrationOtpAsync(model.Email, model.Otp);
 
             if (!result.success) return BadRequest(new { message = "驗證碼錯誤或已過期" });
 
-            return Ok(new { message = "驗證成功，帳號已啟用" });
+            return Ok(new { message = "驗證成功，帳號已啟用，請重新登入" });
         }
 
 
@@ -170,14 +170,15 @@ namespace SalterWebApi.Areas.User.Controllers
 
 
         [HttpPost("GoogleLogin")]
-        public async Task<IActionResult> GoogleLogin([FromBody] string idToken)
+        public async Task<IActionResult> GoogleLogin([FromBody] UserGoogleLoginViewModel request)
         {
-            if (string.IsNullOrEmpty(idToken))
+            if (request == null || string.IsNullOrEmpty(request.IdToken))
             {
                 return BadRequest(new { message = "無效的 Google 憑證" });
             }
 
-            var token = await _userService.GoogleLoginAsync(idToken);
+            // 這裡改傳入 request.IdToken
+            var token = await _userService.GoogleLoginAsync(request.IdToken);
 
             if (string.IsNullOrEmpty(token))
             {
@@ -185,6 +186,24 @@ namespace SalterWebApi.Areas.User.Controllers
             }
 
             return Ok(new { token = token, message = "Google 登入成功" });
+        }
+
+
+        [HttpPost("ForgotPassword")]
+        public async Task<IActionResult> ForgotPassword([FromBody] string email)
+        {
+            var result = await _userService.SendPasswordResetOtpAsync(email);
+            // 為了資安，通常不論有無此 Email 都回傳 Ok，避免被掃描帳號，但專案發表可以回傳錯誤方便演示
+            if (!result) return BadRequest(new { message = "發送失敗" });
+            return Ok(new { message = "驗證碼已寄出" });
+        }
+
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordViewModel model)
+        {
+            var success = await _userService.ResetPasswordAsync(model.Email, model.Otp, model.NewPassword);
+            if (!success) return BadRequest(new { message = "驗證碼錯誤或已過期" });
+            return Ok(new { message = "密碼重設成功" });
         }
     }
 }

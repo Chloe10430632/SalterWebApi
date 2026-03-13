@@ -57,8 +57,9 @@ namespace UserRepositoryHelper.Repository
             {
                 return await _dbContext.SaveChangesAsync() > 0;
             }
-            catch(Exception)
+            catch(Exception ex)
             {
+                Console.WriteLine("發生錯誤了！原因：" + ex.Message);
                 return false;
             }
             
