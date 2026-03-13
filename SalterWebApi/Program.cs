@@ -1,3 +1,8 @@
+using ExpRepositoryHelper;
+using ExpRepositoryHelper.IRepository;
+using ExpRepositoryHelper.Repository;
+using ExpServiceHelper.IService;
+using ExpServiceHelper.Service;
 using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
 using ForumServiceHelper.IService;
@@ -69,6 +74,12 @@ builder.Services.AddScoped<IGenericUserRepository<UserUser>, GenericUserReposito
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<PasswordHasher<UserUser>>();
+
+//Experience 注入
+builder.Services.AddScoped<IRCoachIndex, RCoachIndex>();
+builder.Services.AddScoped<ISCoachIndex, SCoachIndex>();
+builder.Services.AddScoped<ISCoachMethods, SCoachMethods>();
+
 
 
 //Home功能：泛型資料存取層 DAL DI

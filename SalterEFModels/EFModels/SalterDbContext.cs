@@ -55,7 +55,7 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<ExpEquipmentPicture> ExpEquipmentPictures { get; set; }
 
-    public virtual DbSet<ExpFavorite> ExpFavorites { get; set; }
+    public virtual DbSet<ExpFavorites> ExpFavorites { get; set; }
 
     public virtual DbSet<ExpMessage> ExpMessages { get; set; }
 
@@ -170,6 +170,7 @@ public partial class SalterDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Data Source=123.192.123.82,1433;Initial Catalog=Salter;User ID=sa;Password=DX9Qu!3wKWXrbyk;Trust Server Certificate=True");
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -729,20 +730,25 @@ public partial class SalterDbContext : DbContext
                 .HasConstraintName("FK__expEquipm__expEq__37C5420D");
         });
 
-        modelBuilder.Entity<ExpFavorite>(entity =>
+        modelBuilder.Entity<ExpFavorites>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => e.Id).HasName("PK_ExpFavorites_1");
 
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
             entity.Property(e => e.FavoritedAt).HasColumnName("favorited_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Coach).WithMany()
+            entity.HasOne(d => d.Coach).WithMany(p => p.ExpFavorites)
                 .HasForeignKey(d => d.CoachId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_expFavorites_expCoaches");
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.HasOne(d => d.User).WithMany(p => p.ExpFavorites)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_expFavorites_UserUsers");
         });
 

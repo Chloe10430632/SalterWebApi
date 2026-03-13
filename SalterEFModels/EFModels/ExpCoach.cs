@@ -35,6 +35,8 @@ public partial class ExpCoach
 
     public virtual ICollection<ExpEquipment> ExpEquipments { get; set; } = new List<ExpEquipment>();
 
+    public virtual ICollection<ExpFavorites> ExpFavorites { get; set; } = new List<ExpFavorites>();
+
     public virtual ICollection<ExpMessage> ExpMessages { get; set; } = new List<ExpMessage>();
 
     public virtual ICollection<ExpReview> ExpReviews { get; set; } = new List<ExpReview>();

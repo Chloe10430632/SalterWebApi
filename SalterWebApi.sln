@@ -19,6 +19,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomeRepositoryHelper", "Hom
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomeServiceHelper", "Home2\HomeServiceHelper.csproj", "{352C1C0F-1F3D-47DC-836E-FB1A02E889CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpServiceHelper", "ExpServiceHelper\ExpServiceHelper.csproj", "{527EE564-C503-4A16-ADA4-3DA3D62CF376}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpRepositoryHelper", "ExpRepositoryHelper\ExpRepositoryHelper.csproj", "{0AD49ACF-D84B-4004-9224-8191A604A366}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +45,14 @@ Global
 		{025832E1-E9E2-0193-06FA-90BBA15C4F7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{025832E1-E9E2-0193-06FA-90BBA15C4F7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{025832E1-E9E2-0193-06FA-90BBA15C4F7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{527EE564-C503-4A16-ADA4-3DA3D62CF376}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{527EE564-C503-4A16-ADA4-3DA3D62CF376}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{527EE564-C503-4A16-ADA4-3DA3D62CF376}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{527EE564-C503-4A16-ADA4-3DA3D62CF376}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AD49ACF-D84B-4004-9224-8191A604A366}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AD49ACF-D84B-4004-9224-8191A604A366}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AD49ACF-D84B-4004-9224-8191A604A366}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AD49ACF-D84B-4004-9224-8191A604A366}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5900FF3C-B68A-4557-AF7E-E12FE5917C7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5900FF3C-B68A-4557-AF7E-E12FE5917C7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5900FF3C-B68A-4557-AF7E-E12FE5917C7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
