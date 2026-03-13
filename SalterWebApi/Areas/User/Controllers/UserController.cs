@@ -158,9 +158,9 @@ namespace SalterWebApi.Areas.User.Controllers
         public async Task<IActionResult> VerifyOtp([FromBody] UserOtpVerifyViewModel model)
         {
             // 這裡的 model 就會包含前端傳來的 Email 和 Otp
-            var success = await _userService.VerifyRegistrationOtpAsync(model.Email, model.Otp);
+            var result = await _userService.VerifyRegistrationOtpAsync(model.Email, model.Otp);
 
-            if (!success) return BadRequest(new { message = "驗證碼錯誤或已過期" });
+            if (!result.success) return BadRequest(new { message = "驗證碼錯誤或已過期" });
 
             return Ok(new { message = "驗證成功，帳號已啟用" });
         }

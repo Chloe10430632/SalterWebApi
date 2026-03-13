@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 using UserRepositoryHelper.IRepository;
 using UserServiceHelper.IService;
 using UserServiceHelper.Models.DTO.ViewModel;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 namespace UserServiceHelper.Service
 {
@@ -22,6 +25,7 @@ namespace UserServiceHelper.Service
         private readonly IGenericUserRepository<UserUser> _dbUser;
         private readonly PasswordHasher<UserUser> _passwordHasher;
         private readonly IConfiguration _configuration;
+
 
         public UserService(IGenericUserRepository<UserUser> dbUser, PasswordHasher<UserUser> passwordHasher, IConfiguration configuration)
         {
@@ -99,8 +103,6 @@ namespace UserServiceHelper.Service
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
 
-                
-
             };
 
             
@@ -108,7 +110,22 @@ namespace UserServiceHelper.Service
 
             await _dbUser.CreateAsync(newUser);
 
-            return await _dbUser.SaveChangesAsync();
+            var saved = await _dbUser.SaveChangesAsync();
+
+            if (saved)
+            {
+                try
+                {
+                    await SendEmailInternalAsync(newUser.Email, newUser.UserName, otp);
+                }
+                catch (Exception ex)
+                {
+                    // 如果寄信失敗，至少要在 Debug 視窗看到原因
+                    System.Diagnostics.Debug.WriteLine($"寄信失敗：{ex.Message}");
+                }
+            }
+
+            return saved;
         }
 
         public async Task<string?> LoginAsync(UserLoginViewModel model)
@@ -135,18 +152,22 @@ namespace UserServiceHelper.Service
 
         }
 
-        public async Task<bool> VerifyRegistrationOtpAsync(string email, string otp)
+        public async Task<(bool success, string message)> VerifyRegistrationOtpAsync(string email, string otp)
         {
             var dbContext = _dbUser.GetDbContext();
 
-            // 找人：比對 Email、比對 OTP 暗號，且確認現在時間還沒過期
-            var user = await dbContext.UserUsers.FirstOrDefaultAsync(u =>
-                u.Email == email &&
-                u.EmailVerificationOtp == otp &&
-                u.EmailVerificationExpiresAt > DateTime.Now);
+            var user = await dbContext.UserUsers.FirstOrDefaultAsync(u => u.Email == email);
 
             // 如果找不到，代表驗證碼錯了、或是過期了
-            if (user == null) return false;
+            if (user == null) return (false, "找不到使用者");
+
+            if (user.IsActive) return (true, "帳號已啟用，請直接登入");
+
+            if (user.EmailVerificationOtp != otp)  return (false, "驗證碼錯誤");
+
+            if (user.EmailVerificationExpiresAt < DateTime.Now) return (false, "驗證碼已過期，請重新取得");
+
+
 
             // 驗證成功：
             user.IsActive = true;               // 啟用帳號
@@ -157,44 +178,39 @@ namespace UserServiceHelper.Service
             user.EmailVerificationExpiresAt = null;
 
             _dbUser.Update(user);
-            return await _dbUser.SaveChangesAsync();
+            var saved = await _dbUser.SaveChangesAsync();
+
+            if (saved)
+                return (true, "驗證成功！");
+            else
+                return (false, "資料庫更新失敗");
+
         }
 
-
-
-
-        // --- 核心工具：產生 JWT 憑證 ---
-        private string GenerateJwtToken(UserUser user)
+        public async Task<bool> ResendOtpAsync(string email)
         {
-            // 1. 從 appsettings.json 讀取密鑰
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var user = await _dbUser.GetDbContext().UserUsers
+                .FirstOrDefaultAsync(u => u.Email == email && !u.IsActive);
 
-            // 2. 準備「通行證」上面的資訊 (Claims)
-            var claims = new List<Claim>
+            if (user == null) return false;
+
+            // 1. 產生新的 6 位數
+            string newOtp = new Random().Next(100000, 999999).ToString();
+
+            // 2. 更新資料庫
+            user.EmailVerificationOtp = newOtp;
+            user.EmailVerificationExpiresAt = DateTime.Now.AddMinutes(5);
+            _dbUser.Update(user);
+            var saved = await _dbUser.SaveChangesAsync();
+
+            // 3. 再次寄信 (沿用你剛才寫好的邏輯)
+            if (saved)
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("UserId", user.Id.ToString()),
-                new Claim("UserName", user.UserName),
-                // 把你的圖片路徑塞進去
-                new Claim("Avatar", user.ProfilePicture ?? "/admin/imgs/default-avatar.png"),
-                // 塞入角色名稱
-                new Claim(ClaimTypes.Role, user.UserRole?.Name ?? "一般會員")
-            };
+                
+                await SendEmailInternalAsync(user.Email, user.UserName, newOtp);
+            }
 
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])),
-                signingCredentials: creds
-            );
-
-            // 4. 轉換成字串回傳
-            return new JwtSecurityTokenHandler().WriteToken(token);
-
+            return saved;
         }
 
         public async Task<string?> GoogleLoginAsync(string idToken)
@@ -247,5 +263,75 @@ namespace UserServiceHelper.Service
                 return null;
             }
         }
+
+        
+        
+        // --- 核心工具：產生 JWT 憑證 ---
+        private string GenerateJwtToken(UserUser user)
+        {
+            // 1. 從 appsettings.json 讀取密鑰
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            // 2. 準備「通行證」上面的資訊 (Claims)
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("UserId", user.Id.ToString()),
+                new Claim("UserName", user.UserName),
+                // 把你的圖片路徑塞進去
+                new Claim("Avatar", user.ProfilePicture ?? "/admin/imgs/default-avatar.png"),
+                // 塞入角色名稱
+                new Claim(ClaimTypes.Role, user.UserRole?.Name ?? "一般會員")
+            };
+
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"])),
+                signingCredentials: creds
+            );
+
+            // 4. 轉換成字串回傳
+            return new JwtSecurityTokenHandler().WriteToken(token);
+
+        }
+
+        //MailKit 寄信代碼
+        private async Task SendEmailInternalAsync(string toEmail, string userName, string otp)
+        {
+            var message = new MimeMessage();
+            // 建議明確指定名稱與地址，避免 null 導致的錯誤
+            message.From.Add(new MailboxAddress("Salter 團隊", _configuration["EmailSettings:SmtpUser"]));
+            message.To.Add(new MailboxAddress(userName, toEmail));
+            message.Subject = "Salter 專案 - 您的帳號驗證碼";
+
+            message.Body = new TextPart("html")
+            {
+                Text = $@"<div style='border:1px solid #ddd; padding:20px; max-width:500px;'>
+                    <h2 style='color:#2c3e50;'>Salter 驗證碼服務</h2>
+                    <p>{userName} 您好，您的驗證碼如下：</p>
+                    <h1 style='color:#3498db; text-align:center;'>{otp}</h1>
+                    <p style='color:#e74c3c;'>請在 5 分鐘內輸入。如果是您本人操作，請忽略此信。</p>
+                 </div>"
+            };
+
+            using var client = new SmtpClient();
+            // 連接 Gmail SMTP
+            await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
+            // 使用你的帳號與 16 位應用程式密碼
+            // 既然你說 Configuration 設定過了，可以用 _configuration["Email:Password"] 之類的
+            await client.AuthenticateAsync(_configuration["EmailSettings:SmtpUser"], _configuration["EmailSettings:AppPassword"]);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+        }
+
+
+
+
+
     }
 }
