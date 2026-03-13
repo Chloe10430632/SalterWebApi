@@ -270,30 +270,15 @@ namespace ForumServiceHelper.Service
                         }
                     }
 
-                  
-                   
                 }
-
-
-
-               
-
-
-
 
                         bool allSaved = await _dbPosts.SaveChangesAsync();
                         if (allSaved)
                             return newPost.PostId; // 回傳 ID 讓前端可以跳轉
                         else
                             return -1;
-
-
-
             }
-
-
             return -1; //失敗了就回傳-1，成功了回傳˙貼文Id
         }
-
     }
 }
