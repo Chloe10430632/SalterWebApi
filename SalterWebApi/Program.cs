@@ -1,13 +1,19 @@
 using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-
-using SalterEFModels.EFModels;
-using Scalar.AspNetCore;
-
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using SalterEFModels.EFModels;
+using Scalar.AspNetCore;
+using System.Text;
+using UserRepositoryHelper.IRepository; 
+using UserRepositoryHelper.Repository;
+using UserServiceHelper.IService;
+using UserServiceHelper.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +26,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<SalterDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextMac")));
 
+// JWT 驗證器註冊開始 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
+// --- JWT
+
 //Forum功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericSalterRepository<>), typeof(GenericSalterRepository<>));
 builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, GenericSalterRepository<ForumBoardCategory>>();
@@ -28,6 +51,18 @@ builder.Services.AddScoped<IGenericSalterRepository<ForumPost>, GenericSalterRep
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
+
+
+//User功能：泛型資料存取層 DAL DI
+builder.Services.AddScoped(typeof(IGenericUserRepository<>), typeof(GenericUserRepository<>));
+builder.Services.AddScoped<IGenericUserRepository<UserUser>, GenericUserRepository<UserUser>>();
+
+
+//User功能：商業邏輯層 BLL DI
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<PasswordHasher<UserUser>>();
+
 
 // Add services to the container.
 
@@ -85,6 +120,9 @@ app.UseCors("Allow4200");
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication(); // 認證
+app.UseAuthorization();  // 授權
 
 app.UseAuthorization();
 

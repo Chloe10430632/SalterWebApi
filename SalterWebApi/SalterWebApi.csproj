@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.23">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -22,11 +23,13 @@
     <Folder Include="Areas\Trip\" />
     <Folder Include="Controllers\" />
     <Folder Include="Models\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ForumServiceHelper\ForumServiceHelper.csproj" />
     <ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
+    <ProjectReference Include="..\UserServiceHelper\UserServiceHelper.csproj" />
   </ItemGroup>
 
 </Project>
