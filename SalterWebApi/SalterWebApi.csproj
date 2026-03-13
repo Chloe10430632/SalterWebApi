@@ -19,7 +19,6 @@
 
   <ItemGroup>
     <Folder Include="Areas\Admin\" />
-    <Folder Include="Areas\House\" />
     <Folder Include="Areas\Trip\" />
     <Folder Include="Controllers\" />
     <Folder Include="Models\" />
@@ -28,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ForumServiceHelper\ForumServiceHelper.csproj" />
+    <ProjectReference Include="..\Home2\HomeServiceHelper.csproj" />
     <ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
     <ProjectReference Include="..\UserServiceHelper\UserServiceHelper.csproj" />
   </ItemGroup>

@@ -15,6 +15,13 @@ using UserRepositoryHelper.Repository;
 using UserServiceHelper.IService;
 using UserServiceHelper.Service;
 
+using ForumServiceHelper.IService;
+using ForumServiceHelper.Service;
+using HomeRepositoryHelper.IRepository;
+using HomeRepositoryHelper.Repository;
+using HomeServiceHelper.IService;
+using HomeServiceHelper.Service;
+
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -63,6 +70,15 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<PasswordHasher<UserUser>>();
 
+
+//Home功能：泛型資料存取層 DAL DI
+builder.Services.AddScoped(typeof(IGenericHomeRepository<>), typeof(GenericHomeRepository<>));
+builder.Services.AddScoped<IGenericHomeRepository<HomHouse>, GenericHomeRepository<HomHouse>>();
+builder.Services.AddScoped<IGenericHomeRepository<HomRoomType>, GenericHomeRepository<HomRoomType>>();
+builder.Services.AddScoped<IGenericHomeRepository<HomRoomImage>, GenericHomeRepository<HomRoomImage>>();
+builder.Services.AddScoped<IGenericHomeRepository<HomReview>, GenericHomeRepository<HomReview>>();
+//Home功能：商業邏輯層 BLL DI
+builder.Services.AddScoped<IHomService, HomService>();
 
 // Add services to the container.
 
