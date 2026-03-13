@@ -9,6 +9,7 @@ namespace SalterWebApi.Areas.House.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Tags("房屋租借")]
     public class HomeController : ControllerBase
     {
         private readonly IHomService _homService;

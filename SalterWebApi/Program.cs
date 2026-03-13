@@ -24,8 +24,6 @@ using TripRepositoryHelper.Repository;
 using TripServiceHelper.IService;
 using TripServiceHelper.Service;
 
-using ForumServiceHelper.IService;
-using ForumServiceHelper.Service;
 using HomeRepositoryHelper.IRepository;
 using HomeRepositoryHelper.Repository;
 using HomeServiceHelper.IService;
@@ -39,12 +37,12 @@ var builder = WebApplication.CreateBuilder(args);
 //    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContext")));
 
 //地端資料庫連接字串DI
-//builder.Services.AddDbContext<SalterDbContext>(options =>
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextMac")));
+builder.Services.AddDbContext<SalterDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextMac")));
 
 //本機資料庫連接字串DI
-builder.Services.AddDbContext<SalterDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextLocal")));
+//builder.Services.AddDbContext<SalterDbContext>(options =>
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextLocal")));
 
 // JWT 驗證器註冊開始 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
