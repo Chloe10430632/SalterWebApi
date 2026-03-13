@@ -141,10 +141,20 @@ public class TripService : ITripService
         return ServiceResult.Success("行程更新成功");
     }
 
-    public async Task<ServiceResult> DeleteTripAsync(int tripId)
+    public async Task<ServiceResult> DeleteTripAsync(int tripId, int userId)
     {
-        var result = await _repo.DeleteTripAsync(tripId);
-        return result ? ServiceResult.Success("行程刪除成功") : ServiceResult.Fail("找不到行程");
+        try
+        {
+            if (!await _repo.IsOrganizerAsync(tripId, userId))
+                return ServiceResult.Fail("只有主辦人可以刪除行程");
+
+            var result = await _repo.DeleteTripAsync(tripId);
+            return result ? ServiceResult.Success("行程刪除成功") : ServiceResult.Fail("找不到行程");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail($"刪除失敗：{ex.InnerException?.Message ?? ex.Message}");
+        }
     }
 
     #endregion

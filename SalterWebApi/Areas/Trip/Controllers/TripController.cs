@@ -62,7 +62,8 @@ public class TripController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _service.DeleteTripAsync(id);
+        var userId = 1; // TODO: 從 JWT 取得
+        var result = await _service.DeleteTripAsync(id, userId);
         if (!result.IsSuccess)
             return NotFound(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));

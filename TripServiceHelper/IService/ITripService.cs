@@ -9,7 +9,7 @@ public interface ITripService
     Task<TripDetailDto?> GetTripDetailAsync(int tripId);
     Task<ServiceResult> CreateTripAsync(TripRequestDto dto, int organizerUserId);
     Task<ServiceResult> UpdateTripAsync(int tripId, TripRequestDto dto);
-    Task<ServiceResult> DeleteTripAsync(int tripId);
+    Task<ServiceResult> DeleteTripAsync(int tripId, int userId);
     #endregion
 
     # region 成員
