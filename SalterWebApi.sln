@@ -23,6 +23,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpServiceHelper", "ExpServ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpRepositoryHelper", "ExpRepositoryHelper\ExpRepositoryHelper.csproj", "{0AD49ACF-D84B-4004-9224-8191A604A366}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripRepositoryHelper", "TripRepositoryHelper\TripRepositoryHelper.csproj", "{05C5DCA8-8981-4C58-9DD3-4ED10D86AC46}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TripServiceHelper", "TripServiceHelper\TripServiceHelper.csproj", "{1BE82196-DD6D-493C-81A0-FAD74824FD66}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +73,14 @@ Global
 		{352C1C0F-1F3D-47DC-836E-FB1A02E889CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{352C1C0F-1F3D-47DC-836E-FB1A02E889CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{352C1C0F-1F3D-47DC-836E-FB1A02E889CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05C5DCA8-8981-4C58-9DD3-4ED10D86AC46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05C5DCA8-8981-4C58-9DD3-4ED10D86AC46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05C5DCA8-8981-4C58-9DD3-4ED10D86AC46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05C5DCA8-8981-4C58-9DD3-4ED10D86AC46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BE82196-DD6D-493C-81A0-FAD74824FD66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BE82196-DD6D-493C-81A0-FAD74824FD66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BE82196-DD6D-493C-81A0-FAD74824FD66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BE82196-DD6D-493C-81A0-FAD74824FD66}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -19,6 +19,10 @@ using UserRepositoryHelper.IRepository;
 using UserRepositoryHelper.Repository;
 using UserServiceHelper.IService;
 using UserServiceHelper.Service;
+using TripRepositoryHelper.IRepository;
+using TripRepositoryHelper.Repository;
+using TripServiceHelper.IService;
+using TripServiceHelper.Service;
 
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
@@ -35,8 +39,12 @@ var builder = WebApplication.CreateBuilder(args);
 //    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContext")));
 
 //地端資料庫連接字串DI
+//builder.Services.AddDbContext<SalterDbContext>(options =>
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextMac")));
+
+//本機資料庫連接字串DI
 builder.Services.AddDbContext<SalterDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextMac")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContextLocal")));
 
 // JWT 驗證器註冊開始 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -90,6 +98,10 @@ builder.Services.AddScoped<IGenericHomeRepository<HomRoomImage>, GenericHomeRepo
 builder.Services.AddScoped<IGenericHomeRepository<HomReview>, GenericHomeRepository<HomReview>>();
 //Home功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IHomService, HomService>();
+
+//Trip功能 : DAL BLL DI
+builder.Services.AddScoped<ITripRepository, TripRepository>();
+builder.Services.AddScoped<ITripService, TripService>();
 
 // Add services to the container.
 
