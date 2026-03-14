@@ -326,10 +326,11 @@ namespace UserServiceHelper.Service
             // 2. 準備「通行證」上面的資訊 (Claims)
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("UserId", user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim("UserName", user.UserName),
+                new Claim(ClaimTypes.Email,user.Email),
                 // 把你的圖片路徑塞進去
                 new Claim("Avatar", user.ProfilePicture ?? "/admin/imgs/default-avatar.png"),
                 // 塞入角色名稱

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Security.Claims;
 using UserServiceHelper.IService;
 using UserServiceHelper.Models.DTO.ViewModel;
 using UserServiceHelper.Service;
@@ -40,7 +41,7 @@ namespace SalterWebApi.Areas.User.Controllers
         public async Task<ActionResult<UserProfileViewModel>> GetUserProfile()
         {
             // 這裡就是你說的「內建屬性」與「暗號」
-            var currentUserId = User.FindFirst("UserId")?.Value;
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(currentUserId))
                 return Unauthorized(new { message = "無效的憑證" });
@@ -65,7 +66,7 @@ namespace SalterWebApi.Areas.User.Controllers
         public async Task<IActionResult> UpdateUserProfile([FromBody] UserEditViewModel model)
         {
 
-            var currentUserId = User.FindFirst("UserId")?.Value;
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(currentUserId))
                 return Unauthorized(new { message = "無效的憑證" });

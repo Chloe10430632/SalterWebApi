@@ -28,6 +28,7 @@ using HomeRepositoryHelper.IRepository;
 using HomeRepositoryHelper.Repository;
 using HomeServiceHelper.IService;
 using HomeServiceHelper.Service;
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
