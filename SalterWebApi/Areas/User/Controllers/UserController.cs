@@ -191,11 +191,17 @@ namespace SalterWebApi.Areas.User.Controllers
 
 
         [HttpPost("ForgotPassword")]
-        public async Task<IActionResult> ForgotPassword([FromBody] string email)
+        public async Task<IActionResult> ForgotPassword([FromBody] UserForgotPasswordViewModel model)
         {
-            var result = await _userService.SendPasswordResetOtpAsync(email);
-            // 為了資安，通常不論有無此 Email 都回傳 Ok，避免被掃描帳號，但專案發表可以回傳錯誤方便演示
-            if (!result) return BadRequest(new { message = "發送失敗" });
+
+            if (string.IsNullOrEmpty(model.Email))
+                return BadRequest(new { message = "請輸入 Email" });
+
+            var result = await _userService.SendPasswordResetOtpAsync(model.Email);
+
+            // 專案演示用：回傳具體的錯誤
+            if (!result) return BadRequest(new { message = "找不到該帳號或發送失敗" });
+
             return Ok(new { message = "驗證碼已寄出" });
         }
 
