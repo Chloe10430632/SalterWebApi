@@ -4,12 +4,14 @@ using ForumRepositoryHelper.IRepository;
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Models.DTO.Const;
 using ForumServiceHelper.Models.DTO.CreateModel;
+using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,89 +33,88 @@ namespace ForumServiceHelper.Service
             _cloudinaryApiSecret = config["Cloudinary:ApiSecret"];
         }
 
-        public async Task<IList<PostsViewModel>> GetAllPostsAsync(int? postId = null, string? keyword = null, string? sortBy = null, int? userId = null)
+        public async Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(PostsQueryModel query)
         {
-            //1.強制指定變數類型為 IQueryable < ForumPost >，這樣後續的 Where 才能順利對接
-            IQueryable<ForumPost> posts = _dbPosts.GetDbContext().ForumPosts
-                .Include(p => p.User)
-                .Include(p => p.Board)
-                .Include(p => p.ForumPostsImages)
-                .Include(p => p.ForumPostInteractions)
-                .Include(p => p.ForumComments)
-                .Where(p=>p.IsPosted == true && p.Status == PostCreateStatusTypes.Normal);
+            var posts = _dbPosts.GetAll().Where(p => p.IsPosted && p.Status == PostCreateStatusTypes.Normal);
 
-            //預設排序按照瀏覽量
-            sortBy ??= SortTypes.Popular; 
-            sortBy = sortBy.ToUpper().Trim();
+            if (query.BoardId.HasValue) 
+                posts = posts.Where(p => p.BoardId == query.BoardId);
 
-
-            //現在 posts 是 IQueryable，你可以自由地疊加過濾條件
-            if (postId.HasValue)
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
             {
-                posts = posts.Where(p => p.PostId == postId.Value);
+                var kw = query.Keyword.Trim();
+                posts = posts.Where(p => p.Content.Contains(kw) || p.Board.Title.Contains(kw));
             }
 
-            if (userId.HasValue && sortBy == SortTypes.Follow)
+            //處理 Follow 邏輯(使用 Join 效率更高)
+            if (query.SortBy == SortTypes.Follow && query.UserId.HasValue)
             {
-                //先找出userId追蹤的所有看板
-                var userFollowBoards = _dbPosts.GetDbContext().ForumBoardInteractions
-                    .Where(bi => bi.UserId == userId && bi.Type == BoardInteractionTypes.Follow)
+                var followedBoardIds = _dbPosts.GetDbContext().ForumBoardInteractions
+                    .Where(bi => bi.UserId == query.UserId && bi.Type == BoardInteractionTypes.Follow)
                     .Select(bi => bi.BoardId);
-
-                // 只留下屬於這些看板的貼文
-                posts = posts.Where(p => userFollowBoards.Contains(p.BoardId));
+                posts = posts.Where(p => followedBoardIds.Contains(p.BoardId));
             }
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                keyword = keyword.Trim();
-                posts = posts.Where(p => p.Content.Contains(keyword) || p.Board.Title.Contains(keyword));
-            }
-
-            // 計算貼文距離現在的發佈時間 (先以基準日呈現)
-            DateTime now = DateTime.Now; //new DateTime(2026, 2, 12, 12, 35, 0); //DateTime.Now
-            var postDetails = posts.Select(p => new PostsViewModel
+            var postListQuery = posts.Select(p => new PostListViewModel
             {
                 PostId = p.PostId,
                 UserName = p.User.UserName,
                 AvatarUrl = p.User.ProfilePicture,
                 BoardTitle = p.Board.Title,
-                Content = p.Content,
-                ImageUrls = p.ForumPostsImages
-                 .Where(img => img.PostId == p.PostId)
-                 .Select(img => img.ImageUrl).ToList(),
-
-                // 計算時間差邏輯
+                ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
                 CreatedAt = p.CreatedAt,
-                AgoMinuteNumber = (int)(now - p.CreatedAt).TotalMinutes,
-                AgoHourNumber = (int)(now - p.CreatedAt).TotalHours,
-                AgoDayNumber = (int)(now - p.CreatedAt).TotalDays,
+                ImageUrls = p.ForumPostsImages.Select(img => img.ImageUrl).ToList(),
+                LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+                CommentCount = p.ForumComments.Count(),
+                ViewCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.View),
+                PostTags = p.ForumPostTagDetails.Select(pt => pt.Tag.TagName).ToList()
+            });
 
-                LikeCount = p.ForumPostInteractions
-                 .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.Like)
-                 .Count(),
+            // 分頁排序 (以最難的 POPULAR 為例)
+            if (query.SortBy.ToUpper() == SortTypes.Popular)
+            {
+                if (query.LastViewCount.HasValue && query.LastId.HasValue)
+                    postListQuery = postListQuery.Where(p => p.ViewCount < query.LastViewCount || (p.ViewCount == query.LastViewCount && p.PostId < query.LastId));
 
-                CommentCount = p.ForumComments
-                 .Where(pi => pi.PostId == p.PostId)
-                 .Count(),
+                postListQuery = postListQuery.OrderByDescending(p => p.ViewCount).ThenByDescending(p => p.PostId);
+            }
+            else // NEW 即時貼文
+            {
+                if (query.LastCreatedAt.HasValue && query.LastId.HasValue)
+                    postListQuery = postListQuery.Where(p => p.CreatedAt < query.LastCreatedAt || (p.CreatedAt == query.LastCreatedAt && p.PostId < query.LastId));
 
-                BookmarkCount = p.ForumPostInteractions
-                 .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.Collect)
-                 .Count(),
+                postListQuery = postListQuery.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.PostId);
+            }
 
-                ShareCount = p.ForumPostInteractions
-                 .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.Share)
-                 .Count(),
+            return await postListQuery.Take(query.TakeSize).ToListAsync();
+        }
 
-                ViewCount = p.ForumPostInteractions
-                 .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.View)
-                 .Count(),
+        public async Task<PostDetailViewModel?> GetPostDetailAsync(int postId)
+        {
+            return await _dbPosts.GetAll()
+        .Where(p => p.PostId == postId)
+        .Select(p => new PostDetailViewModel
+        {
+            PostId = p.PostId,
+            UserName = p.User.UserName,
+            AvatarUrl = p.User.ProfilePicture,
+            BoardTitle = p.Board.Title,
+            ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
+            CreatedAt = p.CreatedAt,
+            ImageUrls = p.ForumPostsImages.Select(img => img.ImageUrl).ToList(),
+            LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+            CommentCount = p.ForumComments.Count(),
+            ViewCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.View),
+            PostTags = p.ForumPostTagDetails.Select(pt => pt.Tag.TagName).ToList(),
 
-                // 處理父子留言結構
-                Comments = p.ForumComments
-                .Where(c => c.ParentCommentId == null) // 先過濾出「父留言」
+            BookmarkCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
+            ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
+            FullContent = p.Content,
+
+            // 處理父子留言結構
+            Comments = p.ForumComments
+                .Where(c => c.ParentCommentId == null)
                 .OrderByDescending(c => c.CreatedAt)
-                // .Take(2) // 如果只要顯示最新兩則大標留言
                 .Select(c => new CommentPreviewDto
                 {
                     CommentId = c.CommentId,
@@ -121,39 +122,19 @@ namespace ForumServiceHelper.Service
                     Content = c.Content,
                     AvatarUrl = c.User.ProfilePicture,
                     CreatedAt = c.CreatedAt,
-
-                    // 2. 找出屬於這個父留言的子留言
                     Replies = p.ForumComments
-                        .Where(reply => reply.ParentCommentId == c.CommentId)
-                        .OrderBy(reply => reply.CreatedAt) // 子留言通常由舊到新排
-                        .Select(reply => new CommentPreviewDto
+                        .Where(r => r.ParentCommentId == c.CommentId)
+                        .OrderBy(r => r.CreatedAt)
+                        .Select(r => new CommentPreviewDto
                         {
-                            CommentId = reply.CommentId,
-                            UserName = reply.User.UserName,
-                            Content = reply.Content,
-                            AvatarUrl = reply.User.ProfilePicture,
-                            CreatedAt = reply.CreatedAt
+                            CommentId = r.CommentId,
+                            UserName = r.User.UserName,
+                            AvatarUrl = r.User.ProfilePicture,
+                            Content = r.Content,
+                            CreatedAt = r.CreatedAt,
                         }).ToList()
-                }).ToList(),
-
-                PostTags = _dbPosts.GetDbContext().ForumPostTagDetails
-                     .Include(pt => pt.Tag)
-                     .Where(pt => pt.PostId == p.PostId)
-                     .Select(pt =>  pt.Tag.TagName )
-                     .ToList()
-                });
-
-                if (sortBy == SortTypes.Popular || sortBy == SortTypes.Follow)
-                {
-                    postDetails = postDetails.OrderByDescending(pd=>pd.ViewCount);
-                }
-
-                if(sortBy == SortTypes.New)
-                {
-                    postDetails = postDetails.OrderByDescending(pd => pd.CreatedAt);
-                }
-
-            return await postDetails.ToListAsync();
+                }).ToList()
+        }).FirstOrDefaultAsync();
         }
 
         public async Task<int> CheckAndCreateAsync(PostCreateModel data, int? postId = null) //AddOrUpdate

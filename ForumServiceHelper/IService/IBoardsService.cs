@@ -1,4 +1,5 @@
-﻿using ForumServiceHelper.Models.DTO.ViewModel;
+﻿using ForumServiceHelper.Models.DTO.QueryModel;
+using ForumServiceHelper.Models.DTO.ViewModel;
 using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace ForumServiceHelper.IService
 {
     public interface IBoardsService
     {
-        public Task<IList<BoardsViewModel>> GetAllBoardsAsync(string sortBy);
+        public Task<IList<BoardsViewModel>> GetAllBoardsAsync(BoardsQueryModel query);
         public Task<BoardsViewModel?> GetDetailsAsync(int id);
         //public IQueryable<BoardListItemViewModel> GetAllOrSearch(string searchKeyWord);
 

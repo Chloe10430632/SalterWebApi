@@ -1,6 +1,7 @@
 ﻿using ForumRepositoryHelper.IRepository;
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Models.DTO.Const;
+using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
 using SalterEFModels.EFModels;
 using System;
@@ -8,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace ForumServiceHelper.Service
 {
@@ -20,88 +22,60 @@ namespace ForumServiceHelper.Service
             _dbBoards = dbBoards;
         }
 
-        public async Task<IList<BoardsViewModel>> GetAllBoardsAsync(string sortBy = "DEFAULT")
+        public async Task<IList<BoardsViewModel>> GetAllBoardsAsync(BoardsQueryModel query)
         {
-            var boards = await _dbBoards.GetAllAsync();
-            var boardsViewCount = _dbBoards.GetDbContext().ForumBoardInteractions
-                .Where(bi => bi.Type == BoardInteractionTypes.View)
-                .GroupBy(p => p.BoardId)
-                .Select(g => new { BoardId = g.Key, Count = g.Count() });
-
-            var boardsFollowCount = _dbBoards.GetDbContext().ForumBoardInteractions
-                .Where(bi => bi.Type == BoardInteractionTypes.Follow)
-                .GroupBy(p => p.BoardId)
-                .Select(g => new { BoardId = g.Key, Count = g.Count() });
-
-            var boardList = boards
-                .Select(b => new BoardsViewModel
-                {
-                    BoardId = b.BoardId,
-                    BoardTitle = b.Title,
-                    BoardImgUrl = b.ImageUrl,
-                    BoardSort = b.SortOrder,
-                    ViewCount = boardsViewCount
-                    .Where(v => v.BoardId == b.BoardId)
-                    .Select(v => v.Count)
-                    .FirstOrDefault(),
-                    FollowCount = boardsFollowCount
-                     .Where(f => f.BoardId == b.BoardId)
-                    .Select(f => f.Count)
-                    .FirstOrDefault(),
-                });
-
-            sortBy = sortBy.Trim().ToUpper();
-
-            if(sortBy == SortTypes.Default)
+            var boardQuery = _dbBoards.GetAll();
+            //使用 Select 進行投影，讓資料庫執行 COUNT 與 Grouping
+            var boardsData = boardQuery.Select(b => new BoardsViewModel
             {
-                boardList = boardList.OrderBy(bv => bv.BoardSort);
-            }
-            
-            if (sortBy == SortTypes.Popular)
+                BoardId = b.BoardId,
+                BoardTitle = b.Title,
+                BoardImgUrl = b.ImageUrl,
+                BoardSort = b.SortOrder,
+                // 直接利用導覽屬性計算數量，EF Core高效子查詢，每一筆看板資料跑的時候相關互動進行計算
+                ViewCount = b.ForumBoardInteractions
+                     .Count(i => i.Type == BoardInteractionTypes.View),
+                FollowCount = b.ForumBoardInteractions
+                      .Count(i => i.Type == BoardInteractionTypes.Follow)
+            });
+
+            //處理排序邏輯
+            var sortBy = query.SortBy?.Trim().ToUpper();
+            boardsData = sortBy switch
             {
-                boardList = boardList.OrderByDescending(bv => bv.ViewCount);
+                "POPULAR" => boardsData.OrderByDescending(x => x.ViewCount),
+                "FOLLOW" => boardsData.OrderByDescending(x => x.FollowCount),
+                _ => boardsData.OrderBy(x => x.BoardSort) //預設
+            };
+
+            // 回傳筆數
+            if (query.TakeSize > 0)
+            {
+                boardsData = boardsData.Take(query.TakeSize);
             }
 
-            if (sortBy == SortTypes.Follow)
-            {
-                boardList = boardList.OrderByDescending(bv => bv.FollowCount);
-            }
-
-            return boardList.ToList();
-
+            // 執行非同步查詢並回傳結果
+            return await boardsData.ToListAsync();
         }
 
         public async Task<BoardsViewModel?> GetDetailsAsync(int id)
         {
-            var board = await _dbBoards
-                .GetTableByIDAsync(id);
-            var boardsViewCount = _dbBoards.GetDbContext().ForumBoardInteractions
-               .Where(bi => bi.Type == BoardInteractionTypes.View)
-               .GroupBy(p => p.BoardId)
-               .Select(g => new { BoardId = g.Key, Count = g.Count() });
-            var boardsFollowCount = _dbBoards.GetDbContext().ForumBoardInteractions
-               .Where(bi => bi.Type == BoardInteractionTypes.Follow)
-               .GroupBy(p => p.BoardId)
-               .Select(g => new { BoardId = g.Key, Count = g.Count() });
-
-            if (board == null)
-                return  null;
-
-            var boardData = new BoardsViewModel
+            var query = _dbBoards.GetAll();
+           
+            var boardData = await query
+            .Where(b => b.BoardId == id)
+            .Select(b => new BoardsViewModel
             {
-                BoardId = board.BoardId,
-                BoardImgUrl = board.ImageUrl,
-                BoardSort = board.SortOrder,
-                BoardTitle = board.Title,
-                ViewCount = boardsViewCount
-                    .Where(v => v.BoardId == board.BoardId)
-                    .Select(v => v.Count)
-                    .FirstOrDefault(),
-                FollowCount = boardsFollowCount
-                     .Where(f => f.BoardId == board.BoardId)
-                    .Select(f => f.Count)
-                    .FirstOrDefault()
-            };
+                BoardId = b.BoardId,
+                BoardTitle = b.Title,
+                BoardImgUrl = b.ImageUrl,
+                BoardSort = b.SortOrder,
+                ViewCount = b.ForumBoardInteractions
+                             .Count(i => i.Type == BoardInteractionTypes.View),
+                FollowCount = b.ForumBoardInteractions
+                              .Count(i => i.Type == BoardInteractionTypes.Follow)
+            })
+            .FirstOrDefaultAsync(); 
 
             return boardData;
         }

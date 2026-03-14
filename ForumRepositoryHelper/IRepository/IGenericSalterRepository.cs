@@ -6,9 +6,10 @@ namespace ForumRepositoryHelper.IRepository
     {
         SalterDbContext GetDbContext();
 
+        IQueryable<Table> GetAll();
+
         Task<IEnumerable<Table>> GetAllAsync();
 
-        // 根據主鍵取得單筆資料 (使用 ValueTask 在緩存命中時效能較佳)
         ValueTask<Table?> GetTableByIDAsync<PrimaryKeyType>(PrimaryKeyType id);
 
         void Add(Table entity);

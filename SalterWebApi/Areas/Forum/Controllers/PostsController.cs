@@ -3,7 +3,9 @@ using ForumServiceHelper.IService;
 using ForumServiceHelper.Models.DTO.Const;
 using ForumServiceHelper.Models.DTO.CreateModel;
 using ForumServiceHelper.Models.DTO.ErrorMessage;
+using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
+using ForumServiceHelper.Service;
 using Humanizer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -32,27 +34,15 @@ namespace SalterWebApi.Areas.Forum.Controllers
         // GET: api/Posts
         //GET: api/Posts?sortBy=popular.....(Query)
         [HttpGet]
-        public async Task<ActionResult<IList<PostsViewModel>>> GetForumPosts(
-        [FromQuery] int? id,
-        [FromQuery] string? keyword,
-        [FromQuery] string? sortBy,
-        [FromQuery] int? userId)
+        public async Task<ActionResult<IEnumerable<PostListViewModel>>> GetForumPosts(
+       [FromQuery] PostsQueryModel query)
         {
-            if (!string.IsNullOrWhiteSpace(sortBy))
-            {
-                sortBy = sortBy.ToUpper().Trim();
-                if (sortBy== SortTypes.Follow && !userId.HasValue)
-                {
-                    return BadRequest(new ErrorResponse
-                    {
-                        Code = 400,
-                        Message = $"請先登入!"
-                    });
-                }
-            }
+            if (query.TakeSize <= 0) query.TakeSize = 5;
+            if (query.TakeSize > 5) query.TakeSize = 5; //最多就是只能抓5筆
 
-            var allPostList = await _postsService.GetAllPostsAsync(id,keyword,sortBy,userId);
-            if (allPostList.Count==0)
+            var postList = await _postsService.GetAllPostsAsync(query);
+
+            if(postList.Count() == 0)
             {
                 return NotFound(new ErrorResponse
                 {
@@ -61,16 +51,15 @@ namespace SalterWebApi.Areas.Forum.Controllers
                 });
             }
 
-            return Ok(allPostList);
+            return Ok(postList);
         }
 
-        // GET: api/Posts/5
+        // GET: api/Posts/10
         [HttpGet("{id}")]
-        public async Task<ActionResult<PostsViewModel>> GetForumPost(int id)
+        public async Task<ActionResult<PostDetailViewModel>> GetForumPost(int id)
         {
-            var allPost = await _postsService.GetAllPostsAsync(id);
-            var singlePost = allPost.FirstOrDefault();
-            if (singlePost == null)
+            var post = await _postsService.GetPostDetailAsync(id);
+            if (post == null)
             {
                 return NotFound(new ErrorResponse
                 {
@@ -78,7 +67,7 @@ namespace SalterWebApi.Areas.Forum.Controllers
                     Message = $"找不到 ID 為 {id} 的貼文"
                 });
             }
-            return Ok(singlePost);
+            return Ok(post);
         }
 
         // POST: api/Posts 有檔案上傳

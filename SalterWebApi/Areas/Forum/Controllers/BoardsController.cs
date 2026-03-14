@@ -1,4 +1,6 @@
 ﻿using ForumServiceHelper.IService;
+using ForumServiceHelper.Models.DTO.ErrorMessage;
+using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using SalterEFModels.EFModels;
@@ -23,36 +25,35 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
         // GET: api/<BoardsController>
         [HttpGet]
-        public async Task<ActionResult<IList<BoardsViewModel>>> Get([FromQuery] string sortBy = "DEFAULT")
+        public async Task<ActionResult<IList<BoardsViewModel>>> Get([FromQuery] BoardsQueryModel query)
         {
-            // 1. 調用 Service 的非同步方法
-            var allBoardsList = await _boardsService.GetAllBoardsAsync(sortBy);
+            var boardsList = await _boardsService.GetAllBoardsAsync(query);
 
-            // 2. 如果沒資料，回傳空的陣列或 NoContent (204)
-            if (allBoardsList == null)
+            if (boardsList == null)
             {
                 return NoContent();
             }
 
-            // 3. 回傳 200 OK 與 JSON 格式的資料
-            return Ok(allBoardsList);
+            return Ok(boardsList);
         }
 
         // GET api/<BoardsController>/5
         [HttpGet("{id}")]
         public async Task<ActionResult<BoardsViewModel>> GetForumBoardCategory(int id)
         {
-
              var boardData = await _boardsService.GetDetailsAsync(id);
 
             if(boardData == null)
             {
-                return NotFound();
+                return NotFound(new ErrorResponse
+                {
+                    Code = 404,
+                    Message = $"找不到 ID 為 {id} 的看板"
+                });
             }
 
             return boardData;
         }
-
        
     }
 }

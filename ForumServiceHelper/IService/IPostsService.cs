@@ -1,4 +1,5 @@
 ﻿using ForumServiceHelper.Models.DTO.CreateModel;
+using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
 using System;
 using System.Collections;
@@ -11,7 +12,9 @@ namespace ForumServiceHelper.IService
 {
     public interface IPostsService
     {
-       public Task<IList<PostsViewModel>> GetAllPostsAsync(int? postId = null, string? keyword = null, string? sortBy = null, int? userId = null);
+       public Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(PostsQueryModel query);
+
+        public Task<PostDetailViewModel?> GetPostDetailAsync(int postId);
 
         public Task<int> CheckAndCreateAsync(PostCreateModel data, int? postId = null);
 

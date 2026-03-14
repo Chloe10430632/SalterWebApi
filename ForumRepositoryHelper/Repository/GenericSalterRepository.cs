@@ -19,6 +19,11 @@ namespace ForumRepositoryHelper.Repository
             return _dbContext;
         }
 
+        public IQueryable<Table> GetAll()
+        {
+            return _entity.AsNoTracking();
+        }
+
         public async Task<IEnumerable<Table>> GetAllAsync()
         {
             return  await _entity.AsNoTracking().ToListAsync();
