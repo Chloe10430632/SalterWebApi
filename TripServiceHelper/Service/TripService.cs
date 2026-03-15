@@ -122,8 +122,13 @@ public class TripService : ITripService
         }
     }
 
-    public async Task<ServiceResult> UpdateTripAsync(int tripId, TripRequestDto dto)
+    public async Task<ServiceResult> UpdateTripAsync(int tripId, TripRequestDto dto, int userId)
     {
+        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+        var isMember = await _repo.IsMemberAsync(tripId, userId);
+        if (!isOrganizer && !isMember)
+            return ServiceResult.Fail("只有行程成員可以編輯行程");
+
         var trip = await _repo.GetTripByIdAsync(tripId);
         if (trip == null) return ServiceResult.Fail("找不到行程");
 
@@ -240,29 +245,43 @@ public class TripService : ITripService
         return ServiceResult.Success("公告新增成功");
     }
 
-    public async Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementRequestDto dto)
+    public async Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementRequestDto dto, int userId)
     {
         var entity = await _repo.GetAnnouncementByIdAsync(announcementId);
         if (entity == null) return ServiceResult.Fail("找不到公告");
 
+        if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
+            return ServiceResult.Fail("只有主辦人可以編輯公告");
+
         entity.Title = dto.Title;
         entity.Content = dto.Content;
         entity.UpdatedAt = DateTime.Now;
-
         await _repo.UpdateAnnouncementAsync(entity);
         return ServiceResult.Success("公告更新成功");
     }
 
-    public async Task<ServiceResult> DeleteAnnouncementAsync(int announcementId)
+    public async Task<ServiceResult> DeleteAnnouncementAsync(int announcementId, int userId)
     {
-        var result = await _repo.DeleteAnnouncementAsync(announcementId);
-        return result ? ServiceResult.Success("公告刪除成功") : ServiceResult.Fail("找不到公告");
+        var entity = await _repo.GetAnnouncementByIdAsync(announcementId);
+        if (entity == null) return ServiceResult.Fail("找不到公告");
+
+        if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
+            return ServiceResult.Fail("只有主辦人可以刪除公告");
+
+        await _repo.DeleteAnnouncementAsync(announcementId);
+        return ServiceResult.Success("公告刪除成功");
     }
 
-    public async Task<ServiceResult> TogglePinAsync(int announcementId)
+    public async Task<ServiceResult> TogglePinAsync(int announcementId, int userId)
     {
-        var result = await _repo.TogglePinAnnouncementAsync(announcementId);
-        return result ? ServiceResult.Success("置頂狀態已更新") : ServiceResult.Fail("找不到公告");
+        var entity = await _repo.GetAnnouncementByIdAsync(announcementId);
+        if (entity == null) return ServiceResult.Fail("找不到公告");
+
+        if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
+            return ServiceResult.Fail("只有主辦人可以置頂公告");
+
+        await _repo.TogglePinAnnouncementAsync(announcementId);
+        return ServiceResult.Success("置頂狀態已更新");
     }
 
     #endregion
@@ -302,22 +321,32 @@ public class TripService : ITripService
         return ServiceResult.Success("裝備新增成功");
     }
 
-    public async Task<ServiceResult> UpdateGearItemAsync(int gearItemId, TripGearItemRequestDto dto)
+    public async Task<ServiceResult> UpdateGearItemAsync(int gearItemId, TripGearItemRequestDto dto, int userId)
     {
         var entity = await _repo.GetGearItemByIdAsync(gearItemId);
         if (entity == null) return ServiceResult.Fail("找不到裝備");
 
+        var isOrganizer = await _repo.IsOrganizerAsync(entity.TripId, userId);
+        var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
+        if (!isOrganizer && !isMember)
+            return ServiceResult.Fail("只有行程成員可以編輯裝備");
+
         entity.ItemName = dto.ItemName;
         entity.IsRequired = dto.IsRequired;
-
         await _repo.UpdateGearItemAsync(entity);
         return ServiceResult.Success("裝備更新成功");
     }
 
-    public async Task<ServiceResult> DeleteGearItemAsync(int gearItemId)
+    public async Task<ServiceResult> DeleteGearItemAsync(int gearItemId, int userId)
     {
-        var result = await _repo.DeleteGearItemAsync(gearItemId);
-        return result ? ServiceResult.Success("裝備刪除成功") : ServiceResult.Fail("找不到裝備");
+        var entity = await _repo.GetGearItemByIdAsync(gearItemId);
+        if (entity == null) return ServiceResult.Fail("找不到裝備");
+
+        if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
+            return ServiceResult.Fail("只有主辦人可以刪除裝備");
+
+        await _repo.DeleteGearItemAsync(gearItemId);
+        return ServiceResult.Success("裝備刪除成功");
     }
 
     public async Task<ServiceResult> ToggleGearCheckAsync(int gearItemId, int userId)
@@ -353,8 +382,13 @@ public class TripService : ITripService
         return ServiceResult<List<TripLocationDto>>.Success(result);
     }
 
-    public async Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto)
+    public async Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto, int userId)
     {
+        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+        var isMember = await _repo.IsMemberAsync(tripId, userId);
+        if (!isOrganizer && !isMember)
+            return ServiceResult.Fail("只有行程成員可以新增地點");
+
         var entity = new TripTripLocation
         {
             TripId = tripId,
@@ -369,25 +403,34 @@ public class TripService : ITripService
         return ServiceResult.Success("地點新增成功");
     }
 
-    public async Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationRequestDto dto)
+    public async Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationRequestDto dto, int userId)
     {
-        var list = await _repo.GetLocationsAsync(0);
-        var entity = list.FirstOrDefault(l => l.Id == locationId);
+        var entity = await _repo.GetLocationByIdAsync(locationId);
         if (entity == null) return ServiceResult.Fail("找不到地點");
+
+        var isOrganizer = await _repo.IsOrganizerAsync(entity.TripId, userId);
+        var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
+        if (!isOrganizer && !isMember)
+            return ServiceResult.Fail("只有行程成員可以編輯地點");
 
         entity.LocationRole = dto.LocationRole;
         entity.Note = dto.Note;
         entity.SortOrder = dto.SortOrder;
         entity.UpdatedAt = DateTime.Now;
-
         await _repo.UpdateLocationAsync(entity);
         return ServiceResult.Success("地點更新成功");
     }
 
-    public async Task<ServiceResult> DeleteLocationAsync(int locationId)
+    public async Task<ServiceResult> DeleteLocationAsync(int locationId, int userId)
     {
-        var result = await _repo.DeleteLocationAsync(locationId);
-        return result ? ServiceResult.Success("地點刪除成功") : ServiceResult.Fail("找不到地點");
+        var entity = await _repo.GetLocationByIdAsync(locationId);
+        if (entity == null) return ServiceResult.Fail("找不到地點");
+
+        if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
+            return ServiceResult.Fail("只有主辦人可以刪除地點");
+
+        await _repo.DeleteLocationAsync(locationId);
+        return ServiceResult.Success("地點刪除成功");
     }
 
     #endregion
@@ -427,14 +470,16 @@ public class TripService : ITripService
         return ServiceResult.Success("提醒新增成功");
     }
 
-    public async Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto)
+    public async Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto, int userId)
     {
         var entity = await _repo.GetReminderByIdAsync(reminderId);
         if (entity == null) return ServiceResult.Fail("找不到提醒");
 
+        if (entity.UserId != userId)
+            return ServiceResult.Fail("只能修改自己的提醒");
+
         entity.RemindOffsetMinutes = dto.RemindOffsetMinutes;
         entity.IsEnabled = dto.IsEnabled;
-
         await _repo.UpdateReminderAsync(entity);
         return ServiceResult.Success("提醒更新成功");
     }

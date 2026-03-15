@@ -318,7 +318,8 @@ public class TripRepository : ITripRepository
         await _db.SaveChangesAsync();
         return true;
     }
-
+    public async Task<TripTripLocation?> GetLocationByIdAsync(int locationId)
+    => await _db.TripTripLocations.FindAsync(locationId);
     #endregion
 
     #region 提醒
