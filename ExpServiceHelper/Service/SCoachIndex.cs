@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static ExpServiceHelper.DTO.DFavCoach;
+using static ExpServiceHelper.DTO.DCoachFav;
 using System.Security.Claims;
 
 
@@ -20,7 +20,7 @@ namespace ExpServiceHelper.Service
         private readonly IRCoachIndex _rCoachIndex;
         public SCoachIndex(IRCoachIndex rCoachIndex) { _rCoachIndex = rCoachIndex; }
         
-        public async Task<string?> MyFavCoach(DFavCoach a, int UserId)
+        public async Task<string?> MyFavCoach(DCoachFav a, int UserId)
         {
             //用傳進來的 userId//
             // 1.先檢查

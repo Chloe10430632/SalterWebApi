@@ -5,14 +5,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static ExpServiceHelper.DTO.DFavCoach;
+using static ExpServiceHelper.DTO.DCoachFav;
 
 namespace ExpServiceHelper.IService
 {
     public interface ISCoachIndex
     {
         /**收藏教練*/
-        Task<string?> MyFavCoach(DFavCoach a, int UserId);
+        Task<string?> MyFavCoach(DCoachFav a, int UserId);
         
       
     }

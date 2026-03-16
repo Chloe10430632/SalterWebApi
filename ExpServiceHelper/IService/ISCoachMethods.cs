@@ -26,13 +26,13 @@ namespace ExpServiceHelper.IService
         #region ~~教練~~
         
         #region 申請成為教練
-                Task<DAPIResponse<int>> CreateCoach(DEditCoach dto, int currentUserId);
+                Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId);
         #endregion
         #region 詳細自介
                  Task<DCoachInfo> ThisCoachInfo(int coachId);
         #endregion
         #region 教練編輯
-                Task<DAPIResponse<DEditCoach>> EditCoachInfo(DEditCoach dto, int currentUserId);
+                Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId);
         #endregion
         
         #region 系統推薦

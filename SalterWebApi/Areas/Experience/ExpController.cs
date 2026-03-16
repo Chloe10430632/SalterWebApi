@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalterEFModels.EFModels;
 using System.Security.Claims;
-using static ExpServiceHelper.DTO.DFavCoach;
+using static ExpServiceHelper.DTO.DCoachFav;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -71,7 +71,7 @@ namespace SalterWebApi.Areas.Experience
         #region 申請加入教練(新增)
             [Authorize]
             [HttpPost("BecomeCoach")]
-            public async Task<IActionResult> BecomeCoach(DEditCoach dto ) {
+            public async Task<IActionResult> BecomeCoach(DCoachEdit dto ) {
             var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
                    ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
 
@@ -105,7 +105,7 @@ namespace SalterWebApi.Areas.Experience
         #region 編輯自介
         [Authorize]
         [HttpPut("EditCoach{id}")]
-        public async Task<IActionResult> EditThisCoach([FromBody] DEditCoach dto) {
+        public async Task<IActionResult> EditThisCoach([FromBody] DCoachEdit dto) {
             // 1. 抓取 JWS 裡面的 UserId
             var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
                     ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -141,7 +141,7 @@ namespace SalterWebApi.Areas.Experience
         #region 收藏
             [Authorize]
             [HttpPost("Favorites")]
-            public async Task<IActionResult> MyFavCoach(DFavCoach dto)
+            public async Task<IActionResult> MyFavCoach(DCoachFav dto)
             {
             var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
                ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;

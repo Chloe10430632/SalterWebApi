@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ExpServiceHelper.DTO
 {
-    public class DEditCoach
+    public class DCoachEdit
     {
         //只放讓user異動的欄位
        

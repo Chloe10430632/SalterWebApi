@@ -20,7 +20,7 @@ namespace ExpServiceHelper.Service
         private readonly SalterDbContext _context;
         public SCoachMethods(SalterDbContext dbContext) { _context = dbContext; }
         #endregion
-
+        #region~~教練~~
         #region 入口
 
         /**搜尋-地區*/ //找不到//
@@ -119,7 +119,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 申請加入教練(新增)
-        public async Task<DAPIResponse<int>> CreateCoach(DEditCoach dto, int currentUserId)
+        public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
         {
             // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
             bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
@@ -150,7 +150,8 @@ namespace ExpServiceHelper.Service
             };
         }
         #endregion
-        #region 詳細自介get{id}
+
+        #region 詳細自介
         public async Task<DCoachInfo> ThisCoachInfo(int coachId)
         {
             var query = _context.ExpCoaches
@@ -176,15 +177,15 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片??
-        public async Task<DAPIResponse<DEditCoach>> EditCoachInfo(DEditCoach dto, int currentUserId)
+        public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId)
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
             var thisCoach = await _context.ExpCoaches
-                .FirstOrDefaultAsync(c =>  c.UserId == currentUserId);
+                .FirstOrDefaultAsync(c => c.UserId == currentUserId);
 
             if (thisCoach == null)
             {
-                return new DAPIResponse<DEditCoach> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
+                return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
             }
 
             // 2.(賦值)：把前端傳來的 dto 資料塞進資料庫的 entity 裡
@@ -202,7 +203,7 @@ namespace ExpServiceHelper.Service
             // 4. 回傳：因為有只放id的欄位 所以要回傳抓新的對應名字
             var resultData = await _context.ExpCoaches
                 .Where(c => c.Id == thisCoach.Id)
-                .Select(c => new DEditCoach
+                .Select(c => new DCoachEdit
                 {
                     Name = c.Name,
                     AvatarUrl = c.AvatarUrl,
@@ -213,7 +214,7 @@ namespace ExpServiceHelper.Service
                     DistrictName = c.District.Name
                 }).FirstOrDefaultAsync();
 
-            return new DAPIResponse<DEditCoach> { IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = resultData };
+            return new DAPIResponse<DCoachEdit> { IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = resultData };
 
         }
         #endregion
@@ -260,8 +261,14 @@ namespace ExpServiceHelper.Service
             return recommendedList;
         }
         #endregion
+        #endregion
+        #region~~課程~~
+        #region 課程介紹
 
+        //public async Task<> CourseIntro(){}
 
+        #endregion
+        #endregion
 
 
 
@@ -269,27 +276,28 @@ namespace ExpServiceHelper.Service
     #region 課程
     #region 課程介紹get{id}
     #endregion
+    //CourseSaveasTemplate()
     #region 課程編輯post{id}
-    #endregion
-    #region 課程刪除
-    #endregion
-    #region 預約課程
-    #endregion
-    #region 新增評論
-    #endregion
-    #region 編輯評論
-    #endregion
-    #region 刪除評論
-    #endregion
-    #endregion
+        #endregion
+        #region 課程刪除
+        #endregion
+        #region 預約課程
+        #endregion
+        #region 新增評論
+        #endregion
+        #region 編輯評論
+        #endregion
+        #region 刪除評論
+        #endregion
+        #endregion
 
-    #region 交易
-    #region 支付 
-    #endregion
-    #region 歷史交易紀錄 
-    #endregion
-    #endregion
+        #region 交易
+        #region 支付 
+        #endregion
+        #region 歷史交易紀錄 
+        #endregion
+        #endregion
 
-    #region 營運 
-    #endregion
+        #region 營運 
+        #endregion
 }
