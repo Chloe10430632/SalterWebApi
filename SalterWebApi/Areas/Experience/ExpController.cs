@@ -3,6 +3,7 @@ using ExpServiceHelper.IService;
 using ExpServiceHelper.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SalterEFModels.EFModels;
 using System.Security.Claims;
 using static ExpServiceHelper.DTO.DFavCoach;
 
@@ -91,6 +92,10 @@ namespace SalterWebApi.Areas.Experience
             return Ok(result);
         }
         #endregion
+
+
+
+        
 
         // GET: api/<ExpController>
         [HttpGet]
