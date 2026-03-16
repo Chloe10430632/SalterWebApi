@@ -43,8 +43,8 @@ namespace ForumServiceHelper.Service
             var sortBy = query.SortBy?.Trim().ToUpper();
             boardsData = sortBy switch
             {
-                "POPULAR" => boardsData.OrderByDescending(x => x.ViewCount),
-                "FOLLOW" => boardsData.OrderByDescending(x => x.FollowCount),
+                SortTypes.Popular => boardsData.OrderByDescending(x => x.ViewCount),
+                SortTypes.Follow => boardsData.OrderByDescending(x => x.FollowCount),
                 _ => boardsData.OrderBy(x => x.BoardSort) //預設
             };
 

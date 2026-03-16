@@ -20,8 +20,8 @@ namespace ForumServiceHelper.Models.DTO.CreateModel
 
         public bool isPosted { get; set; }
 
-        // 圖片：前端傳入多張圖片的 URL
-        public List<IFormFile>? Images { get; set; } = new();
+        // 圖片：上傳完圖床後，前端傳入多張圖片的 URL
+        public List<string>? ImageUrls { get; set; } = new();
 
         // 標籤：前端傳入標籤 ID
         public List<TagCreateModel>? Tags { get; set; } = new();

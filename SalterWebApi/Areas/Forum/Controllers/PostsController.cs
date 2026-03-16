@@ -7,6 +7,7 @@ using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
 using ForumServiceHelper.Service;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,9 @@ using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SalterWebApi.Areas.Forum.Controllers
 {
@@ -37,20 +40,16 @@ namespace SalterWebApi.Areas.Forum.Controllers
         public async Task<ActionResult<IEnumerable<PostListViewModel>>> GetForumPosts(
        [FromQuery] PostsQueryModel query)
         {
-            if (query.TakeSize <= 0) query.TakeSize = 5;
-            if (query.TakeSize > 5) query.TakeSize = 5; //最多就是只能抓5筆
+            // 1.防禦性程式碼：確保物件存在
+            query ??= new PostsQueryModel();
+
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(claimId, out int userId))
+                query.UserId = userId;
+            else
+                query.UserId = 0;
 
             var postList = await _postsService.GetAllPostsAsync(query);
-
-            if(postList.Count() == 0)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Code = 404,
-                    Message = $"搜尋條件查無相關內容!"
-                });
-            }
-
             return Ok(postList);
         }
 
@@ -61,85 +60,60 @@ namespace SalterWebApi.Areas.Forum.Controllers
             var post = await _postsService.GetPostDetailAsync(id);
             if (post == null)
             {
-                return NotFound(new ErrorResponse
-                {
-                    Code = 404,
-                    Message = $"找不到 ID 為 {id} 的貼文"
-                });
+                throw new KeyNotFoundException($"找不到 ID 為 {id} 的貼文");
             }
             return Ok(post);
         }
 
-        // POST: api/Posts 有檔案上傳
-        [HttpPost]
-        public async Task<ActionResult<ForumPost>> PostForumPost([FromForm] PostCreateModel data)
+        [HttpPost("Images")] //有檔案上傳[FromForm]
+        //[Authorize]
+        public async Task<IActionResult> UploadPostImagesToCloudinary([FromForm] List<IFormFile> files)
         {
-            //先檢查有資料
-            if (string.IsNullOrEmpty(data.Content))
+            // 1. 基礎檢查
+            if (files == null || files.Count == 0)
             {
-                return BadRequest(new ErrorResponse
-                {
-                    Code = 400,
-                    Message = "貼文內容不得為空白!",
-                });
+                throw new ArgumentException("請選擇要上傳的檔案");
             }
-            //有資料開始處理後端邏輯
-            try
-            {
-                int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data);
-                if (postIdOrErrorResult == -1)
-                {
-                    return StatusCode(500, new ErrorResponse
-                    {
-                        Code = 500,
-                        Message = "伺服器處理貼文失敗"
-                    });
-                }
 
-                // return CreatedAtAction(nameof(GetForumPost), new { id = postIdOrErrorResult },data);
-                return Ok(new { isSuccess = true, PostId = postIdOrErrorResult });
-
-            }
-            catch (Exception ex)
+            var imageUrls = await _postsService.UploadToCloudinaryAsync(files);
+       
+            if (imageUrls.Count == 0)
             {
-                return StatusCode(500, "系統繁忙中，請稍後再試");
+                throw new Exception("圖片上傳失敗!");
             }
+
+            // 4. 回傳網址列表給前端
+            // 前端拿到這組 string[] 後，再塞進 PostCreateModel.ImageUrls 
+            return Created(string.Empty, imageUrls);
+        }
+
+        // POST: api/Posts 
+        [HttpPost]
+        [Authorize]
+        public async Task<ActionResult<ForumPost>> PostForumPost([FromBody]PostCreateModel data)
+        {
+            // 既然有 [Authorize]，這裡的 userId 一定有值
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            data.UserId = userId;
+
+            int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data);
+                return Created(string.Empty, new { isSuccess = true, PostId = postIdOrErrorResult });
         }
 
         // PUT: api/Posts/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutForumPost(int id, [FromForm] PostCreateModel data)
+        //[Authorize]
+        public async Task<IActionResult> PutForumPost(int id, [FromBody] PostCreateModel data)
         {
-            //先檢查有資料
-            if (string.IsNullOrEmpty(data.Content))
-            {
-                return BadRequest(new ErrorResponse
-                {
-                    Code = 400,
-                    Message = "貼文內容不得為空白!",
-                });
-            }
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            //有資料開始處理後端邏輯
-            try
-            {
-                int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data, id);
-                if (postIdOrErrorResult == -1)
-                {
-                    return NotFound(new ErrorResponse
-                    {
-                        Code = 404,
-                        Message = $"找不到 ID 為 {id} 的貼文!"
-                    });
-                }
+            if (string.IsNullOrEmpty(claimId))
+                data.UserId = 0;
+            else
+                data.UserId = int.Parse(claimId);
 
+            int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data, id);
                 return Ok(new { isSuccess = true, PostId = postIdOrErrorResult });
-
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, "系統繁忙中，請稍後再試");
-            }
         }
 
         // DELETE: api/Posts/5
@@ -147,13 +121,6 @@ namespace SalterWebApi.Areas.Forum.Controllers
         public async Task<IActionResult> DeleteForumPost(int id)
         {
             bool result =  await _postsService.CheckAndDeleteAsync(id);
-
-            if (!result)
-                return NotFound(new ErrorResponse
-                {
-                    Code = 404,
-                    Message = $"找不到 ID 為 {id} 的貼文"
-                });
             return NoContent(); 
         }
 

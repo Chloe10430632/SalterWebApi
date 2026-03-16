@@ -7,27 +7,27 @@ using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
+using HomeRepositoryHelper.IRepository;
+using HomeRepositoryHelper.Repository;
+using HomeServiceHelper.IService;
+using HomeServiceHelper.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SalterEFModels.EFModels;
+using SalterWebApi.Middlewares;
 using Scalar.AspNetCore;
 using System.Text;
-using UserRepositoryHelper.IRepository; 
-using UserRepositoryHelper.Repository;
-using UserServiceHelper.IService;
-using UserServiceHelper.Service;
 using TripRepositoryHelper.IRepository;
 using TripRepositoryHelper.Repository;
 using TripServiceHelper.IService;
 using TripServiceHelper.Service;
-
-using HomeRepositoryHelper.IRepository;
-using HomeRepositoryHelper.Repository;
-using HomeServiceHelper.IService;
-using HomeServiceHelper.Service;
+using UserRepositoryHelper.IRepository; 
+using UserRepositoryHelper.Repository;
+using UserServiceHelper.IService;
+using UserServiceHelper.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -132,6 +132,10 @@ builder.Services.AddCors(option =>
         });
 });
 
+// 使用Middleware做全域的Exception處理
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -153,8 +157,10 @@ if (app.Environment.IsDevelopment())
 //使用開放其他來源的自定義政策
 app.UseCors("Allow5500");
 app.UseCors("Allow4200");
-//存取靜態圖片
-app.UseStaticFiles();
+
+app.UseStaticFiles(); //存取靜態圖片
+
+app.UseExceptionHandler(); //全域錯誤處理
 
 app.UseHttpsRedirection();
 

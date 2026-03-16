@@ -28,12 +28,6 @@ namespace SalterWebApi.Areas.Forum.Controllers
         public async Task<ActionResult<IList<BoardsViewModel>>> Get([FromQuery] BoardsQueryModel query)
         {
             var boardsList = await _boardsService.GetAllBoardsAsync(query);
-
-            if (boardsList == null)
-            {
-                return NoContent();
-            }
-
             return Ok(boardsList);
         }
 
@@ -45,11 +39,7 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
             if(boardData == null)
             {
-                return NotFound(new ErrorResponse
-                {
-                    Code = 404,
-                    Message = $"找不到 ID 為 {id} 的看板"
-                });
+                throw new KeyNotFoundException($"找不到 ID 為 {id} 的看板");
             }
 
             return boardData;
