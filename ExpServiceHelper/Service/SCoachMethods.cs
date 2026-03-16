@@ -12,16 +12,17 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ExpServiceHelper.Service
 {
-    public class SCoachMethods :ISCoachMethods
+    public class SCoachMethods : ISCoachMethods
     {
         private readonly SalterDbContext _context;
         public SCoachMethods(SalterDbContext dbContext) { _context = dbContext; }
 
+        #region 入口
 
         /**搜尋-地區*/
         public async Task<List<DCoachInfo>> GetCoachDist(string keyDistrict)
         {
-            var q =  _context.ExpCoaches
+            var q = _context.ExpCoaches
                 .Where(c => c.TripDistricts.Any(w => w.Name.Contains(keyDistrict)))
                 .Select(c => new DCoachInfo
                 {
@@ -30,7 +31,7 @@ namespace ExpServiceHelper.Service
                     AvatarUrl = c.AvatarUrl,
                     District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
                     ReviewCount = c.ExpReviews.Count(),
-                     AverageRating = c.ExpReviews.Any()?Math.Round(c.ExpReviews.Average(r => (double)r.Rating),1):0,
+                    AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                     Specialities = c.Specialities.Select(s => s.SportsName).ToList()
                 }
                 );
@@ -51,7 +52,7 @@ namespace ExpServiceHelper.Service
                     AvatarUrl = c.AvatarUrl,
                     District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
                     ReviewCount = c.ExpReviews.Count(),
-                    AverageRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
+                    AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                     Specialities = c.Specialities.Select(s => s.SportsName).ToList()
                 }
                 );
@@ -59,10 +60,11 @@ namespace ExpServiceHelper.Service
         }
 
         /**排序-最新*/
-       public async Task<List<DCoachInfo>>GetCoachNewest()
+        public async Task<List<DCoachInfo>> GetCoachNewest()
         {
             var q = _context.ExpCoaches
                 .OrderByDescending(c => c.CreatedAt)
+                .Take(12)
                 .Select(c => new DCoachInfo
                 {
                     CoachId = c.Id,
@@ -70,26 +72,73 @@ namespace ExpServiceHelper.Service
                     AvatarUrl = c.AvatarUrl,
                     District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
                     ReviewCount = c.ExpReviews.Count(),
-                    AverageRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
+                    AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                     Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
                     CreatedAt = c.CreatedAt
                 });
-                  return await q.ToListAsync();
+            return await q.ToListAsync();
         }
 
-        Task<List<DCoachInfo>> ISCoachMethods.GetCoachHottest()
-        {
-            throw new NotImplementedException();
-        }
+
 
         /**排序-熱門*/
-        //public async Task<List<DCoachInfo>> GetCoachHottest()
-        // {
-        //     //算平均
+        public async Task<List<DCoachInfo>> GetCoachPop()
+        {
+            //拿資料 算平均 算評論數
+            var q = _context.ExpCoaches
+                .Select(c => new
+                {
+                    Coach = c,
+                    AvgRating = c.ExpReviews.Any() ? c.ExpReviews.Average(r => (double)r.Rating) : 0,
+                    ReviewCount = c.ExpReviews.Count()
+                });
+            //排序
+            var rank = await q.OrderByDescending(r => r.AvgRating)
+                .ThenByDescending(r => r.ReviewCount)
+                .Take(12)
+                .ToListAsync();
+            //包成DTO ->return
+            return rank.Select(x => new DCoachInfo
+            {
+                CoachId = x.Coach.Id,
+                CoachName = x.Coach.Name,
+                AvatarUrl = x.Coach.AvatarUrl,
+                District = string.Join(",", x.Coach.TripDistricts.Select(d => d.Name)),
+                ReviewCount = x.ReviewCount,
+                AvgRating = Math.Round(x.AvgRating, 1),
+                Specialities = x.Coach.Specialities.Select(s => s.SportsName).ToList()
+            }).ToList();
 
 
-        //     return;
-        // }
+        }
+
+        #endregion
+
+
+        #region 教練編輯
+        public async Task<DAPIResponse<DEditCoachInfo>> EditCoachInfo(DEditCoachInfo dto)
+        {
+            var coach = await _context.ExpCoaches.FindAsync(dto.Id);
+            if (coach == null)
+            {
+                return new DAPIResponse<DEditCoachInfo> { IsSuccess = false, Message = "謎樣人物" };
+            }
+
+            coach.Name = dto.Name;
+            coach.AvatarUrl = dto.AvatarUrl;
+            coach.Introduction = dto.Introduction;
+            coach.DistrictId = dto.DistrictId;
+            coach.CityId = dto.CityId;
+
+            coach.UpdatedAt = DateTime.Now;
+            if (coach.Name == null) coach.CreatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return new DAPIResponse<DEditCoachInfo>() { IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = dto };
+
+        }
+        #endregion
 
     }
 }

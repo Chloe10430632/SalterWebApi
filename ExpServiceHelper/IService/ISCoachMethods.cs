@@ -9,6 +9,7 @@ namespace ExpServiceHelper.IService
 {
     public interface ISCoachMethods
     {
+        #region 入口
         /**搜尋-地區*/
         Task<List<DCoachInfo>> GetCoachDist(string keyDistrict);
 
@@ -17,6 +18,11 @@ namespace ExpServiceHelper.IService
         /**排序-最新*/
         Task<List<DCoachInfo>> GetCoachNewest();
         /**排序-熱門*/
-        Task<List<DCoachInfo>> GetCoachHottest();
+        Task<List<DCoachInfo>> GetCoachPop();
+        #endregion
+        #region 教練編輯
+        Task<DAPIResponse<DEditCoachInfo>> EditCoachInfo(DEditCoachInfo newdata);
+        #endregion
+
     }
 }

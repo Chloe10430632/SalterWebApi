@@ -16,36 +16,46 @@ namespace SalterWebApi.Areas.Experience
     {
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
-        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods )
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods)
         {
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
         }
+        [HttpGet("PopRank")]
+        public async Task<IActionResult> PopRank()
+        {
+            var result = await _sCoachMethods.GetCoachPop();
+            return Ok(result);
+        }
 
         [HttpGet("NewRank")]
-        public async Task<IActionResult> NewRank() {
+        public async Task<IActionResult> NewRank()
+        {
             var result = await _sCoachMethods.GetCoachNewest();
             return Ok(result);
         }
 
         [HttpGet("SpeSearch")]
-        public async Task<IActionResult> SpeSearch(string keySpecial) { 
+        public async Task<IActionResult> SpeSearch(string keySpecial)
+        {
             var result = await _sCoachMethods.GetCoachSpecial(keySpecial);
             if (result == null || result.Count == 0)
                 return NotFound("！太難了 教練不會！");
             return Ok(result);
         }
         [HttpGet("DistSearch")]
-        public async Task<IActionResult> DistSearch(string keyDistrict) {
+        public async Task<IActionResult> DistSearch(string keyDistrict)
+        {
             var result = await _sCoachMethods.GetCoachDist(keyDistrict);
             //check
-            if(keyDistrict == null || result.Count == 0)
+            if (keyDistrict == null || result.Count == 0)
                 return NotFound("！這裡沒有所謂教練這種生物！");
             return Ok(result);
         }
 
         [HttpPost("Favorites")]
-        public async Task<IActionResult> MyFavCoach(DFavCoach dto) { 
+        public async Task<IActionResult> MyFavCoach(DFavCoach dto)
+        {
             var result = await _sCoachIndex.MyFavCoach(dto);
             return Ok(result);
         }
