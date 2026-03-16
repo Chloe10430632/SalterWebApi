@@ -1,11 +1,10 @@
-﻿using SalterEFModels.EFModels;
-using TripServiceHelper.Models.DTOs;
+﻿using TripServiceHelper.Models.DTOs;
 
 namespace TripServiceHelper.IService;
 
 public interface ITripService
 {
-    # region 行程
+    #region 行程
     Task<TripListResultDto> GetTripListAsync(TripQueryDto query);
     Task<TripDetailDto?> GetTripDetailAsync(int tripId);
     Task<ServiceResult> CreateTripAsync(TripRequestDto dto, int organizerUserId);
@@ -13,18 +12,18 @@ public interface ITripService
     Task<ServiceResult> DeleteTripAsync(int tripId, int userId);
     #endregion
 
-    # region 成員
+    #region 成員
     Task<ServiceResult> JoinTripAsync(int tripId, int userId);
     Task<ServiceResult> LeaveTripAsync(int tripId, int userId);
     #endregion
 
-    # region 收藏
+    #region 收藏
     Task<List<TripSummaryDto>> GetFavoritesAsync(int userId);
     Task<ServiceResult> AddFavoriteAsync(int tripId, int userId);
     Task<ServiceResult> RemoveFavoriteAsync(int tripId, int userId);
     #endregion
 
-   # region 公告
+   #region 公告
     Task<ServiceResult<List<TripAnnouncementDto>>> GetAnnouncementsAsync(int tripId, int userId);
     Task<ServiceResult> CreateAnnouncementAsync(int tripId, TripAnnouncementRequestDto dto, int userId);
     Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementRequestDto dto, int userId);
@@ -32,7 +31,7 @@ public interface ITripService
     Task<ServiceResult> TogglePinAsync(int announcementId, int userId);
     #endregion
 
-    # region 裝備
+    #region 裝備
     Task<ServiceResult<List<TripGearItemDto>>> GetGearItemsAsync(int tripId, int userId);
     Task<ServiceResult> CreateGearItemAsync(int tripId, TripGearItemRequestDto dto, int userId);
     Task<ServiceResult> UpdateGearItemAsync(int gearItemId, TripGearItemRequestDto dto, int userId);
@@ -40,7 +39,7 @@ public interface ITripService
     Task<ServiceResult> ToggleGearCheckAsync(int gearItemId, int userId);
     #endregion
 
-    # region 地點
+    #region 地點
     Task<ServiceResult<List<TripLocationDto>>> GetLocationsAsync(int tripId, int userId);
     Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationRequestDto dto, int userId);
     Task<ServiceResult> DeleteLocationAsync(int locationId, int userId);
@@ -54,7 +53,7 @@ public interface ITripService
     Task<ServiceResult> ToggleReminderAsync(int reminderId);
     #endregion
 
-    # region 城市
+    #region 城市
     Task<List<TripCityDto>> GetCitiesAsync();
     Task<List<TripDistrictDto>> GetDistrictsAsync(int cityId);
     

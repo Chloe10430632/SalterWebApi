@@ -22,7 +22,6 @@ public class TripController : ControllerBase
 
     #region 行程
 
-    // GET api/trip/trip?keyword=台北&page=1
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetList([FromQuery] TripQueryDto query)
@@ -31,47 +30,49 @@ public class TripController : ControllerBase
         return Ok(ApiResponse<TripListResultDto>.Ok(data));
     }
 
-    // GET api/trip/trip/5
     [AllowAnonymous]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
         var data = await _service.GetTripDetailAsync(id);
         if (data == null)
-            return NotFound(ApiResponse<TripDetailDto>.Fail("找不到行程"));
+            return NotFound(ApiResponse<TripDetailDto>.Fail("找不到行程", 404));
         return Ok(ApiResponse<TripDetailDto>.Ok(data));
     }
 
-    // POST api/trip/trip
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] TripRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.CreateTripAsync(dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.CreateTripAsync(dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // PUT api/trip/trip/5
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] TripRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.UpdateTripAsync(id, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.UpdateTripAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // DELETE api/trip/trip/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.DeleteTripAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.DeleteTripAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message));
+            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -79,23 +80,25 @@ public class TripController : ControllerBase
 
     #region 成員
 
-    // POST api/trip/trip/5/join
     [HttpPost("{id}/join")]
     public async Task<IActionResult> Join(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.JoinTripAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.JoinTripAsync(id, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // DELETE api/trip/trip/5/leave
     [HttpDelete("{id}/leave")]
     public async Task<IActionResult> Leave(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.LeaveTripAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.LeaveTripAsync(id, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -105,92 +108,101 @@ public class TripController : ControllerBase
 
     #region 收藏
 
-    // GET api/trip/trip/favorites
     [HttpGet("favorites")]
     public async Task<IActionResult> GetFavorites()
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var data = await _service.GetFavoritesAsync(userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var data = await _service.GetFavoritesAsync(userId.Value);
         return Ok(ApiResponse<List<TripSummaryDto>>.Ok(data));
     }
 
-    // POST api/trip/trip/5/favorite
     [HttpPost("{id}/favorite")]
     public async Task<IActionResult> AddFavorite(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.AddFavoriteAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.AddFavoriteAsync(id, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // DELETE api/trip/trip/5/favorite
     [HttpDelete("{id}/favorite")]
     public async Task<IActionResult> RemoveFavorite(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.RemoveFavoriteAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.RemoveFavoriteAsync(id, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
-
     }
+
     #endregion
 
     #region 公告
 
-    // GET api/trip/trip/5/announcements
     [HttpGet("{id}/announcements")]
     public async Task<IActionResult> GetAnnouncements(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.GetAnnouncementsAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.GetAnnouncementsAsync(id, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<List<TripAnnouncementDto>>.Ok(result.Data!));
     }
 
-    // POST api/trip/trip/5/announcements
     [HttpPost("{id}/announcements")]
     public async Task<IActionResult> CreateAnnouncement(int id, [FromBody] TripAnnouncementRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.CreateAnnouncementAsync(id, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.CreateAnnouncementAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // PUT api/trip/trip/announcements/3
     [HttpPut("announcements/{aid}")]
     public async Task<IActionResult> UpdateAnnouncement(int aid, [FromBody] TripAnnouncementRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.UpdateAnnouncementAsync(aid, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.UpdateAnnouncementAsync(aid, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // DELETE api/trip/trip/announcements/3
     [HttpDelete("announcements/{aid}")]
     public async Task<IActionResult> DeleteAnnouncement(int aid)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.DeleteAnnouncementAsync(aid, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.DeleteAnnouncementAsync(aid, userId.Value);
         if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message));
+            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // PATCH api/trip/trip/announcements/3/pin
     [HttpPatch("announcements/{aid}/pin")]
     public async Task<IActionResult> TogglePin(int aid)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.TogglePinAsync(aid, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.TogglePinAsync(aid, userId.Value);
         if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message));
+            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -198,56 +210,61 @@ public class TripController : ControllerBase
 
     #region 裝備
 
-    // GET api/trip/trip/5/gearitems
     [HttpGet("{id}/gearitems")]
     public async Task<IActionResult> GetGearItems(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.GetGearItemsAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.GetGearItemsAsync(id, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<List<TripGearItemDto>>.Ok(result.Data!));
     }
 
-    // POST api/trip/trip/5/gearitems
     [HttpPost("{id}/gearitems")]
     public async Task<IActionResult> CreateGearItem(int id, [FromBody] TripGearItemRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.CreateGearItemAsync(id, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.CreateGearItemAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // PUT api/trip/trip/gearitems/3
     [HttpPut("gearitems/{gid}")]
     public async Task<IActionResult> UpdateGearItem(int gid, [FromBody] TripGearItemRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.UpdateGearItemAsync(gid, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.UpdateGearItemAsync(gid, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // DELETE api/trip/trip/gearitems/3
     [HttpDelete("gearitems/{gid}")]
     public async Task<IActionResult> DeleteGearItem(int gid)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.DeleteGearItemAsync(gid, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.DeleteGearItemAsync(gid, userId.Value);
         if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message));
+            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // POST api/trip/trip/gearitems/3/check
     [HttpPost("gearitems/{gid}/check")]
     public async Task<IActionResult> ToggleGearCheck(int gid)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.ToggleGearCheckAsync(gid, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.ToggleGearCheckAsync(gid, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -257,47 +274,51 @@ public class TripController : ControllerBase
 
     #region 地點
 
-    // GET api/trip/trip/5/locations
     [HttpGet("{id}/locations")]
     public async Task<IActionResult> GetLocations(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.GetLocationsAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.GetLocationsAsync(id, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<List<TripLocationDto>>.Ok(result.Data!));
     }
 
-    // POST api/trip/trip/5/locations
     [HttpPost("{id}/locations")]
     public async Task<IActionResult> CreateLocation(int id, [FromBody] TripLocationRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.CreateLocationAsync(id, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.CreateLocationAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // PUT api/trip/trip/locations/3
     [HttpPut("locations/{lid}")]
     public async Task<IActionResult> UpdateLocation(int lid, [FromBody] TripLocationRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.UpdateLocationAsync(lid, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.UpdateLocationAsync(lid, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // DELETE api/trip/trip/locations/3
     [HttpDelete("locations/{lid}")]
     public async Task<IActionResult> DeleteLocation(int lid)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.DeleteLocationAsync(lid, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.DeleteLocationAsync(lid, userId.Value);
         if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message));
+            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -305,46 +326,48 @@ public class TripController : ControllerBase
 
     #region 提醒
 
-    // GET api/trip/trip/5/reminders
     [HttpGet("{id}/reminders")]
     public async Task<IActionResult> GetReminders(int id)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.GetRemindersAsync(id, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.GetRemindersAsync(id, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<List<TripReminderDto>>.Ok(result.Data!));
     }
 
-    // POST api/trip/trip/5/reminders
     [HttpPost("{id}/reminders")]
     public async Task<IActionResult> CreateReminder(int id, [FromBody] TripReminderRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.CreateReminderAsync(id, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.CreateReminderAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // PUT api/trip/trip/reminders/3
     [HttpPut("reminders/{rid}")]
     public async Task<IActionResult> UpdateReminder(int rid, [FromBody] TripReminderRequestDto dto)
     {
-        var userId = int.Parse(User.FindFirstValue("UserId")!);
-        var result = await _service.UpdateReminderAsync(rid, dto, userId);
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.UpdateReminderAsync(rid, dto, userId.Value);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
-    // PATCH api/trip/trip/reminders/3/toggle
     [HttpPatch("reminders/{rid}/toggle")]
     public async Task<IActionResult> ToggleReminder(int rid)
     {
         var result = await _service.ToggleReminderAsync(rid);
         if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message));
+            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -352,7 +375,6 @@ public class TripController : ControllerBase
 
     #region 城市
 
-    // GET api/trip/trip/cities
     [AllowAnonymous]
     [HttpGet("cities")]
     public async Task<IActionResult> GetCities()
@@ -361,13 +383,23 @@ public class TripController : ControllerBase
         return Ok(ApiResponse<List<TripCityDto>>.Ok(data));
     }
 
-    // GET api/trip/trip/cities/1/districts
     [AllowAnonymous]
     [HttpGet("cities/{cityId}/districts")]
     public async Task<IActionResult> GetDistricts(int cityId)
     {
         var data = await _service.GetDistrictsAsync(cityId);
         return Ok(ApiResponse<List<TripDistrictDto>>.Ok(data));
+    }
+
+    #endregion
+
+    #region 方法
+
+    private int? GetUserId()
+    {
+        var userIdStr = User.FindFirstValue("UserId");
+        if (string.IsNullOrEmpty(userIdStr)) return null;
+        return int.Parse(userIdStr);
     }
 
     #endregion

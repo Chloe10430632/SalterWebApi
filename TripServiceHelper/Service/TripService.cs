@@ -1,5 +1,4 @@
-﻿using CloudinaryDotNet;
-using SalterEFModels.EFModels;
+﻿using SalterEFModels.EFModels;
 using TripRepositoryHelper.IRepository;
 using TripServiceHelper.Cloudinary;
 using TripServiceHelper.IService;
@@ -186,14 +185,26 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> JoinTripAsync(int tripId, int userId)
     {
+        var trip = await _repo.GetTripByIdAsync(tripId);
+        if (trip == null) return ServiceResult.Fail("找不到行程");
+
+        if (trip.Status != "active")
+            return ServiceResult.Fail("此行程已無法加入");
+
+        if (trip.TripMembers?.Count >= trip.Capacity)
+            return ServiceResult.Fail("行程人數已滿");
+
         var result = await _repo.AddMemberAsync(tripId, userId, "member");
         return result ? ServiceResult.Success("加入成功") : ServiceResult.Fail("已經是成員");
     }
 
     public async Task<ServiceResult> LeaveTripAsync(int tripId, int userId)
     {
+        if (await _repo.IsOrganizerAsync(tripId, userId))
+            return ServiceResult.Fail("主辦人不能退出行程");
+
         var result = await _repo.RemoveMemberAsync(tripId, userId);
-        return result ? ServiceResult.Success("退出成功") : ServiceResult.Fail("不是成員");
+        return result ? ServiceResult.Success("退出成功") : ServiceResult.Fail("你不是此行程的成員");
     }
 
     #endregion
@@ -320,6 +331,7 @@ public class TripService : ITripService
             Id = g.Id,
             ItemName = g.ItemName,
             IsRequired = g.IsRequired,
+            IsCheckedByMe = g.TripGearChecks?.Any(c => c.UserId == userId && c.IsChecked) ?? false,
             CheckedCount = g.TripGearChecks?.Count(c => c.IsChecked) ?? 0
         }).ToList();
 
