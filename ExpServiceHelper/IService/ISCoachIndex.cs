@@ -12,7 +12,7 @@ namespace ExpServiceHelper.IService
     public interface ISCoachIndex
     {
         /**收藏教練*/
-        Task<string?> MyFavCoach(DFavCoach a);
+        Task<string?> MyFavCoach(DFavCoach a, int UserId);
         
       
     }
