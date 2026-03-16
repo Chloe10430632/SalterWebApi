@@ -15,6 +15,6 @@ namespace ExpServiceHelper.DTO
         public DateTime? CreatedAt { get; set; }
         public double AvgRating { get; set; }
         public int ReviewCount { get; set; }
-        public List<string> Specialities { get; set; } = new List<string>();
+        public List<string> Specialities { get; set; } = new List<string>();//
     }
 }
