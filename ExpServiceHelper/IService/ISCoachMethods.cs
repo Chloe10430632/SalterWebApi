@@ -18,11 +18,13 @@ namespace ExpServiceHelper.IService
         /**排序-最新*/
         Task<List<DCoachInfo>> GetCoachNewest();
         /**排序-熱門*/
-        Task<List<DCoachInfo>> GetCoachPop();
+        Task<List<DCoachInfo>> CoachRecommand();
         #endregion
         #region 教練編輯
         Task<DAPIResponse<DEditCoachInfo>> EditCoachInfo(DEditCoachInfo newdata);
         #endregion
-
+        #region 系統推薦
+        Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId);
+        #endregion
     }
 }

@@ -16,6 +16,9 @@ namespace SalterWebApi.Areas.Experience
     [Tags("行程裝備預約")] // Scalar 會用這個名字當分類標題。
     public class ExpController : ControllerBase
     {
+        #region 
+        #endregion
+        #region DI
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
         public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods)
@@ -23,10 +26,12 @@ namespace SalterWebApi.Areas.Experience
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
         }
+        #endregion
+        #region 排序
         [HttpGet("PopRank")]
         public async Task<IActionResult> PopRank()
         {
-            var result = await _sCoachMethods.GetCoachPop();
+            var result = await _sCoachMethods.CoachRecommand();
             return Ok(result);
         }
 
@@ -36,7 +41,8 @@ namespace SalterWebApi.Areas.Experience
             var result = await _sCoachMethods.GetCoachNewest();
             return Ok(result);
         }
-
+        #endregion
+        #region 搜尋
         [HttpGet("SpeSearch")]
         public async Task<IActionResult> SpeSearch(string keySpecial)
         {
@@ -54,7 +60,8 @@ namespace SalterWebApi.Areas.Experience
                 return NotFound("！這裡沒有所謂教練這種生物！");
             return Ok(result);
         }
-
+        #endregion
+        #region 收藏
         [Authorize]
         [HttpPost("Favorites")]
         public async Task<IActionResult> MyFavCoach(DFavCoach dto)
@@ -68,11 +75,22 @@ namespace SalterWebApi.Areas.Experience
             if (int.TryParse(userIdStr, out int currentUserId))
             {
                 //多傳入一個 currentUserId
-            var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
-            return Ok(result);
+                var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
+                return Ok(result);
             }
             return BadRequest("登入後才能收藏");
         }
+        #endregion
+        #region 系統推薦
+        [HttpGet ("Recommand{id}")]
+        public async Task<IActionResult> RecommandCoaches(int id)
+        {
+            var result = await _sCoachMethods.CoachRecommand();
+            if (result == null || result.Count == 0)
+            return NotFound("教練們休息中");
+            return Ok(result);
+        }
+        #endregion
 
         // GET: api/<ExpController>
         [HttpGet]

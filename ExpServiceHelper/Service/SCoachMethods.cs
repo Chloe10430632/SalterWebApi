@@ -14,8 +14,12 @@ namespace ExpServiceHelper.Service
 {
     public class SCoachMethods : ISCoachMethods
     {
+        #region 
+        #endregion
+        #region DI
         private readonly SalterDbContext _context;
         public SCoachMethods(SalterDbContext dbContext) { _context = dbContext; }
+        #endregion
 
         #region 入口
 
@@ -82,7 +86,7 @@ namespace ExpServiceHelper.Service
 
 
         /**排序-熱門*/
-        public async Task<List<DCoachInfo>> GetCoachPop()
+        public async Task<List<DCoachInfo>> CoachRecommand()
         {
             //拿資料 算平均 算評論數
             var q = _context.ExpCoaches
@@ -115,7 +119,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
 
-        #region 教練編輯
+        #region 教練編輯 ??mapAPI抓詳細地址??
         public async Task<DAPIResponse<DEditCoachInfo>> EditCoachInfo(DEditCoachInfo dto)
         {
             var coach = await _context.ExpCoaches.FindAsync(dto.Id);
@@ -137,6 +141,47 @@ namespace ExpServiceHelper.Service
 
             return new DAPIResponse<DEditCoachInfo>() { IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = dto };
 
+        }
+        #endregion
+
+        #region 系統推薦教練
+        public async Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId) {
+            // 1. 先把「當前教練」的地區與專長抓出來（這是我們的基準點）
+            var currentCoachInfo = await _context.ExpCoaches
+                .Where(c => c.Id == thisCoachId)
+                .Select(c => new
+                {
+                    CityId = c.CityId,
+                    // 抓出他所有的專長 ID
+                    SpecialityIds = c.Specialities.Select(s => s.SportsName).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (currentCoachInfo == null) return new List<DCoachRecommend>();
+            // 2. 開始找「臭味相投」的教練
+            var query = _context.ExpCoaches
+                .Where(c => c.Id != thisCoachId ) // 排除自己
+                .Where(c => c.CityId == currentCoachInfo.CityId &&
+                            c.Specialities.Any(s => currentCoachInfo.SpecialityIds.Contains(s.SportsName)));
+            // 3. 執行隨機排序並取前 3 名
+            // 提示：在 LINQ to Entities 中，Guid.NewGuid() 常用來模擬隨機排序//
+            var recommendedList = await query
+                .OrderBy(c => Guid.NewGuid())
+                .Take(3)
+                .Select(c => new DCoachRecommend
+                {
+                    CoachId = c.Id,
+                    CoachName = c.Name,
+                    AvatarUrl = c.AvatarUrl,
+                    // 這裡假設你有關聯到 TripDistricts
+                    City = c.Name, 
+                    Specialities = c.Specialities
+                                    .Select(s => s.SportsName)
+                                    .ToList()
+                })
+                .ToListAsync();
+
+            return recommendedList;
         }
         #endregion
 
