@@ -23,7 +23,7 @@ namespace ExpServiceHelper.Service
 
         #region 入口
 
-        /**搜尋-地區*/
+        /**搜尋-地區*/ //找不到//
         public async Task<List<DCoachInfo>> GetCoachDist(string keyDistrict)
         {
             var q = _context.ExpCoaches
@@ -43,7 +43,7 @@ namespace ExpServiceHelper.Service
 
         }
 
-        /**搜尋-專業*/
+        /**搜尋-專業*/ //找不到//
         public async Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial)
         {
 
@@ -119,7 +119,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
 
-        #region 教練編輯 ??mapAPI抓詳細地址??
+        #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片??
         public async Task<DAPIResponse<DEditCoachInfo>> EditCoachInfo(DEditCoachInfo dto)
         {
             var coach = await _context.ExpCoaches.FindAsync(dto.Id);

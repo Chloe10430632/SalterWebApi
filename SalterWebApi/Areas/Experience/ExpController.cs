@@ -28,74 +28,112 @@ namespace SalterWebApi.Areas.Experience
             _sCoachMethods = sCoachMethods;
         }
         #endregion
-        #region 排序
-        [HttpGet("PopRank")]
-        public async Task<IActionResult> PopRank()
-        {
-            var result = await _sCoachMethods.CoachRecommand();
-            return Ok(result);
-        }
-
-        [HttpGet("NewRank")]
-        public async Task<IActionResult> NewRank()
-        {
-            var result = await _sCoachMethods.GetCoachNewest();
-            return Ok(result);
-        }
-        #endregion
-        #region 搜尋
-        [HttpGet("SpeSearch")]
-        public async Task<IActionResult> SpeSearch(string keySpecial)
-        {
-            var result = await _sCoachMethods.GetCoachSpecial(keySpecial);
-            if (result == null || result.Count == 0)
-                return NotFound("！太難了 教練不會！");
-            return Ok(result);
-        }
-        [HttpGet("DistSearch")]
-        public async Task<IActionResult> DistSearch(string keyDistrict)
-        {
-            var result = await _sCoachMethods.GetCoachDist(keyDistrict);
-            //check
-            if (keyDistrict == null || result.Count == 0)
-                return NotFound("！這裡沒有所謂教練這種生物！");
-            return Ok(result);
-        }
-        #endregion
-        #region 收藏
-        [Authorize]
-        [HttpPost("Favorites")]
-        public async Task<IActionResult> MyFavCoach(DFavCoach dto)
-        {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr))
+        #region 入口
+            #region 排序
+            [HttpGet("PopRank")]
+            public async Task<IActionResult> PopRank()
             {
-                return Unauthorized("找不到會員資訊");
-            }
-            //轉int
-            if (int.TryParse(userIdStr, out int currentUserId))
-            {
-                //多傳入一個 currentUserId
-                var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
+                var result = await _sCoachMethods.CoachRecommand();
                 return Ok(result);
             }
-            return BadRequest("登入後才能收藏");
-        }
+
+            [HttpGet("NewRank")]
+            public async Task<IActionResult> NewRank()
+            {
+                var result = await _sCoachMethods.GetCoachNewest();
+                return Ok(result);
+            }
+            #endregion
+            #region 搜尋
+            [HttpGet("SpeSearch")]
+            public async Task<IActionResult> SpeSearch(string keySpecial)
+            {
+                var result = await _sCoachMethods.GetCoachSpecial(keySpecial);
+                if (result == null || result.Count == 0)
+                    return NotFound("！太難了 教練不會！");
+                return Ok(result);
+            }
+            [HttpGet("DistSearch")]
+            public async Task<IActionResult> DistSearch(string keyDistrict)
+            {
+                var result = await _sCoachMethods.GetCoachDist(keyDistrict);
+                //check
+                if (keyDistrict == null || result.Count == 0)
+                    return NotFound("！這裡沒有所謂教練這種生物！");
+                return Ok(result);
+            }
+        #endregion
+        #endregion
+
+        #region 教練
+        #region 申請加入教練(新增)
+        #endregion
+        #region 詳細自介get{id}
+        #endregion
+        #region 編輯自介post{id}
         #endregion
         #region 系統推薦
-        [HttpGet ("Recommand{id}")]
-        public async Task<IActionResult> RecommandCoaches(int id)
-        {
-            var result = await _sCoachMethods.CoachRecommand();
-            if (result == null || result.Count == 0)
-            return NotFound("教練們休息中");
-            return Ok(result);
-        }
+        [HttpGet("Recommand{id}")]
+            public async Task<IActionResult> RecommandCoaches(int id)
+            {
+                var result = await _sCoachMethods.CoachRecommand();
+                if (result == null || result.Count == 0)
+                    return NotFound("教練們休息中");
+                return Ok(result);
+            }
+            #endregion
+            #region 收藏
+            [Authorize]
+            [HttpPost("Favorites")]
+            public async Task<IActionResult> MyFavCoach(DFavCoach dto)
+            {
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdStr))
+                {
+                    return Unauthorized("找不到會員資訊");
+                }
+                //轉int
+                if (int.TryParse(userIdStr, out int currentUserId))
+                {
+                    //多傳入一個 currentUserId
+                    var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
+                    return Ok(result);
+                }
+                return BadRequest("登入後才能收藏");
+            }
+        #endregion
+        #endregion
+
+        #region 課程
+        #region 課程介紹get{id}
+        #endregion
+        #region 課程編輯post{id}
+        #endregion
+        #region 課程刪除
+        #endregion
+        #region 預約課程
+        #endregion
+        #region 新增評論
+        #endregion
+        #region 編輯評論
+        #endregion
+        #region 刪除評論
+        #endregion
+        #endregion
+
+        #region 交易
+        #region 支付 
+        #endregion
+        #region 歷史交易紀錄 
+        #endregion
+        #endregion
+
+        #region 營運 
         #endregion
 
 
 
-        
+
 
         // GET: api/<ExpController>
         [HttpGet]
