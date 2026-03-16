@@ -1,7 +1,9 @@
 ﻿using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
 using ExpServiceHelper.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using static ExpServiceHelper.DTO.DFavCoach;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -53,11 +55,23 @@ namespace SalterWebApi.Areas.Experience
             return Ok(result);
         }
 
+        [Authorize]
         [HttpPost("Favorites")]
         public async Task<IActionResult> MyFavCoach(DFavCoach dto)
         {
-            var result = await _sCoachIndex.MyFavCoach(dto);
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized("找不到會員資訊");
+            }
+            //轉int
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                //多傳入一個 currentUserId
+            var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
             return Ok(result);
+            }
+            return BadRequest("登入後才能收藏");
         }
 
         // GET: api/<ExpController>

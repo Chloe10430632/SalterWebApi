@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static ExpServiceHelper.DTO.DFavCoach;
+using System.Security.Claims;
 
 
 namespace ExpServiceHelper.Service
@@ -19,14 +20,15 @@ namespace ExpServiceHelper.Service
         private readonly IRCoachIndex _rCoachIndex;
         public SCoachIndex(IRCoachIndex rCoachIndex) { _rCoachIndex = rCoachIndex; }
         
-        public async Task<string?> MyFavCoach(DFavCoach a)
+        public async Task<string?> MyFavCoach(DFavCoach a, int UserId)
         {
+            //用傳進來的 userId//
             // 1.先檢查
-            var isExistde = await _rCoachIndex.ExistAsync(a.UserId, a.CoachId);
+            var isExistde = await _rCoachIndex.ExistAsync(UserId, a.CoachId);
             // 2.取消收藏
             if (isExistde)
             {
-                await _rCoachIndex.DeleteFavCoach(a.UserId, a.CoachId);
+                await _rCoachIndex.DeleteFavCoach(UserId, a.CoachId);
                 return "取消收藏 QAQ";
             }
             //  3.收藏
