@@ -9,7 +9,7 @@ namespace ExpServiceHelper.DTO
     public class DEditCoach
     {
         //只放讓user異動的欄位
-        public int Id { get; set; }
+       
         public string Name { get; set; } = null!;
         public string? AvatarUrl { get; set; }
         public string? Introduction { get; set; }

@@ -69,22 +69,42 @@ namespace SalterWebApi.Areas.Experience
 
         #region~~教練~~
         #region 申請加入教練(新增)
-        [Authorize]
-        [HttpPost("BecomeCoach")]
-        public async Task<IActionResult> BecomeCoach(DEditCoach dto ) {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            [Authorize]
+            [HttpPost("BecomeCoach")]
+            public async Task<IActionResult> BecomeCoach(DEditCoach dto ) {
+            var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
+                   ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+
             if (string.IsNullOrEmpty(userIdStr))
             {
-                return Unauthorized("找不到會員資訊");
+                // 為了 debug，我們把抓到的所有 Type 列出來看看
+                var allTypes = string.Join(", ", User.Claims.Select(c => c.Type));
+                return Unauthorized($"抓不到 ID 標籤。目前有的標籤是: {allTypes}");
             }
-            //轉int
+
+            // 2. 轉 int
             if (int.TryParse(userIdStr, out int currentUserId))
             {
-                //多傳入一個 currentUserId
                 var result = await _sCoachMethods.CreateCoach(dto, currentUserId);
                 return Ok(result);
             }
-            return BadRequest("登入後才能申請當教練");
+
+            return BadRequest("ID 格式不正確，無法申請");
+            //var allClaims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            //var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            //if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId))
+            //{
+            //    return Unauthorized("身分驗證失效，請重新登入");
+            //}
+            ////轉int
+            //try
+            //{
+            //    //多傳入一個 currentUserId
+            //    var result = await _sCoachMethods.CreateCoach(dto, currentUserId);
+            //    return Ok(result);
+            //}
+            //catch (Exception ex)
+            //{ return BadRequest("登入後才能申請當教練"); }
         }
         #endregion
 

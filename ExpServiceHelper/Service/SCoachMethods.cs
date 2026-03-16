@@ -180,7 +180,7 @@ namespace ExpServiceHelper.Service
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
             var thisCoach = await _context.ExpCoaches
-                .FirstOrDefaultAsync(c => c.Id == dto.Id && c.UserId == currentUserId);
+                .FirstOrDefaultAsync(c =>  c.UserId == currentUserId);
 
             if (thisCoach == null)
             {
@@ -204,7 +204,6 @@ namespace ExpServiceHelper.Service
                 .Where(c => c.Id == thisCoach.Id)
                 .Select(c => new DEditCoach
                 {
-                    Id = c.Id,
                     Name = c.Name,
                     AvatarUrl = c.AvatarUrl,
                     Introduction = c.Introduction,
