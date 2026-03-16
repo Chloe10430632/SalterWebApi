@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TripServiceHelper.IService;
 using TripServiceHelper.Models.DTOs;
 
 namespace SalterWebApi.Areas.Trip.Controllers;
 
+[Authorize]
 [ApiController]
 [Area("Trip")]
 [Route("api/trip/[controller]")]
@@ -20,6 +23,7 @@ public class TripController : ControllerBase
     #region 行程
 
     // GET api/trip/trip?keyword=台北&page=1
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetList([FromQuery] TripQueryDto query)
     {
@@ -28,6 +32,7 @@ public class TripController : ControllerBase
     }
 
     // GET api/trip/trip/5
+    [AllowAnonymous]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -41,8 +46,7 @@ public class TripController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] TripRequestDto dto)
     {
-        var organizerUserId = 1; // TODO: 從 JWT 取得
-        var result = await _service.CreateTripAsync(dto, organizerUserId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.CreateTripAsync(dto, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -52,8 +56,7 @@ public class TripController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] TripRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.UpdateTripAsync(id, dto,userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.UpdateTripAsync(id, dto,userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -63,8 +66,7 @@ public class TripController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.DeleteTripAsync(id, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.DeleteTripAsync(id, userId);
         if (!result.IsSuccess)
             return NotFound(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -78,8 +80,7 @@ public class TripController : ControllerBase
     [HttpPost("{id}/join")]
     public async Task<IActionResult> Join(int id)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.JoinTripAsync(id, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.JoinTripAsync(id, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -89,8 +90,7 @@ public class TripController : ControllerBase
     [HttpDelete("{id}/leave")]
     public async Task<IActionResult> Leave(int id)
     {
-        var userId = 1; //TODO:從JWT取得
-        var result = await _service.LeaveTripAsync(id, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.LeaveTripAsync(id, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -104,8 +104,7 @@ public class TripController : ControllerBase
     [HttpGet("favorites")]
     public async Task<IActionResult> GetFavorites()
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var data = await _service.GetFavoritesAsync(userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var data = await _service.GetFavoritesAsync(userId);
         return Ok(ApiResponse<List<TripSummaryDto>>.Ok(data));
     }
 
@@ -113,8 +112,7 @@ public class TripController : ControllerBase
     [HttpPost("{id}/favorite")]
     public async Task<IActionResult> AddFavorite(int id)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.AddFavoriteAsync(id, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.AddFavoriteAsync(id, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -124,8 +122,7 @@ public class TripController : ControllerBase
     [HttpDelete("{id}/favorite")]
     public async Task<IActionResult> RemoveFavorite(int id)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.RemoveFavoriteAsync(id, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.RemoveFavoriteAsync(id, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -139,8 +136,7 @@ public class TripController : ControllerBase
     [HttpGet("{id}/announcements")]
     public async Task<IActionResult> GetAnnouncements(int id)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.GetAnnouncementsAsync(id, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.GetAnnouncementsAsync(id, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<List<TripAnnouncementDto>>.Ok(result.Data!));
@@ -150,8 +146,7 @@ public class TripController : ControllerBase
     [HttpPost("{id}/announcements")]
     public async Task<IActionResult> CreateAnnouncement(int id, [FromBody] TripAnnouncementRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.CreateAnnouncementAsync(id, dto, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.CreateAnnouncementAsync(id, dto, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -161,8 +156,7 @@ public class TripController : ControllerBase
     [HttpPut("announcements/{aid}")]
     public async Task<IActionResult> UpdateAnnouncement(int aid, [FromBody] TripAnnouncementRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.UpdateAnnouncementAsync(aid, dto,userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.UpdateAnnouncementAsync(aid, dto,userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -172,8 +166,7 @@ public class TripController : ControllerBase
     [HttpDelete("announcements/{aid}")]
     public async Task<IActionResult> DeleteAnnouncement(int aid)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.DeleteAnnouncementAsync(aid,userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.DeleteAnnouncementAsync(aid,userId);
         if (!result.IsSuccess)
             return NotFound(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -183,8 +176,7 @@ public class TripController : ControllerBase
     [HttpPatch("announcements/{aid}/pin")]
     public async Task<IActionResult> TogglePin(int aid)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.TogglePinAsync(aid,userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.TogglePinAsync(aid,userId);
         if (!result.IsSuccess)
             return NotFound(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -198,8 +190,7 @@ public class TripController : ControllerBase
     [HttpGet("{id}/gearitems")]
     public async Task<IActionResult> GetGearItems(int id)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.GetGearItemsAsync(id, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.GetGearItemsAsync(id, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<List<TripGearItemDto>>.Ok(result.Data!));
@@ -209,8 +200,7 @@ public class TripController : ControllerBase
     [HttpPost("{id}/gearitems")]
     public async Task<IActionResult> CreateGearItem(int id, [FromBody] TripGearItemRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.CreateGearItemAsync(id, dto, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.CreateGearItemAsync(id, dto, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -220,8 +210,7 @@ public class TripController : ControllerBase
     [HttpPut("gearitems/{gid}")]
     public async Task<IActionResult> UpdateGearItem(int gid, [FromBody] TripGearItemRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.UpdateGearItemAsync(gid, dto,userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.UpdateGearItemAsync(gid, dto,userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -231,8 +220,7 @@ public class TripController : ControllerBase
     [HttpDelete("gearitems/{gid}")]
     public async Task<IActionResult> DeleteGearItem(int gid)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.DeleteGearItemAsync(gid, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.DeleteGearItemAsync(gid, userId);
         if (!result.IsSuccess)
             return NotFound(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -242,8 +230,7 @@ public class TripController : ControllerBase
     [HttpPost("gearitems/{gid}/check")]
     public async Task<IActionResult> ToggleGearCheck(int gid)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.ToggleGearCheckAsync(gid, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.ToggleGearCheckAsync(gid, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -257,8 +244,7 @@ public class TripController : ControllerBase
     [HttpGet("{id}/locations")]
     public async Task<IActionResult> GetLocations(int id)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.GetLocationsAsync(id, userId);
+var userId = int.Parse(User.FindFirstValue("UserId")!);        var result = await _service.GetLocationsAsync(id, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<List<TripLocationDto>>.Ok(result.Data!));
@@ -268,8 +254,7 @@ public class TripController : ControllerBase
     [HttpPost("{id}/locations")]
     public async Task<IActionResult> CreateLocation(int id, [FromBody] TripLocationRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.CreateLocationAsync(id, dto, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.CreateLocationAsync(id, dto, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -279,8 +264,7 @@ public class TripController : ControllerBase
     [HttpPut("locations/{lid}")]
     public async Task<IActionResult> UpdateLocation(int lid, [FromBody] TripLocationRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.UpdateLocationAsync(lid, dto,userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.UpdateLocationAsync(lid, dto,userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -290,8 +274,7 @@ public class TripController : ControllerBase
     [HttpDelete("locations/{lid}")]
     public async Task<IActionResult> DeleteLocation(int lid)
     {
-        var userId = 1; // TODO: 從 JWT 取得
-        var result = await _service.DeleteLocationAsync(lid, userId);
+        var userId = int.Parse(User.FindFirstValue("UserId")!); var result = await _service.DeleteLocationAsync(lid, userId);
         if (!result.IsSuccess)
             return NotFound(ApiResponse<string>.Fail(result.Message));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -305,7 +288,7 @@ public class TripController : ControllerBase
     [HttpGet("{id}/reminders")]
     public async Task<IActionResult> GetReminders(int id)
     {
-        var userId = 1; // TODO: 從 JWT 取得
+var userId = int.Parse(User.FindFirstValue("UserId")!);
         var result = await _service.GetRemindersAsync(id, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
@@ -316,7 +299,7 @@ public class TripController : ControllerBase
     [HttpPost("{id}/reminders")]
     public async Task<IActionResult> CreateReminder(int id, [FromBody] TripReminderRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
+var userId = int.Parse(User.FindFirstValue("UserId")!);
         var result = await _service.CreateReminderAsync(id, dto, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
@@ -327,7 +310,7 @@ public class TripController : ControllerBase
     [HttpPut("reminders/{rid}")]
     public async Task<IActionResult> UpdateReminder(int rid, [FromBody] TripReminderRequestDto dto)
     {
-        var userId = 1; // TODO: 從 JWT 取得
+var userId = int.Parse(User.FindFirstValue("UserId")!);
         var result = await _service.UpdateReminderAsync(rid, dto, userId);
         if (!result.IsSuccess)
             return BadRequest(ApiResponse<string>.Fail(result.Message));
@@ -349,6 +332,7 @@ public class TripController : ControllerBase
     #region 城市
 
     // GET api/trip/trip/cities
+    [AllowAnonymous]
     [HttpGet("cities")]
     public async Task<IActionResult> GetCities()
     {
@@ -357,6 +341,7 @@ public class TripController : ControllerBase
     }
 
     // GET api/trip/trip/cities/1/districts
+    [AllowAnonymous]
     [HttpGet("cities/{cityId}/districts")]
     public async Task<IActionResult> GetDistricts(int cityId)
     {
