@@ -1,5 +1,7 @@
-﻿using SalterEFModels.EFModels;
+﻿using CloudinaryDotNet;
+using SalterEFModels.EFModels;
 using TripRepositoryHelper.IRepository;
+using TripServiceHelper.Cloudinary;
 using TripServiceHelper.IService;
 using TripServiceHelper.Models.DTOs;
 
@@ -8,10 +10,12 @@ namespace TripServiceHelper.Service;
 public class TripService : ITripService
 {
     private readonly ITripRepository _repo;
+    private readonly ICloudinaryTripService _cloudinary;
 
-    public TripService(ITripRepository repo)
+    public TripService(ITripRepository repo, ICloudinaryTripService cloudinary)
     {
         _repo = repo;
+        _cloudinary = cloudinary;
     }
 
     #region 行程
@@ -132,6 +136,13 @@ public class TripService : ITripService
         var trip = await _repo.GetTripByIdAsync(tripId);
         if (trip == null) return ServiceResult.Fail("找不到行程");
 
+        // 如果有新圖片 且 跟舊圖片不一樣  先刪除舊圖片
+        if (!string.IsNullOrEmpty(trip.CoverImagePublicId) &&
+            trip.CoverImagePublicId != dto.CoverImagePublicId)
+        {
+            await _cloudinary.DeleteImageAsync(trip.CoverImagePublicId);
+        }
+
         trip.Title = dto.Title;
         trip.TripType = dto.TripType;
         trip.Description = dto.Description;
@@ -153,8 +164,15 @@ public class TripService : ITripService
             if (!await _repo.IsOrganizerAsync(tripId, userId))
                 return ServiceResult.Fail("只有主辦人可以刪除行程");
 
+            var trip = await _repo.GetTripByIdAsync(tripId);
+            if (trip == null) return ServiceResult.Fail("找不到行程");
+
+            // 如果有封面圖，先刪除 Cloudinary 的圖片
+            if (!string.IsNullOrEmpty(trip.CoverImagePublicId))
+                await _cloudinary.DeleteImageAsync(trip.CoverImagePublicId);
+
             var result = await _repo.DeleteTripAsync(tripId);
-            return result ? ServiceResult.Success("行程刪除成功") : ServiceResult.Fail("找不到行程");
+            return result ? ServiceResult.Success("行程刪除成功") : ServiceResult.Fail("刪除失敗");
         }
         catch (Exception ex)
         {

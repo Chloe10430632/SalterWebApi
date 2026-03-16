@@ -7,6 +7,10 @@ using ForumRepositoryHelper.IRepository;
 using ForumRepositoryHelper.Repository;
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Service;
+using HomeRepositoryHelper.IRepository;
+using HomeRepositoryHelper.Repository;
+using HomeServiceHelper.IService;
+using HomeServiceHelper.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
@@ -15,19 +19,15 @@ using Microsoft.IdentityModel.Tokens;
 using SalterEFModels.EFModels;
 using Scalar.AspNetCore;
 using System.Text;
+using TripRepositoryHelper.IRepository;
+using TripRepositoryHelper.Repository;
+using TripServiceHelper.Cloudinary;
+using TripServiceHelper.IService;
+using TripServiceHelper.Service;
 using UserRepositoryHelper.IRepository; 
 using UserRepositoryHelper.Repository;
 using UserServiceHelper.IService;
 using UserServiceHelper.Service;
-using TripRepositoryHelper.IRepository;
-using TripRepositoryHelper.Repository;
-using TripServiceHelper.IService;
-using TripServiceHelper.Service;
-
-using HomeRepositoryHelper.IRepository;
-using HomeRepositoryHelper.Repository;
-using HomeServiceHelper.IService;
-using HomeServiceHelper.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,6 +100,7 @@ builder.Services.AddScoped<IHomService, HomService>();
 //Trip¥\¯à : DAL BLL DI
 builder.Services.AddScoped<ITripRepository, TripRepository>();
 builder.Services.AddScoped<ITripService, TripService>();
+builder.Services.AddScoped<ICloudinaryTripService, CloudinaryTripService>();
 
 // Add services to the container.
 

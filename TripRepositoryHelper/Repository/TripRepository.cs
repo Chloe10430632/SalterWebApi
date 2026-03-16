@@ -95,8 +95,30 @@ public class TripRepository : ITripRepository
 
     public async Task<bool> DeleteTripAsync(int tripId)
     {
-        var entity = await _db.TripTrips.FindAsync(tripId);
+        var entity = await _db.TripTrips
+            .Include(t => t.TripMembers)
+            .Include(t => t.TripFavorites)
+            .Include(t => t.TripAnnouncements)
+            .Include(t => t.TripGearItems)
+                .ThenInclude(g => g.TripGearChecks)
+            .Include(t => t.TripTripLocations)
+            .Include(t => t.TripReminders)
+            .Include(t => t.TripTimelines)
+            .FirstOrDefaultAsync(t => t.Id == tripId);
+
         if (entity == null) return false;
+
+        // 先刪除關聯資料
+        _db.TripMembers.RemoveRange(entity.TripMembers);
+        _db.TripFavorites.RemoveRange(entity.TripFavorites);
+        _db.TripAnnouncements.RemoveRange(entity.TripAnnouncements);
+        _db.TripGearChecks.RemoveRange(entity.TripGearItems.SelectMany(g => g.TripGearChecks));
+        _db.TripGearItems.RemoveRange(entity.TripGearItems);
+        _db.TripTripLocations.RemoveRange(entity.TripTripLocations);
+        _db.TripReminders.RemoveRange(entity.TripReminders);
+        _db.TripTimelines.RemoveRange(entity.TripTimelines);
+
+        // 再刪除行程
         _db.TripTrips.Remove(entity);
         await _db.SaveChangesAsync();
         return true;
