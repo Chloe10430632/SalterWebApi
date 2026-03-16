@@ -30,7 +30,7 @@ namespace SalterWebApi.Areas.Experience
             _sCoachMethods = sCoachMethods;
         }
         #endregion
-        #region 入口
+        #region ~~入口~~
             #region 排序
             [HttpGet("PopRank")]
             public async Task<IActionResult> PopRank()
@@ -67,9 +67,25 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #endregion
 
-        #region 教練====
+        #region~~教練~~
         #region 申請加入教練(新增)
-
+        [Authorize]
+        [HttpPost("BecomeCoach")]
+        public async Task<IActionResult> BecomeCoach(DEditCoach dto ) {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized("找不到會員資訊");
+            }
+            //轉int
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                //多傳入一個 currentUserId
+                var result = await _sCoachMethods.CreateCoach(dto, currentUserId);
+                return Ok(result);
+            }
+            return BadRequest("登入後才能申請當教練");
+        }
         #endregion
 
         #region 詳細自介
@@ -79,9 +95,9 @@ namespace SalterWebApi.Areas.Experience
             var result = await _sCoachMethods.ThisCoachInfo(coachId);
             return Ok(result);
         }
-        #endregion
+        #endregion//??找不到??
 
-        #region 編輯自介put{id}
+        #region 編輯自介
         [Authorize]
         [HttpPut("EditCoach{id}")]
         public async Task<IActionResult> EditThisCoach([FromBody] DEditCoach dto) {

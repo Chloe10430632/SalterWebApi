@@ -119,11 +119,11 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 申請加入教練(新增)
-        public async Task<DAPIResponse<string>> CreateCoach(DEditCoach dto, int currentUserId)
+        public async Task<DAPIResponse<int>> CreateCoach(DEditCoach dto, int currentUserId)
         {
             // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
             bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
-            if (exists) return new DAPIResponse<string> { IsSuccess = false, Message = "您已經是教練囉！" };
+            if (exists) return new DAPIResponse<int> { IsSuccess = false, Message = "您已經是教練囉！" };
 
             // 2. 建立新實體
             var newCoach = new ExpCoach
@@ -142,7 +142,12 @@ namespace ExpServiceHelper.Service
             _context.ExpCoaches.Add(newCoach);
             await _context.SaveChangesAsync();
 
-            return new DAPIResponse<string> { IsSuccess = true, Message = "恭喜成為教練！" };
+            return new DAPIResponse<int>
+            {
+                IsSuccess = true,
+                Message = "新教練誕生 ！",
+                Data = newCoach.Id // 這就是你要的號碼牌！
+            };
         }
         #endregion
         #region 詳細自介get{id}
