@@ -21,7 +21,7 @@ namespace ExpServiceHelper.IService
         Task<List<DCoachInfo>> CoachRecommand();
         #endregion
         #region 教練編輯
-        Task<DAPIResponse<DEditCoachInfo>> EditCoachInfo(DEditCoachInfo newdata);
+        Task<DAPIResponse<DEditCoach>> EditCoachInfo(DEditCoach dto, int currentUserId);
         #endregion
         #region 系統推薦
         Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId);

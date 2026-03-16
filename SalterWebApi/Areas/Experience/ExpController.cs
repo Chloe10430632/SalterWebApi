@@ -1,11 +1,13 @@
 ﻿using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
 using ExpServiceHelper.Service;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalterEFModels.EFModels;
 using System.Security.Claims;
 using static ExpServiceHelper.DTO.DFavCoach;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -70,7 +72,22 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #region 詳細自介get{id}
         #endregion
-        #region 編輯自介post{id}
+        #region 編輯自介put{id}
+        [Authorize]
+        [HttpPut("EditCoach{id}")]
+        public async Task<IActionResult> EditThisCoach([FromBody] DEditCoach dto) {
+            // 1. 抓取 JWS 裡面的 UserId
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int currentUserId))
+            {
+                return Unauthorized("請重新登入");
+            }
+            // 2. 呼叫 Service，傳入 DTO 和 登入者 ID
+            var result = await _sCoachMethods.EditCoachInfo(dto, currentUserId);
+
+            if (result.IsSuccess) return Ok(result);
+            return BadRequest(result);
+        }
         #endregion
         #region 系統推薦
         [HttpGet("Recommand{id}")]
@@ -82,7 +99,7 @@ namespace SalterWebApi.Areas.Experience
                 return Ok(result);
             }
             #endregion
-            #region 收藏
+        #region 收藏
             [Authorize]
             [HttpPost("Favorites")]
             public async Task<IActionResult> MyFavCoach(DFavCoach dto)

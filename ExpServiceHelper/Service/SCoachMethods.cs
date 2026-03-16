@@ -120,26 +120,44 @@ namespace ExpServiceHelper.Service
 
 
         #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片??
-        public async Task<DAPIResponse<DEditCoachInfo>> EditCoachInfo(DEditCoachInfo dto)
+       public async Task<DAPIResponse<DEditCoach>> EditCoachInfo(DEditCoach dto, int currentUserId)
         {
-            var coach = await _context.ExpCoaches.FindAsync(dto.Id);
-            if (coach == null)
-            {
-                return new DAPIResponse<DEditCoachInfo> { IsSuccess = false, Message = "謎樣人物" };
+            // 除了找 Coach ID，還要確認 user_id 也是本人
+            var thisCoach = await _context.ExpCoaches
+                .FirstOrDefaultAsync(c => c.Id == dto.Id && c.UserId == currentUserId);
+
+            if (thisCoach == null){
+                return new DAPIResponse<DEditCoach> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
             }
 
-            coach.Name = dto.Name;
-            coach.AvatarUrl = dto.AvatarUrl;
-            coach.Introduction = dto.Introduction;
-            coach.DistrictId = dto.DistrictId;
-            coach.CityId = dto.CityId;
+            // 2.(賦值)：把前端傳來的 dto 資料塞進資料庫的 entity 裡
+            // 這一步才是真正的「更新」！
+            thisCoach.Name = dto.Name;
+            thisCoach.AvatarUrl = dto.AvatarUrl;
+            thisCoach.Introduction = dto.Introduction;
+            thisCoach.CityId = dto.CityId;
+            thisCoach.DistrictId = dto.DistrictId;
+            thisCoach.UpdatedAt = DateTime.Now; 
 
-            coach.UpdatedAt = DateTime.Now;
-            if (coach.Name == null) coach.CreatedAt = DateTime.Now;
-
+            // 3. 存檔：這時候 EF 就會知道 thisCoach 被動過了，發出 UPDATE 指令
             await _context.SaveChangesAsync();
 
-            return new DAPIResponse<DEditCoachInfo>() { IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = dto };
+            // 4. 回傳：因為有只放id的欄位 所以要回傳抓新的對應名字
+            var resultData = await _context.ExpCoaches
+                .Where(c => c.Id == thisCoach.Id)
+                .Select(c => new DEditCoach
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    AvatarUrl = c.AvatarUrl,
+                    Introduction = c.Introduction,
+                    CityId = c.CityId,
+                    CityName = c.City.Name,
+                    DistrictId = c.DistrictId,
+                    DistrictName = c.District.Name
+                }).FirstOrDefaultAsync();
+
+            return new DAPIResponse<DEditCoach> { IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = resultData };
 
         }
         #endregion
