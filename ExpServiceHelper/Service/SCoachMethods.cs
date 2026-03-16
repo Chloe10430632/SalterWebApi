@@ -118,15 +118,67 @@ namespace ExpServiceHelper.Service
 
         #endregion
 
+        #region 申請加入教練(新增)
+        public async Task<DAPIResponse<string>> CreateCoach(DEditCoach dto, int currentUserId)
+        {
+            // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
+            bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
+            if (exists) return new DAPIResponse<string> { IsSuccess = false, Message = "您已經是教練囉！" };
+
+            // 2. 建立新實體
+            var newCoach = new ExpCoach
+            {
+                UserId = currentUserId, // 綁定目前的 User
+                Name = dto.Name,
+                AvatarUrl = dto.AvatarUrl,
+                Introduction = dto.Introduction,
+                CityId = dto.CityId,
+                DistrictId = dto.DistrictId,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                IsSuspended = false // 預設不停權
+            };
+
+            _context.ExpCoaches.Add(newCoach);
+            await _context.SaveChangesAsync();
+
+            return new DAPIResponse<string> { IsSuccess = true, Message = "恭喜成為教練！" };
+        }
+        #endregion
+        #region 詳細自介get{id}
+        public async Task<DCoachInfo> ThisCoachInfo(int coachId)
+        {
+            var query = _context.ExpCoaches
+                     .Where(c => c.Id == coachId)
+                     .Select(c => new DCoachInfo
+                     {
+                         CoachId = c.Id,
+                         CoachName = c.Name,
+                         AvatarUrl = c.AvatarUrl,
+                         // 注意：在 LINQ to Entities 中，直接 string.Join 可能會報錯，
+                         // 建議先撈出資料到記憶體，或是處理方式調整
+                         District = c.District.Name, // 根據關聯圖，如果是 1對1 可以直接點出來
+                         AvgRating = c.ExpReviews.Any() ? c.ExpReviews.Average(r => (double)r.Rating) : 0,
+                         ReviewCount = c.ExpReviews.Count(),
+                         Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+                         Introduction = c.Introduction
+                     });
+
+            // 關鍵在這裡！使用 FirstOrDefaultAsync() 真正去資料庫拿「第一筆或預設值」
+            var result = await query.FirstOrDefaultAsync();
+            return result;
+        }
+        #endregion
 
         #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片??
-       public async Task<DAPIResponse<DEditCoach>> EditCoachInfo(DEditCoach dto, int currentUserId)
+        public async Task<DAPIResponse<DEditCoach>> EditCoachInfo(DEditCoach dto, int currentUserId)
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
             var thisCoach = await _context.ExpCoaches
                 .FirstOrDefaultAsync(c => c.Id == dto.Id && c.UserId == currentUserId);
 
-            if (thisCoach == null){
+            if (thisCoach == null)
+            {
                 return new DAPIResponse<DEditCoach> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
             }
 
@@ -137,7 +189,7 @@ namespace ExpServiceHelper.Service
             thisCoach.Introduction = dto.Introduction;
             thisCoach.CityId = dto.CityId;
             thisCoach.DistrictId = dto.DistrictId;
-            thisCoach.UpdatedAt = DateTime.Now; 
+            thisCoach.UpdatedAt = DateTime.Now;
 
             // 3. 存檔：這時候 EF 就會知道 thisCoach 被動過了，發出 UPDATE 指令
             await _context.SaveChangesAsync();
@@ -163,7 +215,8 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 系統推薦教練
-        public async Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId) {
+        public async Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId)
+        {
             // 1. 先把「當前教練」的地區與專長抓出來（這是我們的基準點）
             var currentCoachInfo = await _context.ExpCoaches
                 .Where(c => c.Id == thisCoachId)
@@ -178,7 +231,7 @@ namespace ExpServiceHelper.Service
             if (currentCoachInfo == null) return new List<DCoachRecommend>();
             // 2. 開始找「臭味相投」的教練
             var query = _context.ExpCoaches
-                .Where(c => c.Id != thisCoachId ) // 排除自己
+                .Where(c => c.Id != thisCoachId) // 排除自己
                 .Where(c => c.CityId == currentCoachInfo.CityId &&
                             c.Specialities.Any(s => currentCoachInfo.SpecialityIds.Contains(s.SportsName)));
             // 3. 執行隨機排序並取前 3 名
@@ -192,16 +245,47 @@ namespace ExpServiceHelper.Service
                     CoachName = c.Name,
                     AvatarUrl = c.AvatarUrl,
                     // 這裡假設你有關聯到 TripDistricts
-                    City = c.Name, 
+                    City = c.Name,
                     Specialities = c.Specialities
                                     .Select(s => s.SportsName)
                                     .ToList()
                 })
                 .ToListAsync();
+            //+排除自己
 
             return recommendedList;
         }
         #endregion
 
+
+
+
+
     }
+    #region 課程
+    #region 課程介紹get{id}
+    #endregion
+    #region 課程編輯post{id}
+    #endregion
+    #region 課程刪除
+    #endregion
+    #region 預約課程
+    #endregion
+    #region 新增評論
+    #endregion
+    #region 編輯評論
+    #endregion
+    #region 刪除評論
+    #endregion
+    #endregion
+
+    #region 交易
+    #region 支付 
+    #endregion
+    #region 歷史交易紀錄 
+    #endregion
+    #endregion
+
+    #region 營運 
+    #endregion
 }

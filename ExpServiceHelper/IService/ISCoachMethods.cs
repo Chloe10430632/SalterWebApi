@@ -1,7 +1,9 @@
 ﻿using ExpServiceHelper.DTO;
+using ExpServiceHelper.Service;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,11 +22,44 @@ namespace ExpServiceHelper.IService
         /**排序-熱門*/
         Task<List<DCoachInfo>> CoachRecommand();
         #endregion
+
+        #region 詳細自介
+        Task<DCoachInfo> ThisCoachInfo(int coachId);
+        #endregion
         #region 教練編輯
         Task<DAPIResponse<DEditCoach>> EditCoachInfo(DEditCoach dto, int currentUserId);
         #endregion
+        
         #region 系統推薦
         Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId);
+       
+        #endregion
+
+        #region 課程
+        #region 課程介紹get{id}
+        #endregion
+        #region 課程編輯post{id}
+        #endregion
+        #region 課程刪除
+        #endregion
+        #region 預約課程
+        #endregion
+        #region 新增評論
+        #endregion
+        #region 編輯評論
+        #endregion
+        #region 刪除評論
+        #endregion
+        #endregion
+
+        #region 交易
+        #region 支付 
+        #endregion
+        #region 歷史交易紀錄 
+        #endregion
+        #endregion
+
+        #region 營運 
         #endregion
 
     }

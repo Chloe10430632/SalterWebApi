@@ -67,11 +67,20 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #endregion
 
-        #region 教練
+        #region 教練====
         #region 申請加入教練(新增)
+
         #endregion
-        #region 詳細自介get{id}
+
+        #region 詳細自介
+        [HttpGet("Info{id}")]
+        public async Task<IActionResult> CoachInfo(int coachId) {
+            if (coachId == 0) return NotFound("這位教練還沒出生");
+            var result = await _sCoachMethods.ThisCoachInfo(coachId);
+            return Ok(result);
+        }
         #endregion
+
         #region 編輯自介put{id}
         [Authorize]
         [HttpPut("EditCoach{id}")]
@@ -89,6 +98,7 @@ namespace SalterWebApi.Areas.Experience
             return BadRequest(result);
         }
         #endregion
+
         #region 系統推薦
         [HttpGet("Recommand{id}")]
             public async Task<IActionResult> RecommandCoaches(int id)
@@ -99,6 +109,7 @@ namespace SalterWebApi.Areas.Experience
                 return Ok(result);
             }
             #endregion
+
         #region 收藏
             [Authorize]
             [HttpPost("Favorites")]
