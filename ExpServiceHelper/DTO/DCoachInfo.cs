@@ -13,8 +13,11 @@ namespace ExpServiceHelper.DTO
         public string? AvatarUrl { get; set; }
         public string? District { get; set; }
         public DateTime? CreatedAt { get; set; }
-        public double AverageRating { get; set; } 
+        public double AvgRating { get; set; }
         public int ReviewCount { get; set; }
         public List<string> Specialities { get; set; } = new List<string>();
+        //===詳細==//
+        public string? Introduction { get; set; }
+
     }
 }

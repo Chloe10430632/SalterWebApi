@@ -1,8 +1,13 @@
 ﻿using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
 using ExpServiceHelper.Service;
+using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static ExpServiceHelper.DTO.DFavCoach;
+using SalterEFModels.EFModels;
+using System.Security.Claims;
+using static ExpServiceHelper.DTO.DCoachFav;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -14,41 +19,196 @@ namespace SalterWebApi.Areas.Experience
     [Tags("行程裝備預約")] // Scalar 會用這個名字當分類標題。
     public class ExpController : ControllerBase
     {
+        #region 
+        #endregion
+        #region DI
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
-        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods )
+       // private readonly SalterDbContext _context;
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods)
         {
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
         }
+        #endregion
+        #region ~~入口~~
+            #region 排序
+            [HttpGet("PopRank")]
+            public async Task<IActionResult> PopRank()
+            {
+                var result = await _sCoachMethods.CoachRecommand();
+                return Ok(result);
+            }
 
-        [HttpGet("NewRank")]
-        public async Task<IActionResult> NewRank() {
-            var result = await _sCoachMethods.GetCoachNewest();
-            return Ok(result);
-        }
+            [HttpGet("NewRank")]
+            public async Task<IActionResult> NewRank()
+            {
+                var result = await _sCoachMethods.GetCoachNewest();
+                return Ok(result);
+            }
+            #endregion
+            #region 搜尋
+            [HttpGet("SpeSearch")]
+            public async Task<IActionResult> SpeSearch(string keySpecial)
+            {
+                var result = await _sCoachMethods.GetCoachSpecial(keySpecial);
+                if (result == null || result.Count == 0)
+                    return NotFound("！太難了 教練不會！");
+                return Ok(result);
+            }
+            [HttpGet("DistSearch")]
+            public async Task<IActionResult> DistSearch(string keyDistrict)
+            {
+                var result = await _sCoachMethods.GetCoachDist(keyDistrict);
+                //check
+                if (keyDistrict == null || result.Count == 0)
+                    return NotFound("！這裡沒有所謂教練這種生物！");
+                return Ok(result);
+            }
+        #endregion
+        #endregion
 
-        [HttpGet("SpeSearch")]
-        public async Task<IActionResult> SpeSearch(string keySpecial) { 
-            var result = await _sCoachMethods.GetCoachSpecial(keySpecial);
-            if (result == null || result.Count == 0)
-                return NotFound("！太難了 教練不會！");
-            return Ok(result);
-        }
-        [HttpGet("DistSearch")]
-        public async Task<IActionResult> DistSearch(string keyDistrict) {
-            var result = await _sCoachMethods.GetCoachDist(keyDistrict);
-            //check
-            if(keyDistrict == null || result.Count == 0)
-                return NotFound("！這裡沒有所謂教練這種生物！");
-            return Ok(result);
-        }
+        #region~~教練~~
+        #region 申請加入教練(新增)
+            [Authorize]
+            [HttpPost("BecomeCoach")]
+            public async Task<IActionResult> BecomeCoach(DCoachEdit dto ) {
+            var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
+                   ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
 
-        [HttpPost("Favorites")]
-        public async Task<IActionResult> MyFavCoach(DFavCoach dto) { 
-            var result = await _sCoachIndex.MyFavCoach(dto);
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                // 為了 debug，我們把抓到的所有 Type 列出來看看
+                var allTypes = string.Join(", ", User.Claims.Select(c => c.Type));
+                return Unauthorized($"抓不到 ID 標籤。目前有的標籤是: {allTypes}");
+            }
+
+            // 2. 轉 int
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                var result = await _sCoachMethods.CreateCoach(dto, currentUserId);
+                return Ok(result);
+            }
+
+            return BadRequest("ID 格式不正確，無法申請");
+        }
+        #endregion
+
+        #region 教練自介//??找不到??
+        [HttpGet("Info{id}")]
+        public async Task<IActionResult> CoachInfo(int coachId) {
+            if (coachId == 0) return NotFound("這位教練還沒出生");
+            var result = await _sCoachMethods.ThisCoachInfo(coachId);
             return Ok(result);
         }
+        #endregion
+
+        #region 編輯自介
+        [Authorize]
+        [HttpPut("EditCoach{id}")]
+        public async Task<IActionResult> EditThisCoach([FromBody] DCoachEdit dto) {
+            // 1. 抓取 JWS 裡面的 UserId
+            var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
+                    ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                // 為了 debug，我們把抓到的所有 Type 列出來看看
+                var allTypes = string.Join(", ", User.Claims.Select(c => c.Type));
+                return Unauthorized($"抓不到 ID 標籤。目前有的標籤是: {allTypes}");
+            }
+
+            // 2. 呼叫 Service，傳入 DTO 和 登入者 ID
+            if (int.TryParse(userIdStr, out int currentUserId)) { 
+                var result = await _sCoachMethods.EditCoachInfo(dto, currentUserId);
+                            if (result.IsSuccess) return Ok(result);
+            }                
+            return BadRequest("系統忙碌中");
+            
+        }
+        #endregion
+
+        #region 系統推薦
+        [HttpGet("Recommand{id}")]
+            public async Task<IActionResult> RecommandCoaches(int id)
+            {
+                var result = await _sCoachMethods.CoachRecommand();
+                if (result == null || result.Count == 0)
+                    return NotFound("教練們休息中");
+                return Ok(result);
+            }
+            #endregion
+
+        #region 收藏
+            [Authorize]
+            [HttpPost("Favorites")]
+            public async Task<IActionResult> MyFavCoach(DCoachFav dto)
+            {
+            var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
+               ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                // 為了 debug，我們把抓到的所有 Type 列出來看看
+                var allTypes = string.Join(", ", User.Claims.Select(c => c.Type));
+                return Unauthorized($"抓不到 ID 標籤。目前有的標籤是: {allTypes}");
+            }
+                //轉int
+                if (int.TryParse(userIdStr, out int currentUserId))
+                {
+                    //多傳入一個 currentUserId
+                    var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
+                    return Ok(result);
+                }
+                return BadRequest("登入後才能收藏");
+            }
+        #endregion
+        #endregion
+
+        #region 課程
+        #region 課程介紹get{id}
+        #endregion
+        #region 課程編輯post{id}
+        #endregion
+        #region 課程刪除
+        #endregion
+        #region 預約課程
+        #endregion
+        #region 新增評論
+        #endregion
+        #region 編輯評論
+        #endregion
+        #region 刪除評論
+        #endregion
+        #endregion
+
+        #region 交易
+        #region 支付 
+        #endregion
+        #region 歷史交易紀錄 
+        #endregion
+        #endregion
+
+        #region 營運 
+        #endregion
+        //[HttpGet("test-mapping")]
+        //public async Task<IActionResult> TestMapping()
+        //{
+        //    // 這裡直接用 _context 抓資料，加上 .Include 就像是叫外送要「加點」附餐
+        //    var result = await _context.ExpCoachSpecialityMapping
+        //        .Include(m => m.Coach)      // 順便把教練抓出來
+        //        .Include(m => m.Speciality) // 關鍵：把專長名稱也抓出來
+        //        .Take(10)                   // 先拿 10 筆測試就好，別把資料庫操壞了
+        //        .ToListAsync();
+
+        //    // 如果是 DistrictMapping，邏輯也一樣：
+        //    // var districtResult = await _context.ExpDistrictMapping.Include(d => d.TripDistrict).ToListAsync();
+
+        //    return Ok(result);
+        //}
+
+
+
 
         // GET: api/<ExpController>
         [HttpGet]
