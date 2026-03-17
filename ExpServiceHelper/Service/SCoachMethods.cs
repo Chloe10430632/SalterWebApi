@@ -12,6 +12,28 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ExpServiceHelper.Service
 {
+# region 擴充方法區
+    // --- 這裡是擴充方法區（放在最外層，不要住在別的 Class 裡面） ---public static class CoachMappingExtensions
+    public static class CoachMappingExtensions
+    {
+        // 這是一個「擺盤範本」，不管是搜地區、搜名字、搜專長，都用這個範本
+        public static IQueryable<DCoachInfo> SelectCoachInfo(this IQueryable<ExpCoach> query)
+        {
+            return query.Select(c => new DCoachInfo
+            {
+                CoachId = c.Id,
+                CoachName = c.Name,
+                AvatarUrl = c.AvatarUrl,
+                // 提醒：在資料庫層級 string.Join 可能會報錯，建議到記憶體再處理，或者直接選成 List
+                District = c.TripDistricts.Select(m => m.Name).ToList(),
+                Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+                ReviewCount = c.ExpReviews.Count(),
+                AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0
+            });
+        }
+    }
+    #endregion
+
     public class SCoachMethods : ISCoachMethods
     {
         #region 
@@ -22,26 +44,19 @@ namespace ExpServiceHelper.Service
         #endregion
         #region~~教練~~
         #region 入口
-
-        /**搜尋-地區*/ //找不到//
+       
+        /**搜尋-地區*/ 
         public async Task<List<DCoachInfo>> GetCoachDist(string keyDistrict)
         {
-            var q = _context.ExpCoaches
-                .Where(c => c.TripDistricts.Any(w => w.Name.Contains(keyDistrict)))
-                .Select(c => new DCoachInfo
-                {
-                    CoachId = c.Id,
-                    CoachName = c.Name,
-                    AvatarUrl = c.AvatarUrl,
-                    District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
-                    ReviewCount = c.ExpReviews.Count(),
-                    AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
-                    Specialities = c.Specialities.Select(s => s.SportsName).ToList()
-                }
-                );
-            return await q.ToListAsync();
+            var result = await _context.ExpCoaches
+                .Where(c => c.TripDistricts.Any(m => m.Name.Contains(keyDistrict)))
+                .SelectCoachInfo() // 呼叫剛才寫好的擴充方法
+                .ToListAsync();
 
+            // 如果你一定要回傳 string District，可以在這裡跑個 foreach 做 string.Join
+            return result;
         }
+       
 
         /**搜尋-專業*/ //找不到//
         public async Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial)
@@ -54,7 +69,7 @@ namespace ExpServiceHelper.Service
                     CoachId = c.Id,
                     CoachName = c.Name,
                     AvatarUrl = c.AvatarUrl,
-                    District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
+                    //District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
                     ReviewCount = c.ExpReviews.Count(),
                     AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                     Specialities = c.Specialities.Select(s => s.SportsName).ToList()
@@ -74,7 +89,7 @@ namespace ExpServiceHelper.Service
                     CoachId = c.Id,
                     CoachName = c.Name,
                     AvatarUrl = c.AvatarUrl,
-                    District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
+                   // District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
                     ReviewCount = c.ExpReviews.Count(),
                     AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                     Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
@@ -107,7 +122,7 @@ namespace ExpServiceHelper.Service
                 CoachId = x.Coach.Id,
                 CoachName = x.Coach.Name,
                 AvatarUrl = x.Coach.AvatarUrl,
-                District = string.Join(",", x.Coach.TripDistricts.Select(d => d.Name)),
+               // District = string.Join(",", x.Coach.TripDistricts.Select(d => d.Name)),
                 ReviewCount = x.ReviewCount,
                 AvgRating = Math.Round(x.AvgRating, 1),
                 Specialities = x.Coach.Specialities.Select(s => s.SportsName).ToList()
@@ -163,7 +178,7 @@ namespace ExpServiceHelper.Service
                          AvatarUrl = c.AvatarUrl,
                          // 注意：在 LINQ to Entities 中，直接 string.Join 可能會報錯，
                          // 建議先撈出資料到記憶體，或是處理方式調整
-                         District = c.District.Name, // 根據關聯圖，如果是 1對1 可以直接點出來
+                        // District = c.District.Name, // 根據關聯圖，如果是 1對1 可以直接點出來
                          AvgRating = c.ExpReviews.Any() ? c.ExpReviews.Average(r => (double)r.Rating) : 0,
                          ReviewCount = c.ExpReviews.Count(),
                          Specialities = c.Specialities.Select(s => s.SportsName).ToList(),

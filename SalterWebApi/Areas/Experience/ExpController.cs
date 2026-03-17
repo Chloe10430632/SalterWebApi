@@ -4,6 +4,7 @@ using ExpServiceHelper.Service;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SalterEFModels.EFModels;
 using System.Security.Claims;
 using static ExpServiceHelper.DTO.DCoachFav;
@@ -24,11 +25,12 @@ namespace SalterWebApi.Areas.Experience
         #region DI
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
-       // private readonly SalterDbContext _context;
-        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods)
+        private readonly SalterDbContext _context;
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods, SalterDbContext db)
         {
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
+            _context = db;
         }
         #endregion
         #region ~~入口~~
@@ -191,21 +193,28 @@ namespace SalterWebApi.Areas.Experience
 
         #region 營運 
         #endregion
-        //[HttpGet("test-mapping")]
-        //public async Task<IActionResult> TestMapping()
-        //{
-        //    // 這裡直接用 _context 抓資料，加上 .Include 就像是叫外送要「加點」附餐
-        //    var result = await _context.ExpCoachSpecialityMapping
-        //        .Include(m => m.Coach)      // 順便把教練抓出來
-        //        .Include(m => m.Speciality) // 關鍵：把專長名稱也抓出來
-        //        .Take(10)                   // 先拿 10 筆測試就好，別把資料庫操壞了
-        //        .ToListAsync();
+        [HttpGet("test-mapping")]
+        public async Task<IActionResult> TestMapping()
+        {
+            var coachData = await _context.ExpCoaches
+    .Include(c => c.Specialities)  // 這裡就是你程式碼裡的 d.Specialities
+    .Include(c => c.TripDistricts) // 這裡就是你程式碼裡的 d.TripDistricts
+    .Select(c => new
+    {
+        CoachName = c.Name,
+        // 把專長名稱抓成清單
+        Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+        // 把地區名稱抓成清單
+        Districts = c.TripDistricts.Select(d => d.Name).ToList()
+    })
+    .ToListAsync();
+            return Ok(coachData);
+            var districtData = await _context.TripDistricts
+            .Include(d => d.CoachDists) // 對應你程式碼裡的 p.CoachDists
+            .ToListAsync();
+            return Ok(districtData);
 
-        //    // 如果是 DistrictMapping，邏輯也一樣：
-        //    // var districtResult = await _context.ExpDistrictMapping.Include(d => d.TripDistrict).ToListAsync();
-
-        //    return Ok(result);
-        //}
+        }
 
 
 
