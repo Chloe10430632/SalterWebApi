@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SalterEFModels.EFModels;
 using SalterWebApi.Middlewares;
 using Scalar.AspNetCore;
@@ -107,7 +108,23 @@ builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+
+builder.Services.AddSwaggerGen(options =>
+{
+    // 定義 Bearer Token 安全性定義
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "請輸入 JWT Token (不需要手動加 'Bearer ' 前綴)"
+    });
+});
+
+
 
 
 
@@ -151,7 +168,8 @@ if (app.Environment.IsDevelopment())
 
         options.WithTitle("Salter API")
                .WithTheme(ScalarTheme.Laserwave) // 設定主題
-               .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch); // 預設產出 Fetch 代碼！
+               .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch) // 預設產出 Fetch 代碼！
+               .WithPreferredScheme("Bearer");
     });
 }
 
