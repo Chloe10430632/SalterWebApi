@@ -166,6 +166,20 @@ namespace SalterWebApi.Areas.User.Controllers
             return Ok(new { message = "驗證成功，帳號已啟用，請重新登入" });
         }
 
+        [HttpPost("ResendOtp")]
+        public async Task<IActionResult> ResendOtp([FromBody] UserResendOtpViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.Email))
+                return BadRequest(new { message = "Email 不能為空" });
+
+            var result = await _userService.ResendOtpAsync(model.Email);
+
+            if (!result)
+                return BadRequest(new { message = "找不到該帳號或帳號已啟用" });
+
+            return Ok(new { message = "新的驗證碼已寄出" });
+        }
+
 
 
 
