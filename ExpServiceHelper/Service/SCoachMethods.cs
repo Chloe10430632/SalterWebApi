@@ -28,7 +28,8 @@ namespace ExpServiceHelper.Service
                 District = c.TripDistricts.Select(m => m.Name).ToList(),
                 Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
                 ReviewCount = c.ExpReviews.Count(),
-                AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0
+                AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
+                CreatedAt = c.CreatedAt
             });
         }
     }
@@ -71,21 +72,28 @@ namespace ExpServiceHelper.Service
         /**排序-最新*/
         public async Task<List<DCoachInfo>> GetCoachNewest()
         {
-            var q = _context.ExpCoaches
-                .OrderByDescending(c => c.CreatedAt)
-                .Take(12)
-                .Select(c => new DCoachInfo
-                {
-                    CoachId = c.Id,
-                    CoachName = c.Name,
-                    AvatarUrl = c.AvatarUrl,
-                   // District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
-                    ReviewCount = c.ExpReviews.Count(),
-                    AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
-                    Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
-                    CreatedAt = c.CreatedAt
-                });
-            return await q.ToListAsync();
+            var result = await _context.ExpCoaches
+                 .OrderByDescending(c => c.CreatedAt)
+                 .Take(12)
+                 .SelectCoachInfo()
+                 .ToListAsync();
+            return result;
+            
+            //var q = _context.ExpCoaches
+            //    .OrderByDescending(c => c.CreatedAt)
+            //    .Take(12)
+            //    .Select(c => new DCoachInfo
+            //    {
+            //        CoachId = c.Id,
+            //        CoachName = c.Name,
+            //        AvatarUrl = c.AvatarUrl,
+            //       // District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
+            //        ReviewCount = c.ExpReviews.Count(),
+            //        AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
+            //        Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+            //        CreatedAt = c.CreatedAt
+            //    });
+            //return await q.ToListAsync();
         }
 
 

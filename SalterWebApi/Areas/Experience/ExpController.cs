@@ -209,10 +209,10 @@ namespace SalterWebApi.Areas.Experience
     })
     .ToListAsync();
             return Ok(coachData);
-            var districtData = await _context.TripDistricts
-            .Include(d => d.CoachDists) // 對應你程式碼裡的 p.CoachDists
-            .ToListAsync();
-            return Ok(districtData);
+            //var districtData = await _context.TripDistricts
+            //.Include(d => d.CoachDists) // 對應你程式碼裡的 p.CoachDists
+            //.ToListAsync();
+            //return Ok(districtData);
 
         }
 
