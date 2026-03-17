@@ -41,7 +41,6 @@ namespace ExpServiceHelper.IService
         #endregion
         #endregion
 
-
         #region 課程
         #region 課程介紹get{id}
         #endregion
