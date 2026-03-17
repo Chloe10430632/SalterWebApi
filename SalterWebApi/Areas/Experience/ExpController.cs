@@ -71,61 +71,38 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region~~教練~~
-        #region 查看評論
-        [HttpGet("ContentDetails{id}")]
-        public async Task<IActionResult> ContentDetails(int coachId) {
-            if (coachId == 0) return NotFound("這位教練還沒出生");
-            var result = await _sCoachMethods.CoachReviews(coachId);
-            return Ok(result);
-        }
-        #endregion
-        #region 申請加入教練(新增)
+        #region 申請加入教練(新增) 
         [Authorize]
             [HttpPost("BecomeCoach")]
             public async Task<IActionResult> BecomeCoach(DCoachEdit dto ) {
-            var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
-                   ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userIdStr))
             {
-                // 為了 debug，我們把抓到的所有 Type 列出來看看
-                var allTypes = string.Join(", ", User.Claims.Select(c => c.Type));
-                return Unauthorized($"抓不到 ID 標籤。目前有的標籤是: {allTypes}");
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
             }
 
-            // 2. 轉 int
             if (int.TryParse(userIdStr, out int currentUserId))
             {
                 var result = await _sCoachMethods.CreateCoach(dto, currentUserId);
-                return Ok(result);
+
+                if (result.IsSuccess) return Ok(new { message = "申請成功！歡迎加入教練行列" });
+                return BadRequest(new { message = "申請失敗，請檢查資料是否正確" });
             }
-
-            return BadRequest("ID 格式不正確，無法申請");
+            return BadRequest( new { message = "ID 格式不正確" });
         }
         #endregion
 
-        #region 教練自介//??找不到??
-        [HttpGet("Info{id}")]
-        public async Task<IActionResult> CoachInfo(int coachId) {
-            if (coachId == 0) return NotFound("這位教練還沒出生");
-            var result = await _sCoachMethods.ThisCoachInfo(coachId);
-            return Ok(result);
-        }
-        #endregion
-
-        #region 編輯自介
+        #region 編輯自介 
         [Authorize]
         [HttpPut("EditCoach{id}")]
         public async Task<IActionResult> EditThisCoach([FromBody] DCoachEdit dto) {
             // 1. 抓取 JWS 裡面的 UserId
-            var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
-                    ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userIdStr))
             {
-                // 為了 debug，我們把抓到的所有 Type 列出來看看
-                var allTypes = string.Join(", ", User.Claims.Select(c => c.Type));
-                return Unauthorized($"抓不到 ID 標籤。目前有的標籤是: {allTypes}");
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
             }
 
             // 2. 呼叫 Service，傳入 DTO 和 登入者 ID
@@ -138,6 +115,15 @@ namespace SalterWebApi.Areas.Experience
         }
         #endregion
 
+        #region 教練自介
+        [HttpGet("Info{id}")]
+        public async Task<IActionResult> CoachInfo(int coachId) {
+            if (coachId == 0) return NotFound("這位教練還沒出生");
+            var result = await _sCoachMethods.ThisCoachInfo(coachId);
+            return Ok(result);
+        }
+        #endregion
+
         #region 系統推薦
         [HttpGet("Recommand{id}")]
             public async Task<IActionResult> RecommandCoaches(int id)
@@ -147,24 +133,30 @@ namespace SalterWebApi.Areas.Experience
                     return NotFound("教練們休息中");
                 return Ok(result);
             }
-            #endregion
+        #endregion
 
-        #region 收藏
-            [Authorize]
+        #region 查看評論
+        [HttpGet("ContentDetails{id}")]
+        public async Task<IActionResult> ContentDetails(int coachId) {
+            if (coachId == 0) return NotFound("這位教練還沒出生");
+            var result = await _sCoachMethods.CoachReviews(coachId);
+            return Ok(result);
+        }
+        #endregion
+
+        #region 收藏  
+        [Authorize]
             [HttpPost("Favorites")]
             public async Task<IActionResult> MyFavCoach(DCoachFav dto)
             {
-            var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value
-               ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userIdStr))
             {
-                // 為了 debug，我們把抓到的所有 Type 列出來看看
-                var allTypes = string.Join(", ", User.Claims.Select(c => c.Type));
-                return Unauthorized($"抓不到 ID 標籤。目前有的標籤是: {allTypes}");
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
             }
-                //轉int
-                if (int.TryParse(userIdStr, out int currentUserId))
+            //轉int
+            if (int.TryParse(userIdStr, out int currentUserId))
                 {
                     //多傳入一個 currentUserId
                     var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);

@@ -1,6 +1,7 @@
 ﻿using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
@@ -45,8 +46,8 @@ namespace ExpServiceHelper.Service
         #endregion
         #region~~教練~~
         #region 入口
-       
-        /**搜尋-地區*/ 
+
+        #region~~搜尋-地區~~
         public async Task<List<DCoachInfo>> GetCoachDist(string keyDistrict)
         {
             var result = await _context.ExpCoaches
@@ -57,9 +58,10 @@ namespace ExpServiceHelper.Service
             // 如果你一定要回傳 string District，可以在這裡跑個 foreach 做 string.Join
             return result;
         }
-       
+        #endregion
 
-        /**搜尋-專業*/
+        #region~~搜尋-專業~~
+       
         public async Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial)
         {
            var result = await _context.ExpCoaches
@@ -68,8 +70,9 @@ namespace ExpServiceHelper.Service
                 .ToListAsync();
             return result;
         }
+         #endregion
 
-        /**排序-最新*/
+        #region~~排序-最新~~
         public async Task<List<DCoachInfo>> GetCoachNewest()
         {
             var result = await _context.ExpCoaches
@@ -79,10 +82,10 @@ namespace ExpServiceHelper.Service
                  .ToListAsync();
             return result;
         }
+        #endregion
 
-
-
-        /**排序-熱門*/
+        #region~~排序-熱門~~
+       
         public async Task<List<DCoachInfo>> CoachRecommand()
         {
             // 1. 只拿「排序需要」的資料
@@ -101,7 +104,7 @@ namespace ExpServiceHelper.Service
             // 2. 既然拿到了「前12名的教練實體」，直接接上你的擴充方法！
             return await rankedCoachesQuery.SelectCoachInfo().ToListAsync();
         }
-
+        #endregion
         #endregion
 
         #region 查看評論
@@ -112,16 +115,17 @@ namespace ExpServiceHelper.Service
                 .Select(r => new DCoachReview
                 {
                     UserName = r.User.UserName,
+                    CoachId = r.CoachId,
+                    CourseOrderId = r.CourseOrderId,
                     Rating = r.Rating,
                     ReviewContent = r.ReviewContent,
                     ReviewedAt = r.ReviewedAt,
-
                 });
                 return await review.ToListAsync();
         }
         #endregion
 
-        #region 申請加入教練(新增)
+        #region 申請加入教練(新增)  
         public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
         {
             // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
@@ -152,7 +156,7 @@ namespace ExpServiceHelper.Service
                 Data = newCoach.Id // 這就是你要的號碼牌！
             };
         }
-        #endregion
+        #endregion  
 
         #region 詳細自介
         public async Task<DCoachInfo> ThisCoachInfo(int coachId)
@@ -164,13 +168,13 @@ namespace ExpServiceHelper.Service
                          CoachId = c.Id,
                          CoachName = c.Name,
                          AvatarUrl = c.AvatarUrl,
-                         // 注意：在 LINQ to Entities 中，直接 string.Join 可能會報錯，
-                         // 建議先撈出資料到記憶體，或是處理方式調整
-                        // District = c.District.Name, // 根據關聯圖，如果是 1對1 可以直接點出來
+                         District = c.TripDistricts.Select(m => m.Name).ToList(), 
                          AvgRating = c.ExpReviews.Any() ? c.ExpReviews.Average(r => (double)r.Rating) : 0,
                          ReviewCount = c.ExpReviews.Count(),
                          Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
-                         Introduction = c.Introduction
+                         Introduction = c.Introduction,
+                         CreatedAt = c.CreatedAt
+                         
                      });
 
             // 關鍵在這裡！使用 FirstOrDefaultAsync() 真正去資料庫拿「第一筆或預設值」
@@ -179,7 +183,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片??
+        #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片?? 
         public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId)
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
@@ -193,12 +197,13 @@ namespace ExpServiceHelper.Service
 
             // 2.(賦值)：把前端傳來的 dto 資料塞進資料庫的 entity 裡
             // 這一步才是真正的「更新」！
-            thisCoach.Name = dto.Name;
-            thisCoach.AvatarUrl = dto.AvatarUrl;
-            thisCoach.Introduction = dto.Introduction;
-            thisCoach.CityId = dto.CityId;
-            thisCoach.DistrictId = dto.DistrictId;
-            thisCoach.UpdatedAt = DateTime.Now;
+            if (!string.IsNullOrEmpty(dto.Name)){thisCoach.Name = dto.Name;}
+            if (!string.IsNullOrEmpty(dto.AvatarUrl)) {thisCoach.AvatarUrl = dto.AvatarUrl; }
+            if (!string.IsNullOrEmpty(dto.Introduction)) {thisCoach.Introduction = dto.Introduction; }
+            if (dto.CityId.HasValue) {thisCoach.CityId = dto.CityId; }
+            if (dto.DistrictId.HasValue) {thisCoach.DistrictId = dto.DistrictId; }
+                
+            thisCoach.UpdatedAt = DateTime.Now; 
 
             // 3. 存檔：這時候 EF 就會知道 thisCoach 被動過了，發出 UPDATE 指令
             await _context.SaveChangesAsync();
@@ -222,7 +227,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 系統推薦教練
+        #region 系統推薦教練  //似乎不會篩選 會跑所有教練
         public async Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId)
         {
             // 1. 先把「當前教練」的地區與專長抓出來（這是我們的基準點）
@@ -263,8 +268,9 @@ namespace ExpServiceHelper.Service
 
             return recommendedList;
         }
+        #endregion  
         #endregion
-        #endregion
+
         #region~~課程~~
         #region 課程介紹
 

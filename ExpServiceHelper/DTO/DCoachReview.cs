@@ -8,7 +8,7 @@ namespace ExpServiceHelper.DTO
 {
     public class DCoachReview
     {
-        public int CoachId { get; set; }
+        public int? CoachId { get; set; }
         public string UserName { get; set; }
         public int? Rating { get; set; }
         public string? ReviewContent { get; set; }
