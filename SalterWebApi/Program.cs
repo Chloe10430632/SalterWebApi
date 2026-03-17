@@ -179,14 +179,15 @@ if (app.Environment.IsDevelopment())
                .WithPreferredScheme("Bearer");
     });
 }
+app.UseExceptionHandler(); //全域錯誤處理
+app.UseStaticFiles(); //存取靜態圖片
+app.UseRouting();
 
 //使用開放其他來源的自定義政策
 app.UseCors("Allow5500");
 app.UseCors("Allow4200");
 
-app.UseStaticFiles(); //存取靜態圖片
 
-app.UseExceptionHandler(); //全域錯誤處理
 
 app.UseHttpsRedirection();
 
