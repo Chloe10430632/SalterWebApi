@@ -28,6 +28,7 @@ using UserRepositoryHelper.IRepository;
 using UserRepositoryHelper.Repository;
 using UserServiceHelper.IService;
 using UserServiceHelper.Service;
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 

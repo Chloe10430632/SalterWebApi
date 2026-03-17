@@ -37,6 +37,7 @@ namespace SalterWebApi.Areas.Forum.Controllers
         // GET: api/Posts
         //GET: api/Posts?sortBy=popular.....(Query)
         [HttpGet]
+      // [Authorize]
         public async Task<ActionResult<IEnumerable<PostListViewModel>>> GetForumPosts(
        [FromQuery] PostsQueryModel query)
         {
