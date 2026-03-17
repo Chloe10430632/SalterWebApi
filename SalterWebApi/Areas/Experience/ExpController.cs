@@ -71,8 +71,16 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region~~教練~~
+        #region 查看評論
+        [HttpGet("ContentDetails{id}")]
+        public async Task<IActionResult> ContentDetails(int coachId) {
+            if (coachId == 0) return NotFound("這位教練還沒出生");
+            var result = await _sCoachMethods.CoachReviews(coachId);
+            return Ok(result);
+        }
+        #endregion
         #region 申請加入教練(新增)
-            [Authorize]
+        [Authorize]
             [HttpPost("BecomeCoach")]
             public async Task<IActionResult> BecomeCoach(DCoachEdit dto ) {
             var userIdStr = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value

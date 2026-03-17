@@ -104,6 +104,23 @@ namespace ExpServiceHelper.Service
 
         #endregion
 
+        #region 查看評論
+        public async Task<List<DCoachReview>> CoachReviews(int coachId) {
+            var review = _context.ExpReviews
+                .Where(r => r.CoachId == coachId && r.IsHidden != true)
+                .OrderByDescending(r => r.ReviewedAt)
+                .Select(r => new DCoachReview
+                {
+                    UserName = r.User.UserName,
+                    Rating = r.Rating,
+                    ReviewContent = r.ReviewContent,
+                    ReviewedAt = r.ReviewedAt,
+
+                });
+                return await review.ToListAsync();
+        }
+        #endregion
+
         #region 申請加入教練(新增)
         public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
         {
