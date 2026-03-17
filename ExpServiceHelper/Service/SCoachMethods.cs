@@ -50,7 +50,7 @@ namespace ExpServiceHelper.Service
         {
             var result = await _context.ExpCoaches
                 .Where(c => c.TripDistricts.Any(m => m.Name.Contains(keyDistrict)))
-                .SelectCoachInfo() // 呼叫剛才寫好的擴充方法
+                .SelectCoachInfo() // 呼叫擴充方法
                 .ToListAsync();
 
             // 如果你一定要回傳 string District，可以在這裡跑個 foreach 做 string.Join
@@ -58,24 +58,14 @@ namespace ExpServiceHelper.Service
         }
        
 
-        /**搜尋-專業*/ //找不到//
+        /**搜尋-專業*/
         public async Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial)
         {
-
-            var q = _context.ExpCoaches
-                .Where(c => c.TripDistricts.Any(w => w.Name.Contains(keySpecial)))
-                .Select(c => new DCoachInfo
-                {
-                    CoachId = c.Id,
-                    CoachName = c.Name,
-                    AvatarUrl = c.AvatarUrl,
-                    //District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
-                    ReviewCount = c.ExpReviews.Count(),
-                    AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
-                    Specialities = c.Specialities.Select(s => s.SportsName).ToList()
-                }
-                );
-            return await q.ToListAsync();
+           var result = await _context.ExpCoaches
+                .Where( c=> c.Specialities.Any(s => s.SportsName.Contains(keySpecial)))
+                .SelectCoachInfo()
+                .ToListAsync();
+            return result;
         }
 
         /**排序-最新*/
