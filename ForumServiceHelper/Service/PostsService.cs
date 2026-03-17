@@ -4,15 +4,20 @@ using ForumRepositoryHelper.IRepository;
 using ForumServiceHelper.IService;
 using ForumServiceHelper.Models.DTO.Const;
 using ForumServiceHelper.Models.DTO.CreateModel;
+using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace ForumServiceHelper.Service
 {
@@ -31,88 +36,93 @@ namespace ForumServiceHelper.Service
             _cloudinaryApiSecret = config["Cloudinary:ApiSecret"];
         }
 
-        public async Task<IList<PostsViewModel>> GetAllPostsAsync(int? postId = null, string? keyword = null, string? sortBy = null, int? userId = null)
+        public async Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(PostsQueryModel query)
         {
-            //1.強制指定變數類型為 IQueryable < ForumPost >，這樣後續的 Where 才能順利對接
-            IQueryable<ForumPost> posts = _dbPosts.GetDbContext().ForumPosts
-                .Include(p => p.User)
-                .Include(p => p.Board)
-                .Include(p => p.ForumPostsImages)
-                .Include(p => p.ForumPostInteractions)
-                .Include(p => p.ForumComments);
+            query.SortBy = query.SortBy.ToUpper();
+            query.TakeSize = (query.TakeSize <= 0 || query.TakeSize > 5) ? 5 : query.TakeSize;
+            var posts = _dbPosts.GetAll().Where(p => p.IsPosted && p.Status == PostCreateStatusTypes.Normal);
 
-            //預設排序按照瀏覽量
-            sortBy ??= SortTypes.Popular; 
-            sortBy = sortBy.ToUpper().Trim();
+            if (query.BoardId.HasValue) 
+                posts = posts.Where(p => p.BoardId == query.BoardId);
 
-
-            //現在 posts 是 IQueryable，你可以自由地疊加過濾條件
-            if (postId.HasValue)
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
             {
-                posts = posts.Where(p => p.PostId == postId.Value);
+                var kw = query.Keyword.Trim();
+                posts = posts.Where(p => p.Content.Contains(kw) || p.Board.Title.Contains(kw));
             }
 
-            if (userId.HasValue && sortBy == SortTypes.Follow)
+            if(query.SortBy == SortTypes.Follow && query.UserId == 0)
+                throw new ArgumentException("欲瀏覽追蹤貼文，請先登入喔!");
+
+            //處理 Follow 邏輯(使用 Join 效率更高)
+            if (query.SortBy == SortTypes.Follow && query.UserId>0)
             {
-                //先找出userId追蹤的所有看板
-                var userFollowBoards = _dbPosts.GetDbContext().ForumBoardInteractions
-                    .Where(bi => bi.UserId == userId && bi.Type == BoardInteractionTypes.Follow)
+                var followedBoardIds = _dbPosts.GetDbContext().ForumBoardInteractions
+                    .Where(bi => bi.UserId == query.UserId && bi.Type == BoardInteractionTypes.Follow)
                     .Select(bi => bi.BoardId);
-
-                // 只留下屬於這些看板的貼文
-                posts = posts.Where(p => userFollowBoards.Contains(p.BoardId));
+                posts = posts.Where(p => followedBoardIds.Contains(p.BoardId));
             }
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                keyword = keyword.Trim();
-                posts = posts.Where(p => p.Content.Contains(keyword) || p.Board.Title.Contains(keyword));
-            }
-
-            // 計算貼文距離現在的發佈時間 (先以基準日呈現)
-            DateTime now = DateTime.Now; //new DateTime(2026, 2, 12, 12, 35, 0); //DateTime.Now
-            var postDetails = posts.Select(p => new PostsViewModel
+            var postListQuery = posts.Select(p => new PostListViewModel
             {
                 PostId = p.PostId,
                 UserName = p.User.UserName,
                 AvatarUrl = p.User.ProfilePicture,
                 BoardTitle = p.Board.Title,
-                Content = p.Content,
-                ImageUrls = p.ForumPostsImages
-                 .Where(img => img.PostId == p.PostId)
-                 .Select(img => img.ImageUrl).ToList(),
-
-                // 計算時間差邏輯
+                ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
                 CreatedAt = p.CreatedAt,
-                AgoMinuteNumber = (int)(now - p.CreatedAt).TotalMinutes,
-                AgoHourNumber = (int)(now - p.CreatedAt).TotalHours,
-                AgoDayNumber = (int)(now - p.CreatedAt).TotalDays,
+                ImageUrls = p.ForumPostsImages.Select(img => img.ImageUrl).ToList(),
+                LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+                CommentCount = p.ForumComments.Count(),
+                ViewCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.View),
+                PostTags = p.ForumPostTagDetails.Select(pt => pt.Tag.TagName).ToList()
+            });
 
-                LikeCount = p.ForumPostInteractions
-                 .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.Like)
-                 .Count(),
+            // 分頁排序 (以最難的 POPULAR 為例)
+            if (query.SortBy.ToUpper() == SortTypes.Popular)
+            {
+                if (query.LastViewCount.HasValue && query.LastId.HasValue)
+                    postListQuery = postListQuery.Where(p => p.ViewCount < query.LastViewCount || (p.ViewCount == query.LastViewCount && p.PostId < query.LastId));
 
-                CommentCount = p.ForumComments
-                 .Where(pi => pi.PostId == p.PostId)
-                 .Count(),
+                postListQuery = postListQuery.OrderByDescending(p => p.ViewCount).ThenByDescending(p => p.PostId);
+            }
+            else // NEW 即時貼文
+            {
+                if (query.LastCreatedAt.HasValue && query.LastId.HasValue)
+                    postListQuery = postListQuery.Where(p => p.CreatedAt < query.LastCreatedAt || (p.CreatedAt == query.LastCreatedAt && p.PostId < query.LastId));
 
-                BookmarkCount = p.ForumPostInteractions
-                 .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.Collect)
-                 .Count(),
+                postListQuery = postListQuery.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.PostId);
+            }
 
-                ShareCount = p.ForumPostInteractions
-                 .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.Share)
-                 .Count(),
+            return await postListQuery.Take(query.TakeSize).ToListAsync();
+        }
 
-                ViewCount = p.ForumPostInteractions
-                 .Where(pi => pi.PostId == p.PostId && pi.Type == PostInteractionType.View)
-                 .Count(),
+        public async Task<PostDetailViewModel?> GetPostDetailAsync(int postId)
+        {
+            return await _dbPosts.GetAll()
+        .Where(p => p.PostId == postId)
+        .Select(p => new PostDetailViewModel
+        {
+            PostId = p.PostId,
+            UserName = p.User.UserName,
+            AvatarUrl = p.User.ProfilePicture,
+            BoardTitle = p.Board.Title,
+            ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
+            CreatedAt = p.CreatedAt,
+            ImageUrls = p.ForumPostsImages.Select(img => img.ImageUrl).ToList(),
+            LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+            CommentCount = p.ForumComments.Count(),
+            ViewCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.View),
+            PostTags = p.ForumPostTagDetails.Select(pt => pt.Tag.TagName).ToList(),
 
-                // 處理父子留言結構
-                Comments = p.ForumComments
-                .Where(c => c.ParentCommentId == null) // 先過濾出「父留言」
+            BookmarkCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
+            ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
+            FullContent = p.Content,
+
+            // 處理父子留言結構
+            Comments = p.ForumComments
+                .Where(c => c.ParentCommentId == null)
                 .OrderByDescending(c => c.CreatedAt)
-                // .Take(2) // 如果只要顯示最新兩則大標留言
                 .Select(c => new CommentPreviewDto
                 {
                     CommentId = c.CommentId,
@@ -120,165 +130,190 @@ namespace ForumServiceHelper.Service
                     Content = c.Content,
                     AvatarUrl = c.User.ProfilePicture,
                     CreatedAt = c.CreatedAt,
-
-                    // 2. 找出屬於這個父留言的子留言
                     Replies = p.ForumComments
-                        .Where(reply => reply.ParentCommentId == c.CommentId)
-                        .OrderBy(reply => reply.CreatedAt) // 子留言通常由舊到新排
-                        .Select(reply => new CommentPreviewDto
+                        .Where(r => r.ParentCommentId == c.CommentId)
+                        .OrderBy(r => r.CreatedAt)
+                        .Select(r => new CommentPreviewDto
                         {
-                            CommentId = reply.CommentId,
-                            UserName = reply.User.UserName,
-                            Content = reply.Content,
-                            AvatarUrl = reply.User.ProfilePicture,
-                            CreatedAt = reply.CreatedAt
+                            CommentId = r.CommentId,
+                            UserName = r.User.UserName,
+                            AvatarUrl = r.User.ProfilePicture,
+                            Content = r.Content,
+                            CreatedAt = r.CreatedAt,
                         }).ToList()
-                }).ToList(),
-
-                PostTags = _dbPosts.GetDbContext().ForumPostTagDetails
-                     .Include(pt => pt.Tag)
-                     .Where(pt => pt.PostId == p.PostId)
-                     .Select(pt =>  pt.Tag.TagName )
-                     .ToList()
-                });
-
-                if (sortBy == SortTypes.Popular || sortBy == SortTypes.Follow)
-                {
-                    postDetails = postDetails.OrderByDescending(pd=>pd.ViewCount);
-                }
-
-                if(sortBy == SortTypes.New)
-                {
-                    postDetails = postDetails.OrderByDescending(pd => pd.CreatedAt);
-                }
-
-            return await postDetails.ToListAsync();
+                }).ToList()
+        }).FirstOrDefaultAsync();
         }
 
-        public async Task<int> CheckAndCreateAsync(PostCreateModel data)
+        public async Task<List<string>> UploadToCloudinaryAsync(List<IFormFile> images)
         {
-            List<string> finalImageUrls = new List<string>();
-
-            if (data != null)
+            var imageUrls = new List<string>();
+            if (images.Count > 0)
             {
-                // 1. 建立貼文主體
-                var newPost = new ForumPost
+                var account = new Account(_cloudinaryName, _cloudinaryApiKey, _cloudinaryApiSecret);
+                var cloudinary = new Cloudinary(account);
+
+                int fileIndex = 1;
+                foreach (var file in images)
+                {
+                    if (file.Length <= 0) continue;
+
+                    using var stream = file.OpenReadStream();
+                    var uploadParams = new ImageUploadParams()
+                    {
+                        File = new FileDescription(file.FileName, stream),
+                        Folder = "Salter/Forum",
+                        PublicId = $"{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..4]}",
+                        Transformation = new Transformation().Quality("auto").FetchFormat("auto")
+                    };
+
+                    // 改用 UploadAsync 提升非同步效能
+                    var uploadResult = await cloudinary.UploadAsync(uploadParams);
+                    if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        imageUrls.Add(uploadResult.SecureUrl.ToString());
+                    }
+                }
+                return imageUrls;
+            }
+            return imageUrls;
+        }
+
+        public async Task<int> CheckAndCreateAsync(PostCreateModel data, int? postId = null) //AddOrUpdate
+        {
+            if (string.IsNullOrWhiteSpace(data.Content))
+            {
+                throw new ArgumentException("貼文內容不可為空，請輸入文字。");
+            }
+
+            if (data.BoardId <= 0)
+            {
+                throw new ArgumentException("請選擇正確的看板。");
+            }
+
+            ForumPost? post;
+
+            if (postId.HasValue && postId.Value > 0)
+            {
+                // 更新模式：包含舊的關聯以便後續處理
+                post = await _dbPosts.GetDbContext().ForumPosts
+                    .Include(p => p.ForumPostsImages)
+                    .Include(p => p.ForumPostTagDetails)
+                    .FirstOrDefaultAsync(p => p.PostId == postId.Value);
+
+                if (post == null) throw new KeyNotFoundException($"找不到 ID 為 {postId} 的貼文");
+
+                if(post.UserId!=data.UserId)
+                    throw new ArgumentException($"您沒有權限修改他人貼文!");
+
+                // 更新欄位內容
+                post.BoardId = data.BoardId;
+                post.Content = data.Content;
+                post.LocationId = data.LocationId;
+                post.IsPosted = data.isPosted;
+                post.Status = data.isPosted ? PostCreateStatusTypes.Normal : PostCreateStatusTypes.Hide;
+                post.UpdatedAt = DateTime.Now;
+
+                // 清理舊有的圖片與標籤關聯 (採取「先刪後加」策略是最穩健的)
+                _dbPosts.GetDbContext().ForumPostsImages.RemoveRange(post.ForumPostsImages);
+                _dbPosts.GetDbContext().ForumPostTagDetails.RemoveRange(post.ForumPostTagDetails);
+            }
+            else
+            {
+                // 新增模式
+                post = new ForumPost
                 {
                     UserId = data.UserId,
                     BoardId = data.BoardId,
                     Content = data.Content,
                     LocationId = data.LocationId,
-                    Status = data.Status,
                     IsPinned = false,
-                    IsPosted = true,
+                    IsPosted = data.isPosted,
+                    Status = data.isPosted ? PostCreateStatusTypes.Normal : PostCreateStatusTypes.Hide,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
-                _dbPosts.Add(newPost);
-                bool isPostSaved = await _dbPosts.SaveChangesAsync();
+                _dbPosts.Add(post);
+            }
 
-                if (isPostSaved)
+            // --- 2. 處理圖片 (直接使用傳入的 URL) ---
+            if (data.ImageUrls is { Count: > 0 })
+            {
+                for (int i = 0; i < data.ImageUrls.Count; i++)
                 {
-                    // 2. 處理圖片
-                    if (data.Images.Any())
+                    var postImage = new ForumPostsImage
                     {
-                        int fileIndex = 1;
-                        foreach (var file in data.Images)
-                        {
-                            if (file.Length > 0)
-                            {
-                                // 建立 Cloudinary 帳戶實例 (建議從設定檔讀取或 DI 注入)
-                                var account = new Account(_cloudinaryName, _cloudinaryApiKey, _cloudinaryApiSecret);
-                                var cloudinary = new Cloudinary(account);
+                        Post = post, // EF 會自動處理關聯
+                        ImageUrl = data.ImageUrls[i],
+                        SortIndex = i + 1
+                    };
+                    _dbPosts.GetDbContext().ForumPostsImages.Add(postImage);
+                }
+            }
 
-                                // 使用資料流讀取上傳圖片
-                                using var stream = file.OpenReadStream();
-                                var uploadParams = new ImageUploadParams()
-                                {
-                                    File = new FileDescription(file.FileName, stream),
-                                    Folder = "Salter/Forum",
-                                    PublicId = $"{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 4)}",
-                                    // 可加入圖片轉換設定 (例如限定大小)
-                                    Transformation = new Transformation().Quality("auto").FetchFormat("auto")
-                                };
+            // --- 3. 處理標籤 (優化後的邏輯) ---
+            if (data.Tags is { Count: > 0 })
+            {
+                var tagNames = data.Tags.Select(t => t.TagName.Trim()).Distinct().ToList();
 
-                                // 執行非同步上傳
-                                var uploadResult = cloudinary.Upload(uploadParams);
-                                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
-                                {
-                                    // 取得 Cloudinary 回傳的 SecureUrl (https)
-                                    string uploadedUrl = uploadResult.SecureUrl.ToString();
-                                    finalImageUrls.Add(uploadedUrl);
-                                    // 將相對路徑存入資料庫 (供前端存取使用)
-                                    var postImage = new ForumPostsImage
-                                    {
-                                        PostId = newPost.PostId,
-                                        ImageUrl = uploadedUrl,
-                                        SortIndex = fileIndex
-                                    };
-                                    _dbPosts.GetDbContext().ForumPostsImages.Add(postImage);
-                                }
-                                else
-                                {
-                                    return -1;
-                                }
-                            }
-                            fileIndex++;
-                        }
+                var existingTags = await _dbPosts.GetDbContext().ForumTags
+                    .Where(t => tagNames.Contains(t.TagName))
+                    .ToListAsync();
+
+                foreach (var name in tagNames)
+                {
+                    var targetTag = existingTags.FirstOrDefault(t => t.TagName == name);
+
+                    if (targetTag == null)
+                    {
+                        targetTag = new ForumTag { TagName = name };
+                        _dbPosts.GetDbContext().ForumTags.Add(targetTag);
                     }
 
-                    // 3. 處理標籤關聯 (有標籤才做動作)
-                    if (data.Tags.Any())
+                    var detail = new ForumPostTagDetail
                     {
-                        foreach (var tag in data.Tags)
-                        {
-                            // 找出標籤文字是否已存在?不存在就新增標籤
-                            tag.TagName = tag.TagName.Trim();
+                        Post = post,
+                        Tag = targetTag
+                    };
+                    _dbPosts.GetDbContext().ForumPostTagDetails.Add(detail);
+                }
+            }
 
-                            //Tag不存在
-                            if (!_dbPosts.GetDbContext().ForumTags.Any(t => t.TagName == tag.TagName))
-                            {
-                                //不存在，新增貼文標籤
-                                var newTag = new ForumTag
-                                {
-                                    TagName = tag.TagName
-                                };
-                                _dbPosts.GetDbContext().ForumTags.Add(newTag);
-                                bool isTagSaved = await _dbPosts.SaveChangesAsync();
-                                if (isTagSaved)
-                                {
-                                    //已存在，直接新增貼文標籤明細表
-                                    var newPostnewTagsDetail = new ForumPostTagDetail
-                                    {
-                                        PostId = newPost.PostId,
-                                        TagId = newTag.TagId
-                                    };
-                                    _dbPosts.GetDbContext().ForumPostTagDetails.Add(newPostnewTagsDetail);
-                                }
-                            }
-                            else
-                            {
-                                //Tag已存在，直接新增貼文標籤明細表
-                                var newPostTagsDetail = new ForumPostTagDetail
-                                {
-                                    PostId = newPost.PostId,
-                                    TagId = tag.TagId
-                                };
-                                _dbPosts.GetDbContext().ForumPostTagDetails.Add(newPostTagsDetail);
-                            }
+            // --- 4. 存檔 ---
+            await _dbPosts.SaveChangesAsync();
+            return post.PostId;
+        }
 
-                        }
-                    }
+        public async Task<bool> CheckAndDeleteAsync(int postId)
+        {
+            // 1. 抓出貼文主體，同時 Include 所有關聯表
+            // 這是關鍵：必須把關聯資料一併載入，EF 才知道要刪除哪些東西
+            var post = await _dbPosts.GetDbContext().ForumPosts
+                .Include(p => p.ForumPostsImages)
+                .Include(p => p.ForumPostTagDetails)
+                .FirstOrDefaultAsync(p => p.PostId == postId);
 
+            if (post == null) throw new KeyNotFoundException($"找不到 ID 為 {postId} 的貼文");
+
+           
+                // 2. 先刪除圖片關聯
+                if (post.ForumPostsImages.Any())
+                {
+                    _dbPosts.GetDbContext().ForumPostsImages.RemoveRange(post.ForumPostsImages);
                 }
 
-                        bool allSaved = await _dbPosts.SaveChangesAsync();
-                        if (allSaved)
-                            return newPost.PostId; // 回傳 ID 讓前端可以跳轉
-                        else
-                            return -1;
-            }
-            return -1; //失敗了就回傳-1，成功了回傳˙貼文Id
+                // 3. 刪除標籤明細關聯
+                if (post.ForumPostTagDetails.Any())
+                {
+                    _dbPosts.GetDbContext().ForumPostTagDetails.RemoveRange(post.ForumPostTagDetails);
+                }
+
+                // 4. 最後刪除貼文主體
+                _dbPosts.GetDbContext().ForumPosts.Remove(post);
+
+                // 5. 統一存檔 (這會包在同一個 Transaction 中)
+                return await _dbPosts.SaveChangesAsync();
+           
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using ForumServiceHelper.Models.DTO.CreateModel;
+using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,9 +13,15 @@ namespace ForumServiceHelper.IService
 {
     public interface IPostsService
     {
-       public Task<IList<PostsViewModel>> GetAllPostsAsync(int? postId = null, string? keyword = null, string? sortBy = null, int? userId = null);
+       public Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(PostsQueryModel query);
 
-        public Task<int> CheckAndCreateAsync(PostCreateModel data);
+        public Task<PostDetailViewModel?> GetPostDetailAsync(int postId);
+
+        public Task<List<string>> UploadToCloudinaryAsync(List<IFormFile> images);
+
+        public Task<int> CheckAndCreateAsync(PostCreateModel data, int? postId = null);
+
+        public Task<bool> CheckAndDeleteAsync(int postId);
 
     }
 }

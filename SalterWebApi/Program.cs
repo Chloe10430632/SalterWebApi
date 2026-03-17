@@ -16,7 +16,9 @@ using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SalterEFModels.EFModels;
+using SalterWebApi.Middlewares;
 using Scalar.AspNetCore;
 using System.Text;
 using TripRepositoryHelper.IRepository;
@@ -28,15 +30,10 @@ using UserRepositoryHelper.IRepository;
 using UserRepositoryHelper.Repository;
 using UserServiceHelper.IService;
 using UserServiceHelper.Service;
-using TripRepositoryHelper.IRepository;
-using TripRepositoryHelper.Repository;
-using TripServiceHelper.IService;
-using TripServiceHelper.Service;
 
-using HomeRepositoryHelper.IRepository;
-using HomeRepositoryHelper.Repository;
-using HomeServiceHelper.IService;
-using HomeServiceHelper.Service;
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -118,7 +115,23 @@ builder.Services.AddScoped<ICloudinaryTripService, CloudinaryTripService>();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+
+builder.Services.AddSwaggerGen(options =>
+{
+    // 定義 Bearer Token 安全性定義
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "請輸入 JWT Token (不需要手動加 'Bearer ' 前綴)"
+    });
+});
+
+
 
 
 
@@ -144,6 +157,10 @@ builder.Services.AddCors(option =>
         });
 });
 
+// 使用Middleware做全域的Exception處理
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -158,15 +175,18 @@ if (app.Environment.IsDevelopment())
 
         options.WithTitle("Salter API")
                .WithTheme(ScalarTheme.Laserwave) // 設定主題
-               .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch); // 預設產出 Fetch 代碼！
+               .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch) // 預設產出 Fetch 代碼！
+               .WithPreferredScheme("Bearer");
     });
 }
 
 //使用開放其他來源的自定義政策
 app.UseCors("Allow5500");
 app.UseCors("Allow4200");
-//存取靜態圖片
-app.UseStaticFiles();
+
+app.UseStaticFiles(); //存取靜態圖片
+
+app.UseExceptionHandler(); //全域錯誤處理
 
 app.UseHttpsRedirection();
 

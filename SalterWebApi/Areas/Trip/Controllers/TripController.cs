@@ -397,7 +397,7 @@ public class TripController : ControllerBase
 
     private int? GetUserId()
     {
-        var userIdStr = User.FindFirstValue("UserId");
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdStr)) return null;
         return int.Parse(userIdStr);
     }

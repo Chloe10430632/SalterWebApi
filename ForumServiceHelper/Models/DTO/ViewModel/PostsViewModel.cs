@@ -6,35 +6,29 @@ using System.Threading.Tasks;
 
 namespace ForumServiceHelper.Models.DTO.ViewModel
 {
-    public class PostsViewModel
+    // 列表專用：拿掉 Comments，讓前端在首頁加載飛快
+    public class PostListViewModel
     {
         public int PostId { get; set; }
-
-        // 發文者
         public string UserName { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
         public string BoardTitle { get; set; } = "預設";
-
-        // 內容
-        public string Content { get; set; } = string.Empty;
+        public string ContentPreview { get; set; } = string.Empty; // 內容摘要
         public List<string> ImageUrls { get; set; } = new();
-        public DateTime CreatedAt { get; set; } 
-        public int AgoMinuteNumber { get; set; }
-        public int AgoHourNumber { get; set; }
-        public int AgoDayNumber { get; set; }
-
-        // 統計數據
+        public DateTime CreatedAt { get; set; }
         public int LikeCount { get; set; }
         public int CommentCount { get; set; }
+        public int ViewCount { get; set; }
+        public List<string> PostTags { get; set; } = new();
+    }
+
+    // 詳情專用：繼承列表並擴充留言與詳細數據
+    public class PostDetailViewModel : PostListViewModel
+    {
         public int BookmarkCount { get; set; }
         public int ShareCount { get; set; }
-        public int ViewCount { get; set; }
-
-        // 留言
+        public string FullContent { get; set; } = string.Empty;
         public List<CommentPreviewDto> Comments { get; set; } = new();
-
-        //標籤
-        public List<string> PostTags { get; set; } = new();
     }
     public class CommentPreviewDto
     {

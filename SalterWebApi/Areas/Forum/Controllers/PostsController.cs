@@ -1,9 +1,13 @@
-﻿using ForumServiceHelper.IService;
+﻿using Azure;
+using ForumServiceHelper.IService;
 using ForumServiceHelper.Models.DTO.Const;
 using ForumServiceHelper.Models.DTO.CreateModel;
 using ForumServiceHelper.Models.DTO.ErrorMessage;
+using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
+using ForumServiceHelper.Service;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +15,9 @@ using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SalterWebApi.Areas.Forum.Controllers
 {
@@ -31,144 +37,92 @@ namespace SalterWebApi.Areas.Forum.Controllers
         // GET: api/Posts
         //GET: api/Posts?sortBy=popular.....(Query)
         [HttpGet]
-        public async Task<ActionResult<IList<PostsViewModel>>> GetForumPosts(
-        [FromQuery] int? id,
-        [FromQuery] string? keyword,
-        [FromQuery] string? sortBy,
-        [FromQuery] int? userId)
+      // [Authorize]
+        public async Task<ActionResult<IEnumerable<PostListViewModel>>> GetForumPosts(
+       [FromQuery] PostsQueryModel query)
         {
-            if (!string.IsNullOrWhiteSpace(sortBy))
-            {
-                sortBy = sortBy.ToUpper().Trim();
-                if (sortBy== SortTypes.Follow && !userId.HasValue)
-                {
-                    return BadRequest(new ErrorResponse
-                    {
-                        Code = 400,
-                        Message = $"請先登入!"
-                    });
-                }
-            }
+            // 1.防禦性程式碼：確保物件存在
+            query ??= new PostsQueryModel();
 
-            var allPostList = await _postsService.GetAllPostsAsync(id,keyword,sortBy,userId);
-            if (allPostList.Count==0)
-            {
-                return NotFound(new ErrorResponse
-                {
-                    Code = 404,
-                    Message = $"搜尋條件查無相關內容!"
-                });
-            }
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(claimId, out int userId))
+                query.UserId = userId;
+            else
+                query.UserId = 0;
 
-            return Ok(allPostList);
+            var postList = await _postsService.GetAllPostsAsync(query);
+            return Ok(postList);
         }
 
-        // GET: api/Posts/5
+        // GET: api/Posts/10
         [HttpGet("{id}")]
-        public async Task<ActionResult<PostsViewModel>> GetForumPost(int id)
+        public async Task<ActionResult<PostDetailViewModel>> GetForumPost(int id)
         {
-            var allPost = await _postsService.GetAllPostsAsync(id);
-            var singlePost = allPost.FirstOrDefault();
-            if (singlePost == null)
+            var post = await _postsService.GetPostDetailAsync(id);
+            if (post == null)
             {
-                return NotFound(new ErrorResponse
-                {
-                    Code = 404,
-                    Message = $"找不到 ID 為 {id} 的貼文"
-                });
+                throw new KeyNotFoundException($"找不到 ID 為 {id} 的貼文");
             }
-            return Ok(singlePost);
+            return Ok(post);
+        }
+
+        [HttpPost("Images")] //有檔案上傳[FromForm]
+        //[Authorize]
+        public async Task<IActionResult> UploadPostImagesToCloudinary([FromForm] List<IFormFile> files)
+        {
+            // 1. 基礎檢查
+            if (files == null || files.Count == 0)
+            {
+                throw new ArgumentException("請選擇要上傳的檔案");
+            }
+
+            var imageUrls = await _postsService.UploadToCloudinaryAsync(files);
+       
+            if (imageUrls.Count == 0)
+            {
+                throw new Exception("圖片上傳失敗!");
+            }
+
+            // 4. 回傳網址列表給前端
+            // 前端拿到這組 string[] 後，再塞進 PostCreateModel.ImageUrls 
+            return Created(string.Empty, imageUrls);
+        }
+
+        // POST: api/Posts 
+        [HttpPost]
+        [Authorize]
+        public async Task<ActionResult<ForumPost>> PostForumPost([FromBody]PostCreateModel data)
+        {
+            // 既然有 [Authorize]，這裡的 userId 一定有值
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            data.UserId = userId;
+
+            int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data);
+                return Created(string.Empty, new { isSuccess = true, PostId = postIdOrErrorResult });
         }
 
         // PUT: api/Posts/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutForumPost(int id, ForumPost forumPost)
+        //[Authorize]
+        public async Task<IActionResult> PutForumPost(int id, [FromBody] PostCreateModel data)
         {
-            return Ok();
-            //if (id != forumPost.PostId)
-            //{
-            //    return BadRequest();
-            //}
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            //_context.Entry(forumPost).State = EntityState.Modified;
+            if (string.IsNullOrEmpty(claimId))
+                data.UserId = 0;
+            else
+                data.UserId = int.Parse(claimId);
 
-            //try
-            //{
-            //    await _context.SaveChangesAsync();
-            //}
-            //catch (DbUpdateConcurrencyException)
-            //{
-            //    if (!ForumPostExists(id))
-            //    {
-            //        return NotFound();
-            //    }
-            //    else
-            //    {
-            //        throw;
-            //    }
-            //}
-
-            //return NoContent();
-        }
-
-        // POST: api/Posts 有檔案上傳
-        [HttpPost]
-        public async Task<ActionResult<ForumPost>> PostForumPost([FromForm]PostCreateModel data)
-        {
-            //先檢查有資料
-            if (string.IsNullOrEmpty(data.Content))
-                {
-                    return BadRequest(new ErrorResponse
-                    {
-                        Code = 400,
-                        Message = "貼文資料不完整",
-                    });
-                }
-            //有資料開始處理後端邏輯
-            try
-            {
-                    int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data);
-                    if (postIdOrErrorResult == -1)
-                    {
-                            return StatusCode(500, new ErrorResponse
-                            {
-                                Code = 500,
-                                Message = "伺服器處理貼文失敗"
-                            });
-                     }
-
-                // return CreatedAtAction(nameof(GetForumPost), new { id = postIdOrErrorResult },data);
+            int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data, id);
                 return Ok(new { isSuccess = true, PostId = postIdOrErrorResult });
-
-            }
-            catch(Exception ex)
-            {
-                return StatusCode(500, "系統繁忙中，請稍後再試");
-            }
         }
 
         // DELETE: api/Posts/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteForumPost(int id)
         {
-            return Ok();
-            //    var forumPost = await _context.ForumPosts.FindAsync(id);
-            //    if (forumPost == null)
-            //    {
-            //        return NotFound();
-            //    }
-
-            //    _context.ForumPosts.Remove(forumPost);
-            //    await _context.SaveChangesAsync();
-
-            //    return NoContent();
-            //}
-
-            //private bool ForumPostExists(int id)
-            //{
-            //    return _context.ForumPosts.Any(e => e.PostId == id);
-            //} 
+            bool result =  await _postsService.CheckAndDeleteAsync(id);
+            return NoContent(); 
         }
 
     }
