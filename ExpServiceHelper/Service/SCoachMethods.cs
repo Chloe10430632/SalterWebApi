@@ -78,22 +78,6 @@ namespace ExpServiceHelper.Service
                  .SelectCoachInfo()
                  .ToListAsync();
             return result;
-            
-            //var q = _context.ExpCoaches
-            //    .OrderByDescending(c => c.CreatedAt)
-            //    .Take(12)
-            //    .Select(c => new DCoachInfo
-            //    {
-            //        CoachId = c.Id,
-            //        CoachName = c.Name,
-            //        AvatarUrl = c.AvatarUrl,
-            //       // District = string.Join(",", c.TripDistricts.Select(m => m.Name)),
-            //        ReviewCount = c.ExpReviews.Count(),
-            //        AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
-            //        Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
-            //        CreatedAt = c.CreatedAt
-            //    });
-            //return await q.ToListAsync();
         }
 
 
@@ -101,32 +85,21 @@ namespace ExpServiceHelper.Service
         /**排序-熱門*/
         public async Task<List<DCoachInfo>> CoachRecommand()
         {
-            //拿資料 算平均 算評論數
-            var q = _context.ExpCoaches
+            // 1. 只拿「排序需要」的資料
+            var rankedCoachesQuery = _context.ExpCoaches
                 .Select(c => new
                 {
-                    Coach = c,
-                    AvgRating = c.ExpReviews.Any() ? c.ExpReviews.Average(r => (double)r.Rating) : 0,
-                    ReviewCount = c.ExpReviews.Count()
-                });
-            //排序
-            var rank = await q.OrderByDescending(r => r.AvgRating)
-                .ThenByDescending(r => r.ReviewCount)
+                    Entity = c, // 把整顆教練實體帶著
+                    Avg = c.ExpReviews.Any() ? c.ExpReviews.Average(r => (double)r.Rating) : 0,
+                    Count = c.ExpReviews.Count()
+                })
+                .OrderByDescending(x => x.Avg)
+                .ThenByDescending(x => x.Count)
                 .Take(12)
-                .ToListAsync();
-            //包成DTO ->return
-            return rank.Select(x => new DCoachInfo
-            {
-                CoachId = x.Coach.Id,
-                CoachName = x.Coach.Name,
-                AvatarUrl = x.Coach.AvatarUrl,
-               // District = string.Join(",", x.Coach.TripDistricts.Select(d => d.Name)),
-                ReviewCount = x.ReviewCount,
-                AvgRating = Math.Round(x.AvgRating, 1),
-                Specialities = x.Coach.Specialities.Select(s => s.SportsName).ToList()
-            }).ToList();
+                .Select(x => x.Entity); // 【關鍵】排序完後，我們只要回傳教練實體
 
-
+            // 2. 既然拿到了「前12名的教練實體」，直接接上你的擴充方法！
+            return await rankedCoachesQuery.SelectCoachInfo().ToListAsync();
         }
 
         #endregion
