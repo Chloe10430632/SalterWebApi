@@ -24,21 +24,20 @@ namespace ExpServiceHelper.IService
         #endregion
 
         #region ~~教練~~
-        #region 查看評論
-        Task<List<DCoachReview>> CoachReviews(int coachId);
-        #endregion
         #region 申請成為教練
         Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId);
-        #endregion
-        #region 詳細自介
-        Task<DCoachInfo> ThisCoachInfo(int coachId);
         #endregion
         #region 教練編輯
         Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId);
         #endregion
-
+        #region 詳細自介
+        Task<DCoachInfo> ThisCoachInfo(int coachId);
+        #endregion
         #region 系統推薦
         Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId);
+        #endregion
+        #region 查看評論
+        Task<List<DCoachReview>> CoachReviews(int coachId);
         #endregion
         #endregion
 
