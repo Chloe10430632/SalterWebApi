@@ -28,6 +28,16 @@ using UserRepositoryHelper.IRepository;
 using UserRepositoryHelper.Repository;
 using UserServiceHelper.IService;
 using UserServiceHelper.Service;
+using TripRepositoryHelper.IRepository;
+using TripRepositoryHelper.Repository;
+using TripServiceHelper.IService;
+using TripServiceHelper.Service;
+
+using HomeRepositoryHelper.IRepository;
+using HomeRepositoryHelper.Repository;
+using HomeServiceHelper.IService;
+using HomeServiceHelper.Service;
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
@@ -127,7 +137,7 @@ builder.Services.AddCors(option =>
     option.AddPolicy("Allow4200",
         policy =>
         {
-            policy.WithOrigins("http://127.0.0.1:4200")
+            policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .WithExposedHeaders("Location");
