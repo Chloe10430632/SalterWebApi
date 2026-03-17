@@ -73,10 +73,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped(typeof(IGenericSalterRepository<>), typeof(GenericSalterRepository<>));
 builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, GenericSalterRepository<ForumBoardCategory>>();
 builder.Services.AddScoped<IGenericSalterRepository<ForumPost>, GenericSalterRepository<ForumPost>>();
+builder.Services.AddScoped<IGenericSalterRepository<ForumAd>, GenericSalterRepository<ForumAd>>();
 
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
+builder.Services.AddScoped<IAdsService, AdsService>();
 
 
 //User功能：泛型資料存取層 DAL DI
