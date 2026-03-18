@@ -34,7 +34,20 @@ namespace ExpServiceHelper.Service
                 CreatedAt = c.CreatedAt
             });
         }
+        public static IQueryable<DCourseOpenSession> SelectCourseInfo(this IQueryable<ExpCourseSession> query)
+        {
+            return query.Select(c => new DCourseOpenSession
+            {
+                TemplateId = c.Id,
+                CoachId = c.CoachId,
+                TimeSlot = c.TimeSlot,
+                MaxStudents = c.MaxParticipants,
+                SelectedDates = new List<DateOnly> { c.SessionDate.Value },
+                UpdatedAt = c.UpdatedAt
+            });
+        }
     }
+    
     #endregion
 
     public class SCoachMethods : ISCoachMethods
@@ -438,13 +451,6 @@ namespace ExpServiceHelper.Service
             };
 
         }
-
-
-
-
-
-
-
         #endregion
 
         #region 課程展示
@@ -465,6 +471,11 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #region 課程搜尋-難度
+
+        #endregion
+
+
         #endregion
         //var template = _context.ExpCourseSessions.FirstOrDefault(t => t.Id == dto.TemplateId && t.CoachId == coachId);
         //        if (template == null){ throw new Exception("不要偷跑去其他教練的領地"); }
@@ -472,12 +483,11 @@ namespace ExpServiceHelper.Service
 
 
         #region 課程
-        #region 課程搜尋
+        #region 課程搜尋-有名額
         #endregion
-        #region 課程刪除
         #endregion
-        #region 預約課程
-        #endregion
+
+        #region 評論
         #region 新增評論
         #endregion
         #region 編輯評論
@@ -486,7 +496,9 @@ namespace ExpServiceHelper.Service
         #endregion
         #endregion
 
-        #region 交易
+        #region 交易流程
+        #region 預約課程
+        #endregion
         #region 支付 
         #endregion
         #region 歷史交易紀錄 
