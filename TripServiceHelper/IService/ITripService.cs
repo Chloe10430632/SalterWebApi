@@ -26,7 +26,7 @@ public interface ITripService
    #region 公告
     Task<ServiceResult<List<TripAnnouncementDto>>> GetAnnouncementsAsync(int tripId, int userId);
     Task<ServiceResult> CreateAnnouncementAsync(int tripId, TripAnnouncementRequestDto dto, int userId);
-    Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementRequestDto dto, int userId);
+    Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementUpdateDto dto, int userId);
     Task<ServiceResult> DeleteAnnouncementAsync(int announcementId, int userId);
     Task<ServiceResult> TogglePinAsync(int announcementId, int userId);
     #endregion
@@ -41,7 +41,7 @@ public interface ITripService
 
     #region 地點
     Task<ServiceResult<List<TripLocationDto>>> GetLocationsAsync(int tripId, int userId);
-    Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationRequestDto dto, int userId);
+    Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationUpdateDto dto, int userId);
     Task<ServiceResult> DeleteLocationAsync(int locationId, int userId);
     Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto, int userId);
     #endregion

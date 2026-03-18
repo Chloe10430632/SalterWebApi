@@ -1427,8 +1427,8 @@ public partial class SalterDbContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Content)
-                .HasColumnType("text")
-                .HasColumnName("content");
+    .HasColumnType("nvarchar(max)")
+    .HasColumnName("content");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
