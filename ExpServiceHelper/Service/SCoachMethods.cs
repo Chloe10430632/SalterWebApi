@@ -40,10 +40,12 @@ namespace ExpServiceHelper.Service
     {
         #region 
         #endregion
+
         #region DI
         private readonly SalterDbContext _context;
         public SCoachMethods(SalterDbContext dbContext) { _context = dbContext; }
         #endregion
+
         #region~~教練~~
         #region 入口
 
@@ -268,39 +270,37 @@ namespace ExpServiceHelper.Service
 
             return recommendedList;
         }
-        #endregion  
-
-        #region 
-       
-        public async Task<List<DCoachFavList>> GetMyFavCoach(int userId)
-        {
-            // 1. 先拿到 Entity 列表
-            var fav = _context.ExpFavorites
-                .Where(f => f.UserId == userId) 
-                .Select(f => new DCoachFavList
-                {
-                    UserId = f.UserId,
-                    CoachId = f.CoachId,
-                    CoachName = f.Coach.Name, // 透過導覽屬性抓教練名
-                    AvatarUrl = f.Coach.AvatarUrl,
-                    City = f.Coach.City.Name,
-                    District = f.Coach.TripDistricts.Select(d => d.Name).ToList(),
-                    Specialities = f.Coach.Specialities.Select(sm => sm.SportsName).ToList(),
-                    AvgRating = f.Coach.ExpReviews.Any()
-                        ? f.Coach.ExpReviews.Average(r => (double)r.Rating)
-                        : 0,
-                    ReviewCount = f.Coach.ExpReviews.Count()
-                }).ToListAsync();
-        
-            return await fav;
-        }
         #endregion
 
+        #region 收藏清單
+         public async Task<List<DCoachFavList>> GetMyFavCoach(int userId)
+                {
+                    // 1. 先拿到 Entity 列表
+                    var fav = _context.ExpFavorites
+                        .Where(f => f.UserId == userId) 
+                        .Select(f => new DCoachFavList
+                        {
+                            UserId = f.UserId,
+                            CoachId = f.CoachId,
+                            CoachName = f.Coach.Name, // 透過導覽屬性抓教練名
+                            AvatarUrl = f.Coach.AvatarUrl,
+                            City = f.Coach.City.Name,
+                            District = f.Coach.TripDistricts.Select(d => d.Name).ToList(),
+                            Specialities = f.Coach.Specialities.Select(sm => sm.SportsName).ToList(),
+                            AvgRating = f.Coach.ExpReviews.Any()
+                                ? f.Coach.ExpReviews.Average(r => (double)r.Rating)
+                                : 0,
+                            ReviewCount = f.Coach.ExpReviews.Count()
+                        }).ToListAsync();
+        
+                    return await fav;
+                }
+        #endregion
+       
         #endregion
 
         #region~~課程~~
         #region 課程介紹
-
         //public async Task<> CourseIntro(){}
 
         #endregion
