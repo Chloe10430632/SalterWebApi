@@ -300,7 +300,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region~~課程~~
-        #region 課程上架
+        #region 課程模板建立
         public async Task<DAPIResponse<int>> CreateSessions(DCourseCreate dto, int coachId) {
            //主表圖表分開處理
             var t = new ExpCourseTemplate

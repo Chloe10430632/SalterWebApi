@@ -45,9 +45,12 @@ namespace ExpServiceHelper.IService
         #endregion
 
         #region 課程
-        #region 課程介紹get{id}
+        #region 課程模板建立
+        Task<DAPIResponse<int>> CreateSessions(DCourseCreate dto, int coachId);
         #endregion
-        #region 課程編輯post{id}
+        #region 課程模板編輯
+        #endregion
+        #region 課程介紹get{id}
         #endregion
         #region 課程刪除
         #endregion
