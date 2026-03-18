@@ -11,7 +11,7 @@ namespace ExpRepositoryHelper.IRepository
     public interface IRCoachIndex
     {
         /**加入收藏*/
-        Task AddFavCoach(ExpFavorites favEntity); //存進去就好所以不用型別
+        Task AddFavCoach(ExpFavorite favEntity); //存進去就好所以不用型別
         /**移除收藏*/
         Task DeleteFavCoach(int userID, int coachID);
         /**檢查存在*/

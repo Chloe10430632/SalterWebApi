@@ -23,15 +23,13 @@ public partial class ExpCourseTemplate
 
     public DateTime? UpdatedAt { get; set; }
 
-    public int? PhotoId { get; set; }
-
     public int? LocationId { get; set; }
 
     public virtual ExpCoach? Coach { get; set; }
 
+    public virtual ICollection<ExpCoursePhoto> ExpCoursePhotos { get; set; } = new List<ExpCoursePhoto>();
+
     public virtual ICollection<ExpCourseSession> ExpCourseSessions { get; set; } = new List<ExpCourseSession>();
 
     public virtual TripLocation? LocationNavigation { get; set; }
-
-    public virtual ExpCoursePhoto? Photo { get; set; }
 }

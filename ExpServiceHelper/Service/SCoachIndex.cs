@@ -34,7 +34,7 @@ namespace ExpServiceHelper.Service
             //  3.收藏
             else
             {
-                var entity = new ExpFavorites
+                var entity = new ExpFavorite
                 {
                     UserId = UserId,
                     CoachId = a.CoachId,

@@ -167,7 +167,10 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
 
-    
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=123.192.123.82,1433;Initial Catalog=Salter;User ID=sa;Password=DX9Qu!3wKWXrbyk;Trust Server Certificate=True");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CardActivityType>(entity =>
@@ -575,6 +578,10 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.CourseTemplateId).HasColumnName("course_template_id");
             entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
             entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at");
+
+            entity.HasOne(d => d.CourseTemplate).WithMany(p => p.ExpCoursePhotos)
+                .HasForeignKey(d => d.CourseTemplateId)
+                .HasConstraintName("FK_ExpCoursePhotos_ExpCourseTemplates");
         });
 
         modelBuilder.Entity<ExpCourseSession>(entity =>
@@ -617,7 +624,6 @@ public partial class SalterDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("location");
             entity.Property(e => e.LocationId).HasColumnName("location_id");
-            entity.Property(e => e.PhotoId).HasColumnName("photo_id");
             entity.Property(e => e.Price)
                 .HasColumnType("decimal(7, 0)")
                 .HasColumnName("price");
@@ -633,10 +639,6 @@ public partial class SalterDbContext : DbContext
             entity.HasOne(d => d.LocationNavigation).WithMany(p => p.ExpCourseTemplates)
                 .HasForeignKey(d => d.LocationId)
                 .HasConstraintName("FK_ExpCourseTemplates_TripLocations");
-
-            entity.HasOne(d => d.Photo).WithMany(p => p.ExpCourseTemplates)
-                .HasForeignKey(d => d.PhotoId)
-                .HasConstraintName("FK_ExpCourseTemplates_ExpCoursePhotos");
         });
 
         modelBuilder.Entity<ExpEquipment>(entity =>
@@ -1013,12 +1015,11 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
-                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ForumComments_ForumComments");
 
             entity.HasOne(d => d.Post).WithMany(p => p.ForumComments)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_forumComments_forumPosts");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumComments)

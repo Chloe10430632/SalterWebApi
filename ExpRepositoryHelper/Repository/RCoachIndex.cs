@@ -12,9 +12,12 @@ namespace ExpRepositoryHelper.Repository
 
         public async Task<bool> ExistAsync(int userID, int coachID)
         {
-          return await _dbContext.ExpFavorites.AnyAsync((System.Linq.Expressions.Expression<Func<ExpFavorites, bool>>)(f => f.UserId == userID && f.CoachId == coachID));
+            //return await _dbContext.ExpFavorites.AnyAsync((System.Linq.Expressions.Expression<Func<ExpFavorites, bool>>)(f => f.UserId == userID && f.CoachId == coachID));
+            //TODO 檢查結果是否正確
+            return await _dbContext.ExpFavorites.AnyAsync(f => f.UserId == userID && f.CoachId == coachID);
         }
-        public async Task AddFavCoach(ExpFavorites favEntity)
+        //TODO 檢查結果是否正確2
+        public async Task AddFavCoach(ExpFavorite favEntity)
         {
             await _dbContext.ExpFavorites.AddAsync(favEntity);
             await _dbContext.SaveChangesAsync();
@@ -23,15 +26,16 @@ namespace ExpRepositoryHelper.Repository
         public async Task DeleteFavCoach(int userID, int coachID)
         {
             var target = await _dbContext.ExpFavorites
-            .FirstOrDefaultAsync((System.Linq.Expressions.Expression<Func<ExpFavorites, bool>>)(f=> f.UserId == userID && f.CoachId == coachID));
+            .FirstOrDefaultAsync(f => f.UserId == userID && f.CoachId == coachID);
             if (target != null)
             {
-                _dbContext.ExpFavorites.Remove((ExpFavorites)target);
+                //TODO 檢查結果是否正確3
+                _dbContext.ExpFavorites.Remove(target);
                 await _dbContext.SaveChangesAsync();
             }
         }
-        
-        }
+
+    }
 
 }
 
