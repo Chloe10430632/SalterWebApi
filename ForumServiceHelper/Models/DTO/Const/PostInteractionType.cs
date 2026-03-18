@@ -14,7 +14,5 @@ namespace ForumServiceHelper.Models.DTO.Const
         public const string Collect = "COLLECT";
         public const string Share = "SHARE";
         public const string Report = "REPORT";
-        public const string Comment = "COMMENT";
-
     }
 }

@@ -11,7 +11,7 @@ public partial class TripAnnouncement
 
     public string Title { get; set; } = null!;
 
-    public string Content { get; set; } = null!;
+    public string? Content { get; set; }
 
     public bool IsPinned { get; set; }
 

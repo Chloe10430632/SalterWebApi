@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace SalterWebApi.Areas.Forum.Controllers
 {
     [Area("Forum")]
-    [Route("api/[area]/[controller]")] // 路由 api/Forum/Posts
+    [Route("api/[area]/[controller]")] // 路由 api/Forum/Ads
     [ApiController]
     [Tags("社群討論版")]
     public class AdsController : ControllerBase
