@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace UserServiceHelper.Models.DTO.ViewModel
@@ -13,6 +14,8 @@ namespace UserServiceHelper.Models.DTO.ViewModel
         public string? Phone { get; set; }
         public string? Gender { get; set; }
         public DateOnly? Birthday { get; set; }
+
+        [JsonPropertyName("profilePicture")]
         public string? ProfilePicture { get; set; }
     }
 }

@@ -64,9 +64,9 @@ namespace UserServiceHelper.Service
                 return false;
 
             userInDb.UserName = !string.IsNullOrWhiteSpace(model.UserName) ? model.UserName : userInDb.UserName;
-            userInDb.Phone = !string.IsNullOrWhiteSpace(model.Phone) ? model.Phone : userInDb.Phone;
-            userInDb.Gender = !string.IsNullOrWhiteSpace(model.Gender) ? model.Gender : userInDb.Gender;
-            userInDb.Birthday = model.Birthday ?? userInDb.Birthday;
+            userInDb.Phone = model.Phone;
+            userInDb.Gender = model.Gender;
+            userInDb.Birthday = model.Birthday;
             userInDb.ProfilePicture = !string.IsNullOrWhiteSpace(model.ProfilePicture) ? model.ProfilePicture : userInDb.ProfilePicture;
             userInDb.UpdatedAt = DateTime.Now;
 
@@ -76,22 +76,24 @@ namespace UserServiceHelper.Service
 
         }
 
-        public async Task<bool> RegisterAsync(UserRegisterViewModel Rmodel)
+        public async Task<bool> RegisterAsync(UserRegisterViewModel model)
         {
             var dbContext = _dbUser.GetDbContext();
-            if (await dbContext.UserUsers.AnyAsync(u => u.Email == Rmodel.Email))
+            if (await dbContext.UserUsers.AnyAsync(u => u.Email == model.Email))
                 return false;
 
             string otp = new Random().Next(100000, 999999).ToString();
 
             var newUser = new UserUser
             {
-                UserName = Rmodel.UserName,
-                Email = Rmodel.Email,
-                Phone = Rmodel.Phone,
-                Gender = Rmodel.Gender,
-                Birthday = Rmodel.Birthday,              
-                ProfilePicture = Rmodel.ProfilePicture ?? "/admin/imgs/default-avatar.png",
+                UserName = model.UserName,
+                Email = model.Email,
+                Phone = model.Phone,
+                Gender = model.Gender,
+                Birthday = model.Birthday,              
+                ProfilePicture = string.IsNullOrWhiteSpace(model.ProfilePicture)
+                 ? "/admin/imgs/default-avatar.png"
+                 : model.ProfilePicture,
 
                 UserRoleId = 1,
                 StatusId = 1,
@@ -106,7 +108,7 @@ namespace UserServiceHelper.Service
             };
 
             
-            newUser.PasswordHash = _passwordHasher.HashPassword(newUser, Rmodel.Password);
+            newUser.PasswordHash = _passwordHasher.HashPassword(newUser, model.Password);
 
             await _dbUser.CreateAsync(newUser);
 
@@ -114,15 +116,18 @@ namespace UserServiceHelper.Service
 
             if (saved)
             {
-                try
+                // 背景執行，不 await，直接讓 API 回傳成功給前端
+                _ = Task.Run(async () =>
                 {
-                    await SendEmailInternalAsync(newUser.Email, newUser.UserName, otp);
-                }
-                catch (Exception ex)
-                {
-                    // 如果寄信失敗，至少要在 Debug 視窗看到原因
-                    System.Diagnostics.Debug.WriteLine($"寄信失敗：{ex.Message}");
-                }
+                    try
+                    {
+                        await SendEmailInternalAsync(newUser.Email, newUser.UserName, otp);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"註冊信寄送失敗：{ex.Message}");
+                    }
+                });
             }
 
             return saved;
@@ -206,8 +211,17 @@ namespace UserServiceHelper.Service
             // 3. 再次寄信 (沿用你剛才寫好的邏輯)
             if (saved)
             {
-                
-                await SendEmailInternalAsync(user.Email, user.UserName, newOtp);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await SendEmailInternalAsync(user.Email, user.UserName, newOtp);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"重發驗證信失敗：{ex.Message}");
+                    }
+                });
             }
 
             return saved;
@@ -286,8 +300,18 @@ namespace UserServiceHelper.Service
 
             if (saved)
             {
-                // 沿用你寫好的 SendEmailInternalAsync，稍微改一下主旨就好
-                await SendEmailInternalAsync(user.Email, user.UserName, otp);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        // 這裡的主旨可能要稍微區分，或者你在 SendEmailInternalAsync 裡加個參數
+                        await SendEmailInternalAsync(user.Email, user.UserName, otp);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"忘記密碼信寄送失敗：{ex.Message}");
+                    }
+                });
             }
 
             return saved;
