@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ExpServiceHelper.Service
 {
@@ -301,7 +302,7 @@ namespace ExpServiceHelper.Service
 
         #region~~課程~~
         #region 課程模板建立
-        public async Task<DAPIResponse<int>> CreateSessions(DCourseCreate dto, int coachId) {
+        public async Task<DAPIResponse<int>> CreateTemplate(DCourseCreate dto, int coachId) {
            //主表圖表分開處理
             var t = new ExpCourseTemplate
             {
@@ -311,7 +312,7 @@ namespace ExpServiceHelper.Service
                 Difficulty = dto.Difficulty,
                 Price = dto.Price,
                 Location = dto.Location,
-               
+               CreatedAt = DateTime.Now
             };
             //有傳圖片再做這步
             if (dto.PhotoUrls != null) {
@@ -334,45 +335,98 @@ namespace ExpServiceHelper.Service
                 Message = "新課程模板做好啦 ！",
                 Data = t.Id 
             };
-        } 
- 
+        }
        
 
+
+ #region 課程模板編輯
+        public async Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId) {
+            var t = _context.ExpCourseTemplates
+                .Include(x => x.ExpCoursePhotos)
+                .FirstOrDefault( c =>c.Id == TemplateId);
+            if (t == null) return null;
+
+            if (!string.IsNullOrEmpty(dto.Title)){ t.Title = dto.Title; }
+            if (!string.IsNullOrEmpty(dto.Description)){ t.Description = dto.Description; }
+            if (!string.IsNullOrEmpty(dto.Difficulty)){ t.Difficulty = dto.Difficulty; }
+            if (dto.Price > 0){ t.Price = dto.Price; }
+            if (!string.IsNullOrEmpty(dto.Location)) { t.Location = dto.Location; }
+            if (dto.PhotoUrls != null){
+                // 1. 取得資料庫目前的照片網址清單
+               
+                var originPhoto = t.ExpCoursePhotos.ToList();
+                var existingUrls = originPhoto.Select(p => p.PhotoUrl).ToList();
+
+                // 2. 找出「要刪除」的照片 (情境 2 & 4)
+                // 那些在資料庫裡，但不在前端名單中的
+                var photosToRemove = originPhoto
+                    .Where(p => !dto.PhotoUrls.Contains(p.PhotoUrl))
+                    .ToList();
+
+                foreach (var p in photosToRemove)
+                {
+                    _context.ExpCoursePhotos.Remove(p);
+                }
+
+                // 3. 找出「要新增」的照片 (情境 1 & 3 & 4)
+                // 那些在前端名單中，但不在資料庫裡的
+                var urlsToAdd = dto.PhotoUrls
+                    .Where(url => !existingUrls.Contains(url))
+                    .ToList();
+
+                foreach (var url in urlsToAdd)
+                {
+                    t.ExpCoursePhotos.Add(new ExpCoursePhoto
+                    {
+                        PhotoUrl = url,
+                        UploadedAt = DateTime.Now
+                        // course_template_id 會由 EF Core 自動幫你關聯，不用手填！
+                    });
+                }
+            }
+            t.UpdatedAt = DateTime.Now;
+
+            
+            await _context.SaveChangesAsync();
+            return dto;
+
+        }
         #endregion
-            //var template = _context.ExpCourseSessions.FirstOrDefault(t => t.Id == dto.TemplateId && t.CoachId == coachId);
-            //        if (template == null){ throw new Exception("不要偷跑去其他教練的領地"); }
+
+        #endregion
+        //var template = _context.ExpCourseSessions.FirstOrDefault(t => t.Id == dto.TemplateId && t.CoachId == coachId);
+        //        if (template == null){ throw new Exception("不要偷跑去其他教練的領地"); }
         #endregion
 
 
 
-    
-    #region 課程
-    #region 課程介紹get{id}
-    #endregion
-    //CourseSaveasTemplate()
-    #region 課程編輯post{id}
-    #endregion
-    #region 課程刪除
-    #endregion
-    #region 預約課程
-    #endregion
-    #region 新增評論
-    #endregion
-    #region 編輯評論
-    #endregion
-    #region 刪除評論
-    #endregion
-    #endregion
+        #region 課程
+        #region 課程介紹get{id}
+        #endregion
+        //CourseSaveasTemplate()
+        #region 課程編輯post{id}
+        #endregion
+        #region 課程刪除
+        #endregion
+        #region 預約課程
+        #endregion
+        #region 新增評論
+        #endregion
+        #region 編輯評論
+        #endregion
+        #region 刪除評論
+        #endregion
+        #endregion
 
-    #region 交易
-    #region 支付 
-    #endregion
-    #region 歷史交易紀錄 
-    #endregion
-    #endregion
+        #region 交易
+        #region 支付 
+        #endregion
+        #region 歷史交易紀錄 
+        #endregion
+        #endregion
 
-    #region 營運 
-    #endregion
+        #region 營運 
+        #endregion
 
-   }     
+    }
 }
