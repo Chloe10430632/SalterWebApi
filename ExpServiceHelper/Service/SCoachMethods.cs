@@ -34,9 +34,9 @@ namespace ExpServiceHelper.Service
                 CreatedAt = c.CreatedAt
             });
         }
-       
+
     }
-    
+
     #endregion
 
     public class SCoachMethods : ISCoachMethods
@@ -302,7 +302,7 @@ namespace ExpServiceHelper.Service
 
         #region~~課程~~
         #region 課程模板建立
-        public async Task<DAPIResponse<int>> CreateTemplate(DCourseCreate dto, int coachId)
+        public async Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int coachId)
         {
             //主表圖表分開處理
             var t = new ExpCourseTemplate
@@ -332,11 +332,10 @@ namespace ExpServiceHelper.Service
             //update
             await _context.SaveChangesAsync();
 
-            return new DAPIResponse<int>
+            return new DAPIResponse<string>
             {
                 IsSuccess = true,
-                Message = "新課程模板做好啦 ！",
-                Data = t.Id
+                Message = "新課程模板做好啦 ！"
             };
         }
         #endregion
@@ -432,7 +431,7 @@ namespace ExpServiceHelper.Service
                 };
                 await _context.ExpCourseSessions.AddAsync(newSession);
             }
-            _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             return new DTO.DAPIResponse<string>
             {
                 IsSuccess = true,
@@ -464,7 +463,35 @@ namespace ExpServiceHelper.Service
 
         #region ~~評論~~
         #region 新增評論
+        public async Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId)
+        {
+            //先去「訂單表 (ExpCourseOrders)」確認有沒有這筆訂單，順便把 CoachId 拿回來
+            var order = await _context.ExpCourseOrders
+                .Where(o => o.Id == courseOId && o.UserId == userId)
+                .Select(o => new {
+                    CoachId = o.CourseSession.CoachId
+                }).FirstOrDefaultAsync();
+            if (order == null) { 
+                return new DAPIResponse<string> { IsSuccess = false, Message ="沒有課程可以評論" };}
 
+            var newReview = new ExpReview
+            {
+                UserId = userId,
+                CoachId = order.CoachId, // 從訂單帶入教練 ID
+                CourseOrderId = courseOId,
+                Rating = dto.Rating,
+                ReviewContent = dto.ReviewContent,
+                ReviewedAt = DateTime.Now, // 記得加上評論時間
+                IsHidden = false
+            };
+            await _context.ExpReviews.AddAsync(newReview);
+            await _context.SaveChangesAsync();
+            return new DAPIResponse<string>
+            {
+                IsSuccess = true,
+                Message = "~感謝大大撥冗評論~"
+            };
+        }
         #endregion
         #endregion
 
@@ -500,3 +527,4 @@ namespace ExpServiceHelper.Service
         #endregion
 
     }
+}
