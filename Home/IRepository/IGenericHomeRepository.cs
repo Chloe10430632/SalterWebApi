@@ -15,5 +15,6 @@ namespace HomeRepositoryHelper.IRepository
         public Task DeleteByIdAsync(int id);
         public  Task UpdateAsync(Table entity);
         public  Task SaveAsync();
+        
     }
 }

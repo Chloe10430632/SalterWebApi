@@ -15,5 +15,6 @@ namespace HomeServiceHelper.IService
         Task<IEnumerable<string?>> GetAllCityAsync();
         Task<IEnumerable<HouseDetailViewDTO>> GetTopRoomsAsync(int count);
         Task<bool> AddReviewAsync(ReviewCreateDTO dto);
+        Task<bool> CreateFullHouseAsync(HouseCreateDTO dto);
     }
 }

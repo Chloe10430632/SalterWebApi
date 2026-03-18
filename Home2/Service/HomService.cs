@@ -1,6 +1,7 @@
 ﻿using HomeRepositoryHelper.IRepository;
 using HomeServiceHelper.IService;
 using HomeServiceHelper.Models.DTO.ViewModels;
+using Microsoft.EntityFrameworkCore;
 using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
@@ -17,17 +18,20 @@ namespace HomeServiceHelper.Service
         private readonly IGenericHomeRepository<HomRoomType> _roomTypeRepo;
         private readonly IGenericHomeRepository<HomRoomImage> _houseImageRepo;
         private readonly IGenericHomeRepository<HomReview> _reviewRepo;
+        private readonly SalterDbContext _context;
         public HomService
             (IGenericHomeRepository<HomHouse> houseRepo,
             IGenericHomeRepository<HomRoomType> roomTypeRepo,
             IGenericHomeRepository<HomRoomImage> houseImageRepo,
-            IGenericHomeRepository<HomReview> reviewRepo
+            IGenericHomeRepository<HomReview> reviewRepo,
+            SalterDbContext context
             )
         {
             _houseRepo = houseRepo;
             _roomTypeRepo = roomTypeRepo;
             _houseImageRepo = houseImageRepo;
             _reviewRepo = reviewRepo;
+            _context = context;
         }
 
         //取得所有房子及其房型的基本資訊
@@ -177,15 +181,74 @@ namespace HomeServiceHelper.Service
                 Comment = dto.Comment,
                 UserId = dto.MemberId,
                 CreatedTime = DateTime.Now,
-                BookingId =1001
+                BookingId = 1001
             };
-            
+
             await _reviewRepo.AddAsync(newReview);
-            
+
             return true;
         }
 
+        //新增資料API：一次新增房子、房型、圖片等相關資料，並確保資料的一致性（使用交易）
+        public async Task<bool> CreateFullHouseAsync(HouseCreateDTO dto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
+            try
+            {
+                // 1. 新增房屋 (HomHouse)
+                var house = new HomHouse
+                {
+                    UserId = dto.UserID,
+                    Description = dto.HouseDescription,
+                    Location = dto.Location,
+                    District = dto.District,
+                    Citie = dto.Citie
+                };
+                await _houseRepo.AddAsync(house);
+                // 必須先 Save 才能拿到自動產生的 houseID
+                await _houseRepo.SaveAsync();
 
+                // 2. 新增房型 (HomRoomType)
+                var roomType = new HomRoomType
+                {
+                    HouseId = house.HouseId, // 關聯剛產生的 HouseID
+                    Name = dto.RoomName,
+                    Capacity = dto.Capacity,
+                    PricePerNight = dto.PricePerNight,
+                    Description = dto.RoomDescription,
+                    CreatedTime = DateTime.Now,
+                    IsActive = true,
+                    ViewCount = 0
+                };
+                await _roomTypeRepo.AddAsync(roomType);
+                await _roomTypeRepo.SaveAsync(); // 拿到 roomTypeID
+
+                // 3. 批次新增圖片 (HomRoomImage)
+                if (dto.ImageUrls != null && dto.ImageUrls.Any())
+                {
+                    foreach (var url in dto.ImageUrls)
+                    {
+                        var roomImage = new HomRoomImage
+                        {
+                            RoomTypeId = roomType.RoomTypeId, // 關聯剛產生的 RoomTypeID
+                            ImagePath = url,
+                            CreatedTime = DateTime.Now
+                        };
+                        await _houseImageRepo.AddAsync(roomImage);
+                    }
+                    await _houseImageRepo.SaveAsync();
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+
+        }
     }
 }
