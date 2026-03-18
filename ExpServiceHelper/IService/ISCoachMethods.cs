@@ -51,12 +51,15 @@ namespace ExpServiceHelper.IService
         #region 課程模板編輯
         Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId);
         #endregion
-        #region 課程介紹get{id}
+        #region  課程上架 
+        Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId);
         #endregion
-        #region 課程刪除
+        #region 課程展示
+        Task<DCourseOpenSession> ThisCourse(int coachId, int courseId);
         #endregion
-        #region 預約課程
         #endregion
+
+        #region 評論
         #region 新增評論
         #endregion
         #region 編輯評論
@@ -65,7 +68,10 @@ namespace ExpServiceHelper.IService
         #endregion
         #endregion
 
+
         #region 交易
+        #region 預約課程
+        #endregion
         #region 支付 
         #endregion
         #region 歷史交易紀錄 

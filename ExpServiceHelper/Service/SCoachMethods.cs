@@ -460,8 +460,6 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-
-
         #endregion
 
         #region ~~評論~~
@@ -472,12 +470,6 @@ namespace ExpServiceHelper.Service
 
 
 
-        #region 課程
-        #region 課程搜尋-有名額
-        #endregion
-        #region 課程搜尋-難度
-        #endregion
-        #endregion
 
         #region 評論
         #region 新增評論
@@ -500,5 +492,11 @@ namespace ExpServiceHelper.Service
         #region 營運 
         #endregion
 
+        #region 課程--搜尋
+        #region 課程搜尋-有名額
+        #endregion
+        #region 課程搜尋-難度
+        #endregion
+        #endregion
 
     }
