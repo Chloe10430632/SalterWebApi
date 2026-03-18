@@ -39,6 +39,9 @@ namespace ExpServiceHelper.IService
         #region 查看評論
         Task<List<DCoachReview>> CoachReviews(int coachId);
         #endregion
+        # region 列出所有收藏
+        Task<List<DCoachFavList>> GetMyFavCoach(int userId);
+        #endregion
         #endregion
 
         #region 課程

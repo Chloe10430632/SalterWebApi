@@ -46,6 +46,6 @@ namespace ExpServiceHelper.Service
             } }
             catch (Exception ex) { throw new Exception($"{ex.Message}"); }
         }
-        //public async Task<List<DCoachFav>> GetMyFavCoach() { }
+        
     }
 }

@@ -162,8 +162,28 @@ namespace SalterWebApi.Areas.Experience
                     var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
                     return Ok(result);
                 }
-                return BadRequest("登入後才能收藏");
+                return BadRequest("登入後才能使用功能");
             }
+        #endregion
+
+        #region 收藏清單
+        [HttpGet("myFavList{id}")]
+        public async Task<IActionResult> MyFavCoachList(int userId) {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            }
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                var result = await _sCoachMethods.GetMyFavCoach(userId);
+                if (result == null || userId == 0)
+                    return NotFound("...收藏列表很冷清...");
+            return Ok(result);
+            }
+            return BadRequest("登入後才能使用功能");
+        }
         #endregion
         #endregion
 

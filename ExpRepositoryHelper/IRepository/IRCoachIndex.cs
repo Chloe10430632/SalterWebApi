@@ -16,7 +16,7 @@ namespace ExpRepositoryHelper.IRepository
         Task DeleteFavCoach(int userID, int coachID);
         /**檢查存在*/
         Task<bool> ExistAsync(int userID, int coachID);
-
+       
 
     }
 }

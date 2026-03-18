@@ -13,7 +13,5 @@ namespace ExpServiceHelper.IService
     {
         /**收藏教練*/
         Task<string?> MyFavCoach(DCoachFav a, int UserId);
-        
-      
     }
 }

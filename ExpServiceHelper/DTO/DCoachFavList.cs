@@ -6,9 +6,12 @@ using System.Threading.Tasks;
 
 namespace ExpServiceHelper.DTO
 {
-    public class DCoachInfo
+    public class DCoachFavList
     {
+        public int UserId { get; set; }
         public int CoachId { get; set; }
+
+        //===收藏清單===//
         public string CoachName { get; set; } = null!;
         public string? AvatarUrl { get; set; }
         public List<string?> District { get; set; } = new List<string>();
@@ -16,12 +19,5 @@ namespace ExpServiceHelper.DTO
         public double AvgRating { get; set; }
         public int ReviewCount { get; set; }
         public List<string> Specialities { get; set; } = new List<string>();
-        //===最新排序===//
-        public DateTime? CreatedAt { get; set; }
-
-        //===詳細===//
-        public string? Introduction { get; set; }
-     
-
     }
 }

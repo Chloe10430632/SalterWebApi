@@ -269,6 +269,33 @@ namespace ExpServiceHelper.Service
             return recommendedList;
         }
         #endregion  
+
+        #region 
+       
+        public async Task<List<DCoachFavList>> GetMyFavCoach(int userId)
+        {
+            // 1. 先拿到 Entity 列表
+            var fav = _context.ExpFavorites
+                .Where(f => f.UserId == userId) 
+                .Select(f => new DCoachFavList
+                {
+                    UserId = f.UserId,
+                    CoachId = f.CoachId,
+                    CoachName = f.Coach.Name, // 透過導覽屬性抓教練名
+                    AvatarUrl = f.Coach.AvatarUrl,
+                    City = f.Coach.City.Name,
+                    District = f.Coach.TripDistricts.Select(d => d.Name).ToList(),
+                    Specialities = f.Coach.Specialities.Select(sm => sm.SportsName).ToList(),
+                    AvgRating = f.Coach.ExpReviews.Any()
+                        ? f.Coach.ExpReviews.Average(r => (double)r.Rating)
+                        : 0,
+                    ReviewCount = f.Coach.ExpReviews.Count()
+                }).ToListAsync();
+        
+            return await fav;
+        }
+        #endregion
+
         #endregion
 
         #region~~課程~~
@@ -279,7 +306,7 @@ namespace ExpServiceHelper.Service
         #endregion
         #endregion
 
-        
+
 
     }
     #region 課程
@@ -287,26 +314,26 @@ namespace ExpServiceHelper.Service
     #endregion
     //CourseSaveasTemplate()
     #region 課程編輯post{id}
-        #endregion
-        #region 課程刪除
-        #endregion
-        #region 預約課程
-        #endregion
-        #region 新增評論
-        #endregion
-        #region 編輯評論
-        #endregion
-        #region 刪除評論
-        #endregion
-        #endregion
+    #endregion
+    #region 課程刪除
+    #endregion
+    #region 預約課程
+    #endregion
+    #region 新增評論
+    #endregion
+    #region 編輯評論
+    #endregion
+    #region 刪除評論
+    #endregion
+    #endregion
 
-        #region 交易
-        #region 支付 
-        #endregion
-        #region 歷史交易紀錄 
-        #endregion
-        #endregion
+    #region 交易
+    #region 支付 
+    #endregion
+    #region 歷史交易紀錄 
+    #endregion
+    #endregion
 
-        #region 營運 
-        #endregion
+    #region 營運 
+    #endregion
 }
