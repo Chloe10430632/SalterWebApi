@@ -249,6 +249,7 @@ public class TripRepository : ITripRepository
     {
         return await _db.TripGearItems
             .Include(g => g.TripGearChecks)
+            .ThenInclude(c => c.User)
             .Where(g => g.TripId == tripId)
             .ToListAsync();
     }

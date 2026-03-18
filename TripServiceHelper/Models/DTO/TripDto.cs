@@ -108,7 +108,8 @@ public class TripAnnouncementDto //後端回傳給前端
     public DateTime UpdatedAt { get; set; }
 }
 
-public class TripAnnouncementRequestDto //前端送到後端的資料格式
+//建立用
+public class TripAnnouncementRequestDto
 {
     [Required(ErrorMessage = "標題不能為空")]
     [MaxLength(200, ErrorMessage = "標題最多 200 字")]
@@ -116,6 +117,13 @@ public class TripAnnouncementRequestDto //前端送到後端的資料格式
 
     public string? Content { get; set; }
 }
+
+public class TripAnnouncementUpdateDto
+{
+    [MaxLength(200, ErrorMessage = "標題最多 200 字")]
+    public string? Title { get; set; }
+    public string? Content { get; set; }
+}   
 #endregion
 
 #region 裝備
@@ -126,6 +134,7 @@ public class TripGearItemDto
     public bool IsRequired { get; set; }
     public bool IsCheckedByMe { get; set; }
     public int CheckedCount { get; set; }
+    public List<CheckedMemberDto> CheckedMembers { get; set; } = new();
 }
 
 public class TripGearItemRequestDto
@@ -135,6 +144,12 @@ public class TripGearItemRequestDto
     public string ItemName { get; set; } = null!;
 
     public bool IsRequired { get; set; }
+}
+public class CheckedMemberDto
+{
+    public int UserId { get; set; }
+    public string UserName { get; set; } = null!;
+    public bool IsChecked { get; set; }
 }
 #endregion
 
@@ -157,12 +172,21 @@ public class TripReminderRequestDto
 #endregion
 
 #region 地點 Request
+// 建立用
 public class TripLocationRequestDto
 {
     public int LocationId { get; set; }
     public string? LocationRole { get; set; }
     public string? Note { get; set; }
     public int SortOrder { get; set; }
+}
+
+// 更新用
+public class TripLocationUpdateDto
+{
+    public string? LocationRole { get; set; }
+    public string? Note { get; set; }
+    public int? SortOrder { get; set; }
 }
 #endregion
 

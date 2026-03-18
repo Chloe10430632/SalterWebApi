@@ -1429,7 +1429,9 @@ public partial class SalterDbContext : DbContext
             entity.HasIndex(e => e.IsPinned, "IX_TripAnnouncements_Pinned");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Content).HasColumnName("content");
+            entity.Property(e => e.Content)
+    .HasColumnType("nvarchar(max)")
+    .HasColumnName("content");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")

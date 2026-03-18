@@ -48,7 +48,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.CreateTripAsync(dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -60,7 +60,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.UpdateTripAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -72,7 +72,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.DeleteTripAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -88,7 +88,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.JoinTripAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -100,7 +100,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.LeaveTripAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -126,7 +126,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.AddFavoriteAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -138,7 +138,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.RemoveFavoriteAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -154,7 +154,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.GetAnnouncementsAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<List<TripAnnouncementDto>>.Ok(result.Data!));
     }
 
@@ -166,22 +166,21 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.CreateAnnouncementAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
     [HttpPut("announcements/{aid}")]
-    public async Task<IActionResult> UpdateAnnouncement(int aid, [FromBody] TripAnnouncementRequestDto dto)
+    public async Task<IActionResult> UpdateAnnouncement(int aid, [FromBody] TripAnnouncementUpdateDto dto)
     {
         var userId = GetUserId();
         if (userId == null)
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.UpdateAnnouncementAsync(aid, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
-
     [HttpDelete("announcements/{aid}")]
     public async Task<IActionResult> DeleteAnnouncement(int aid)
     {
@@ -190,7 +189,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.DeleteAnnouncementAsync(aid, userId.Value);
         if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -218,7 +217,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.GetGearItemsAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<List<TripGearItemDto>>.Ok(result.Data!));
     }
 
@@ -230,7 +229,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.CreateGearItemAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -242,7 +241,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.UpdateGearItemAsync(gid, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -266,7 +265,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.ToggleGearCheckAsync(gid, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -282,7 +281,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.GetLocationsAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<List<TripLocationDto>>.Ok(result.Data!));
     }
 
@@ -294,19 +293,19 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.CreateLocationAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
     [HttpPut("locations/{lid}")]
-    public async Task<IActionResult> UpdateLocation(int lid, [FromBody] TripLocationRequestDto dto)
+    public async Task<IActionResult> UpdateLocation(int lid, [FromBody] TripLocationUpdateDto dto)
     {
         var userId = GetUserId();
         if (userId == null)
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.UpdateLocationAsync(lid, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -334,7 +333,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.GetRemindersAsync(id, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<List<TripReminderDto>>.Ok(result.Data!));
     }
 
@@ -346,7 +345,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.CreateReminderAsync(id, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
@@ -358,7 +357,7 @@ public class TripController : ControllerBase
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.UpdateReminderAsync(rid, dto, userId.Value);
         if (!result.IsSuccess)
-            return BadRequest(ApiResponse<string>.Fail(result.Message));
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
