@@ -23,7 +23,7 @@ public partial class ForumPost
 
     public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     public virtual ForumBoardCategory Board { get; set; } = null!;
 

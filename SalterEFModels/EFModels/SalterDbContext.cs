@@ -55,7 +55,7 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<ExpEquipmentPicture> ExpEquipmentPictures { get; set; }
 
-    public virtual DbSet<ExpFavorites> ExpFavorites { get; set; }
+    public virtual DbSet<ExpFavorite> ExpFavorites { get; set; }
 
     public virtual DbSet<ExpMessage> ExpMessages { get; set; }
 
@@ -167,7 +167,7 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
 
-
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CardActivityType>(entity =>
@@ -575,10 +575,6 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.CourseTemplateId).HasColumnName("course_template_id");
             entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
             entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at");
-
-            entity.HasOne(d => d.CourseTemplate).WithMany(p => p.ExpCoursePhotos)
-                .HasForeignKey(d => d.CourseTemplateId)
-                .HasConstraintName("FK__ExpCourse__cours__2057CCD0");
         });
 
         modelBuilder.Entity<ExpCourseSession>(entity =>
@@ -608,9 +604,7 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F4ACBE606");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.Description)
@@ -623,6 +617,7 @@ public partial class SalterDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("location");
             entity.Property(e => e.LocationId).HasColumnName("location_id");
+            entity.Property(e => e.PhotoId).HasColumnName("photo_id");
             entity.Property(e => e.Price)
                 .HasColumnType("decimal(7, 0)")
                 .HasColumnName("price");
@@ -637,7 +632,11 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.LocationNavigation).WithMany(p => p.ExpCourseTemplates)
                 .HasForeignKey(d => d.LocationId)
-                .HasConstraintName("FK_expCourseTemplates_TripLocations");
+                .HasConstraintName("FK_ExpCourseTemplates_TripLocations");
+
+            entity.HasOne(d => d.Photo).WithMany(p => p.ExpCourseTemplates)
+                .HasForeignKey(d => d.PhotoId)
+                .HasConstraintName("FK_ExpCourseTemplates_ExpCoursePhotos");
         });
 
         modelBuilder.Entity<ExpEquipment>(entity =>
@@ -726,7 +725,7 @@ public partial class SalterDbContext : DbContext
                 .HasConstraintName("FK__expEquipm__expEq__37C5420D");
         });
 
-        modelBuilder.Entity<ExpFavorites>(entity =>
+        modelBuilder.Entity<ExpFavorite>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_ExpFavorites_1");
 
@@ -1012,9 +1011,14 @@ public partial class SalterDbContext : DbContext
                 .HasColumnName("updated_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
+            entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
+                .HasForeignKey(d => d.ParentCommentId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ForumComments_ForumComments");
+
             entity.HasOne(d => d.Post).WithMany(p => p.ForumComments)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_forumComments_forumPosts");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumComments)
@@ -1426,9 +1430,7 @@ public partial class SalterDbContext : DbContext
             entity.HasIndex(e => e.IsPinned, "IX_TripAnnouncements_Pinned");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Content)
-                .HasColumnType("text")
-                .HasColumnName("content");
+            entity.Property(e => e.Content).HasColumnName("content");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
@@ -1797,13 +1799,6 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
-            entity.Property(e => e.CoverImageUrl)
-    .HasMaxLength(500)
-    .HasColumnName("cover_image_url");
-
-            entity.Property(e => e.CoverImagePublicId)
-                .HasMaxLength(200)
-                .HasColumnName("cover_image_public_id");
 
             entity.HasOne(d => d.OrganizerUser).WithMany(p => p.TripTrips)
                 .HasForeignKey(d => d.OrganizerUserId)

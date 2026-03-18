@@ -72,12 +72,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //Forum功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericSalterRepository<>), typeof(GenericSalterRepository<>));
 builder.Services.AddScoped<IGenericSalterRepository<ForumBoardCategory>, GenericSalterRepository<ForumBoardCategory>>();
+builder.Services.AddScoped<IGenericSalterRepository<ForumBoardInteraction>, GenericSalterRepository<ForumBoardInteraction>>();
 builder.Services.AddScoped<IGenericSalterRepository<ForumPost>, GenericSalterRepository<ForumPost>>();
+builder.Services.AddScoped<IGenericSalterRepository<ForumPostInteraction>, GenericSalterRepository<ForumPostInteraction>>();
+builder.Services.AddScoped<IGenericSalterRepository<ForumAd>, GenericSalterRepository<ForumAd>>();
+builder.Services.AddScoped<IGenericSalterRepository<ForumComment>, GenericSalterRepository<ForumComment>>();
 
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
-
+builder.Services.AddScoped<IAdsService, AdsService>();
+builder.Services.AddScoped<IPostInteractionsService, PostInteractionsService>();
+builder.Services.AddScoped<IBoardInteractionsService, BoardInteractionsService>();
+builder.Services.AddScoped<ICommentsService, CommentsService>();
 
 //User功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericUserRepository<>), typeof(GenericUserRepository<>));
@@ -179,14 +186,15 @@ if (app.Environment.IsDevelopment())
                .WithPreferredScheme("Bearer");
     });
 }
+app.UseExceptionHandler(); //全域錯誤處理
+app.UseStaticFiles(); //存取靜態圖片
+app.UseRouting();
 
 //使用開放其他來源的自定義政策
 app.UseCors("Allow5500");
 app.UseCors("Allow4200");
 
-app.UseStaticFiles(); //存取靜態圖片
 
-app.UseExceptionHandler(); //全域錯誤處理
 
 app.UseHttpsRedirection();
 

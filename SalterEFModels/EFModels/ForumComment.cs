@@ -19,6 +19,10 @@ public partial class ForumComment
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<ForumComment> InverseParentComment { get; set; } = new List<ForumComment>();
+
+    public virtual ForumComment? ParentComment { get; set; }
+
     public virtual ForumPost Post { get; set; } = null!;
 
     public virtual UserUser User { get; set; } = null!;

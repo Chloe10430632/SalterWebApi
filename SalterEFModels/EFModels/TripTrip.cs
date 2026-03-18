@@ -28,10 +28,10 @@ public partial class TripTrip
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
     public string? CoverImageUrl { get; set; }
+
     public string? CoverImagePublicId { get; set; }
-
-
 
     public virtual UserUser OrganizerUser { get; set; } = null!;
 
