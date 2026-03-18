@@ -10,7 +10,7 @@ namespace ExpServiceHelper.DTO
     {
         public int TemplateId { get; set; }
         public string TimeSlot { get; set; } // 譬如 "09:00-11:00"
-        public int MaxStudent { get; set; }
+        public int MaxStudents { get; set; }
         public List<DateTime> SelectedDates { get; set; } = new List<DateTime>(); // 這裡就是放 [4/13, 4/27]
     }
 }

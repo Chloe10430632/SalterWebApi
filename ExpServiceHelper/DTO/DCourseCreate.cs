@@ -11,10 +11,10 @@ namespace ExpServiceHelper.DTO
         public int? CoachId { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
-        public int Difficulty { get; set; }
+        public string? Difficulty { get; set; }
         public decimal? Price { get; set; }
         public string? Location { get; set; }
-        public string? PhotoUrl { get; set; }
+        public List<string> PhotoUrls { get; set; } = new List<string>();
 
     }
 }
