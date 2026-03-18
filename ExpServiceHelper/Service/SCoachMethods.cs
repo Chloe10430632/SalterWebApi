@@ -403,24 +403,25 @@ namespace ExpServiceHelper.Service
 
 
             //選時間和人數
-            DateTime today = DateTime.Today;
-            DateTime day60 = today.AddDays(60);
+            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+            DateOnly day60 = today.AddDays(60);
 
-            foreach (var date in dto.SelectedDates){
+            foreach (var date in dto.SelectedDates)
+            {
 
                 if (date < today || date > day60) continue;
                 //找有沒有衝堂
-                var dateOnly = DateOnly.FromDateTime(date);  //date 是 DateTime，資料庫是 DateOnly，要轉換
                 bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
                     s.CoachId == t.CoachId &&
-                    s.SessionDate == dateOnly &&
+                    s.SessionDate == date &&
                     s.TimeSlot == dto.TimeSlot);
                 if (isConflict) throw new Exception("尚未習得隱分身之術 你逆");
 
-                var newSession = new ExpCourseSession{
+                var newSession = new ExpCourseSession
+                {
                     CourseTemplateId = TemplateId,
                     CoachId = t.CoachId,
-                    SessionDate = dateOnly,
+                    SessionDate = date,
                     TimeSlot = dto.TimeSlot,
                     MaxParticipants = dto.MaxStudents,
                     CurrentParticipants = 0,
@@ -430,7 +431,8 @@ namespace ExpServiceHelper.Service
                 await _context.ExpCourseSessions.AddAsync(newSession);
             }
             _context.SaveChangesAsync();
-            return new DTO.DAPIResponse<string>{
+            return new DTO.DAPIResponse<string>
+            {
                 IsSuccess = true,
                 Message = "課程開放報名~",
             };
@@ -442,38 +444,57 @@ namespace ExpServiceHelper.Service
 
 
 
+
+        #endregion
+
+        #region 課程展示
+        public async Task<DCourseOpenSession> ThisCourse(int coachId, int courseId)
+        {
+            var result = await _context.ExpCourseSessions
+                    .Where(c => c.CoachId == coachId && c.Id == courseId)
+                    .Select(c => new DCourseOpenSession
+                    {
+                        TemplateId = c.Id,
+                        CoachId = c.CoachId,
+                        TimeSlot = c.TimeSlot,
+                        MaxStudents = c.MaxParticipants,
+                        SelectedDates = new List<DateOnly> { c.SessionDate.Value },
+                        UpdatedAt = c.UpdatedAt
+                    }).FirstOrDefaultAsync();
+            return result;
+        }
+        #endregion
+
+        #endregion
+        //var template = _context.ExpCourseSessions.FirstOrDefault(t => t.Id == dto.TemplateId && t.CoachId == coachId);
+        //        if (template == null){ throw new Exception("不要偷跑去其他教練的領地"); }
+
+
+
+        #region 課程
+        #region 課程搜尋
+        #endregion
+        #region 課程刪除
+        #endregion
+        #region 預約課程
+        #endregion
+        #region 新增評論
+        #endregion
+        #region 編輯評論
+        #endregion
+        #region 刪除評論
+        #endregion
+        #endregion
+
+        #region 交易
+        #region 支付 
+        #endregion
+        #region 歷史交易紀錄 
+        #endregion
+        #endregion
+
+        #region 營運 
+        #endregion
+
     }
-    #endregion
-
-    #endregion
-    //var template = _context.ExpCourseSessions.FirstOrDefault(t => t.Id == dto.TemplateId && t.CoachId == coachId);
-    //        if (template == null){ throw new Exception("不要偷跑去其他教練的領地"); }
-
-
-
-    #region 課程
-    #region 課程介紹get{id}
-    #endregion
-    #region 課程刪除
-    #endregion
-    #region 預約課程
-    #endregion
-    #region 新增評論
-    #endregion
-    #region 編輯評論
-    #endregion
-    #region 刪除評論
-    #endregion
-    #endregion
-
-    #region 交易
-    #region 支付 
-    #endregion
-    #region 歷史交易紀錄 
-    #endregion
-    #endregion
-
-    #region 營運 
-    #endregion
-
 }
