@@ -14,7 +14,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ExpServiceHelper.Service
 {
-# region 擴充方法區
+    #region 擴充方法區
     // --- 這裡是擴充方法區（放在最外層，不要住在別的 Class 裡面） ---public static class CoachMappingExtensions
     public static class CoachMappingExtensions
     {
@@ -47,9 +47,7 @@ namespace ExpServiceHelper.Service
         public SCoachMethods(SalterDbContext dbContext) { _context = dbContext; }
         #endregion
 
-        #region~~教練~~
         #region 入口
-
         #region~~搜尋-地區~~
         public async Task<List<DCoachInfo>> GetCoachDist(string keyDistrict)
         {
@@ -64,7 +62,6 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region~~搜尋-專業~~
-
         public async Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial)
         {
             var result = await _context.ExpCoaches
@@ -88,7 +85,6 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region~~排序-熱門~~
-
         public async Task<List<DCoachInfo>> CoachRecommand()
         {
             // 1. 只拿「排序需要」的資料
@@ -110,8 +106,10 @@ namespace ExpServiceHelper.Service
         #endregion
         #endregion
 
+        #region~~教練~~
         #region 查看評論
-        public async Task<List<DCoachReview>> CoachReviews(int coachId) {
+        public async Task<List<DCoachReview>> CoachReviews(int coachId)
+        {
             var review = _context.ExpReviews
                 .Where(r => r.CoachId == coachId && r.IsHidden != true)
                 .OrderByDescending(r => r.ReviewedAt)
@@ -302,8 +300,9 @@ namespace ExpServiceHelper.Service
 
         #region~~課程~~
         #region 課程模板建立
-        public async Task<DAPIResponse<int>> CreateTemplate(DCourseCreate dto, int coachId) {
-           //主表圖表分開處理
+        public async Task<DAPIResponse<int>> CreateTemplate(DCourseCreate dto, int coachId)
+        {
+            //主表圖表分開處理
             var t = new ExpCourseTemplate
             {
                 CoachId = coachId,
@@ -312,10 +311,11 @@ namespace ExpServiceHelper.Service
                 Difficulty = dto.Difficulty,
                 Price = dto.Price,
                 Location = dto.Location,
-               CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now
             };
             //有傳圖片再做這步
-            if (dto.PhotoUrls != null) {
+            if (dto.PhotoUrls != null)
+            {
                 foreach (var pic in dto.PhotoUrls)
                 {
                     t.ExpCoursePhotos.Add(new ExpCoursePhoto
@@ -330,30 +330,32 @@ namespace ExpServiceHelper.Service
             //update
             await _context.SaveChangesAsync();
 
-            return new DAPIResponse<int> {
+            return new DAPIResponse<int>
+            {
                 IsSuccess = true,
                 Message = "新課程模板做好啦 ！",
-                Data = t.Id 
+                Data = t.Id
             };
         }
-       
+        #endregion
 
-
- #region 課程模板編輯
-        public async Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId) {
+        #region 課程模板編輯
+        public async Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId)
+        {
             var t = _context.ExpCourseTemplates
                 .Include(x => x.ExpCoursePhotos)
-                .FirstOrDefault( c =>c.Id == TemplateId);
+                .FirstOrDefault(c => c.Id == TemplateId);
             if (t == null) return null;
 
-            if (!string.IsNullOrEmpty(dto.Title)){ t.Title = dto.Title; }
-            if (!string.IsNullOrEmpty(dto.Description)){ t.Description = dto.Description; }
-            if (!string.IsNullOrEmpty(dto.Difficulty)){ t.Difficulty = dto.Difficulty; }
-            if (dto.Price > 0){ t.Price = dto.Price; }
+            if (!string.IsNullOrEmpty(dto.Title)) { t.Title = dto.Title; }
+            if (!string.IsNullOrEmpty(dto.Description)) { t.Description = dto.Description; }
+            if (!string.IsNullOrEmpty(dto.Difficulty)) { t.Difficulty = dto.Difficulty; }
+            if (dto.Price > 0) { t.Price = dto.Price; }
             if (!string.IsNullOrEmpty(dto.Location)) { t.Location = dto.Location; }
-            if (dto.PhotoUrls != null){
+            if (dto.PhotoUrls != null)
+            {
                 // 1. 取得資料庫目前的照片網址清單
-               
+
                 var originPhoto = t.ExpCoursePhotos.ToList();
                 var existingUrls = originPhoto.Select(p => p.PhotoUrl).ToList();
 
@@ -386,47 +388,92 @@ namespace ExpServiceHelper.Service
             }
             t.UpdatedAt = DateTime.Now;
 
-            
+
             await _context.SaveChangesAsync();
             return dto;
-
         }
         #endregion
 
-        #endregion
-        //var template = _context.ExpCourseSessions.FirstOrDefault(t => t.Id == dto.TemplateId && t.CoachId == coachId);
-        //        if (template == null){ throw new Exception("不要偷跑去其他教練的領地"); }
-        #endregion
+        #region 課程上架 
+        public async Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId)
+        {
+            //先找有沒有模板
+            var t = await _context.ExpCourseTemplates.FirstOrDefaultAsync(t => t.Id == TemplateId);
+            if (t == null) { throw new Exception("凡人不能看的天書"); }
+
+
+            //選時間和人數
+            DateTime today = DateTime.Today;
+            DateTime day60 = today.AddDays(60);
+
+            foreach (var date in dto.SelectedDates){
+
+                if (date < today || date > day60) continue;
+                //找有沒有衝堂
+                var dateOnly = DateOnly.FromDateTime(date);  //date 是 DateTime，資料庫是 DateOnly，要轉換
+                bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
+                    s.CoachId == t.CoachId &&
+                    s.SessionDate == dateOnly &&
+                    s.TimeSlot == dto.TimeSlot);
+                if (isConflict) throw new Exception("尚未習得隱分身之術 你逆");
+
+                var newSession = new ExpCourseSession{
+                    CourseTemplateId = TemplateId,
+                    CoachId = t.CoachId,
+                    SessionDate = dateOnly,
+                    TimeSlot = dto.TimeSlot,
+                    MaxParticipants = dto.MaxStudents,
+                    CurrentParticipants = 0,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                await _context.ExpCourseSessions.AddAsync(newSession);
+            }
+            _context.SaveChangesAsync();
+            return new DTO.DAPIResponse<string>{
+                IsSuccess = true,
+                Message = "課程開放報名~",
+            };
+
+        }
 
 
 
-        #region 課程
-        #region 課程介紹get{id}
-        #endregion
-        //CourseSaveasTemplate()
-        #region 課程編輯post{id}
-        #endregion
-        #region 課程刪除
-        #endregion
-        #region 預約課程
-        #endregion
-        #region 新增評論
-        #endregion
-        #region 編輯評論
-        #endregion
-        #region 刪除評論
-        #endregion
-        #endregion
 
-        #region 交易
-        #region 支付 
-        #endregion
-        #region 歷史交易紀錄 
-        #endregion
-        #endregion
 
-        #region 營運 
-        #endregion
 
     }
+    #endregion
+
+    #endregion
+    //var template = _context.ExpCourseSessions.FirstOrDefault(t => t.Id == dto.TemplateId && t.CoachId == coachId);
+    //        if (template == null){ throw new Exception("不要偷跑去其他教練的領地"); }
+
+
+
+    #region 課程
+    #region 課程介紹get{id}
+    #endregion
+    #region 課程刪除
+    #endregion
+    #region 預約課程
+    #endregion
+    #region 新增評論
+    #endregion
+    #region 編輯評論
+    #endregion
+    #region 刪除評論
+    #endregion
+    #endregion
+
+    #region 交易
+    #region 支付 
+    #endregion
+    #region 歷史交易紀錄 
+    #endregion
+    #endregion
+
+    #region 營運 
+    #endregion
+
 }
