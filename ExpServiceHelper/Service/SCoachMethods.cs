@@ -34,18 +34,7 @@ namespace ExpServiceHelper.Service
                 CreatedAt = c.CreatedAt
             });
         }
-        public static IQueryable<DCourseOpenSession> SelectCourseInfo(this IQueryable<ExpCourseSession> query)
-        {
-            return query.Select(c => new DCourseOpenSession
-            {
-                TemplateId = c.Id,
-                CoachId = c.CoachId,
-                TimeSlot = c.TimeSlot,
-                MaxStudents = c.MaxParticipants,
-                SelectedDates = new List<DateOnly> { c.SessionDate.Value },
-                UpdatedAt = c.UpdatedAt
-            });
-        }
+       
     }
     
     #endregion
@@ -471,19 +460,22 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 課程搜尋-難度
-
-        #endregion
 
 
         #endregion
-        //var template = _context.ExpCourseSessions.FirstOrDefault(t => t.Id == dto.TemplateId && t.CoachId == coachId);
-        //        if (template == null){ throw new Exception("不要偷跑去其他教練的領地"); }
+
+        #region ~~評論~~
+        #region 新增評論
+
+        #endregion
+        #endregion
 
 
 
         #region 課程
         #region 課程搜尋-有名額
+        #endregion
+        #region 課程搜尋-難度
         #endregion
         #endregion
 
@@ -508,5 +500,5 @@ namespace ExpServiceHelper.Service
         #region 營運 
         #endregion
 
+
     }
-}
