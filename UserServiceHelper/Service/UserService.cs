@@ -366,7 +366,7 @@ namespace UserServiceHelper.Service
                     <h2 style='color:#2c3e50;'>Salter 驗證碼服務</h2>
                     <p>{userName} 您好，您的驗證碼如下：</p>
                     <h1 style='color:#3498db; text-align:center;'>{otp}</h1>
-                    <p style='color:#e74c3c;'>請在 5 分鐘內輸入。如果是您本人操作，請忽略此信。</p>
+                    <p style='color:#e74c3c;'>請在 5 分鐘內輸入。如果不是您本人操作，請忽略此信。</p>
                  </div>"
             };
 
