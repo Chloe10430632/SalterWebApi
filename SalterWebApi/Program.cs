@@ -170,6 +170,8 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
+app.UseExceptionHandler(); //全域錯誤處理
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -186,12 +188,11 @@ if (app.Environment.IsDevelopment())
                .WithPreferredScheme("Bearer");
     });
 }
-app.UseExceptionHandler(); //全域錯誤處理
 app.UseStaticFiles(); //存取靜態圖片
 app.UseRouting();
 
 //使用開放其他來源的自定義政策
-app.UseCors("Allow5500");
+//app.UseCors("Allow5500");
 app.UseCors("Allow4200");
 
 
@@ -200,8 +201,6 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication(); // 認證
 app.UseAuthorization();  // 授權
-
-app.UseAuthorization();
 
 app.MapControllers();
 
