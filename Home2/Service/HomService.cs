@@ -18,12 +18,14 @@ namespace HomeServiceHelper.Service
         private readonly IGenericHomeRepository<HomRoomType> _roomTypeRepo;
         private readonly IGenericHomeRepository<HomRoomImage> _houseImageRepo;
         private readonly IGenericHomeRepository<HomReview> _reviewRepo;
+        private readonly IGenericHomeRepository<HomRoomTypeAmenity> _amenityRepo;
         private readonly SalterDbContext _context;
         public HomService
             (IGenericHomeRepository<HomHouse> houseRepo,
             IGenericHomeRepository<HomRoomType> roomTypeRepo,
             IGenericHomeRepository<HomRoomImage> houseImageRepo,
             IGenericHomeRepository<HomReview> reviewRepo,
+            IGenericHomeRepository<HomRoomTypeAmenity> amenityRepo,
             SalterDbContext context
             )
         {
@@ -32,6 +34,7 @@ namespace HomeServiceHelper.Service
             _houseImageRepo = houseImageRepo;
             _reviewRepo = reviewRepo;
             _context = context;
+            _amenityRepo = amenityRepo;
         }
 
         //取得所有房子及其房型的基本資訊
@@ -193,6 +196,7 @@ namespace HomeServiceHelper.Service
         public async Task<bool> CreateFullHouseAsync(HouseCreateDTO dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
+            //使用交易技術，保證資料的一致性
 
             try
             {
@@ -238,6 +242,21 @@ namespace HomeServiceHelper.Service
                         await _houseImageRepo.AddAsync(roomImage);
                     }
                     await _houseImageRepo.SaveAsync();
+                }
+                // 4. 批次新增設備關聯 (HomRoomTypeAmenity)
+                if (dto.AmenityIds != null && dto.AmenityIds.Any())
+                {
+                    foreach (var amenityId in dto.AmenityIds)
+                    {
+                        var roomAmenity = new HomRoomTypeAmenity
+                        {
+                            RoomTypeId = roomType.RoomTypeId, // 關聯剛剛產生的房型
+                            AmenityId = amenityId             // 對應 HomAmenity 表的 ID
+                        };
+                        await _amenityRepo.AddAsync(roomAmenity);
+                    }
+                    // 最後統一儲存所有設備關聯
+                    await _amenityRepo.SaveAsync();
                 }
 
                 await transaction.CommitAsync();

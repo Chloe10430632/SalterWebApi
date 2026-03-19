@@ -24,6 +24,8 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
 
         // 圖片網址列表 (準備存入 HomRoomImage)
         public List<string> ImageUrls { get; set; } = new List<string>();
+        // 設施ID列表 (準備存入 HomRoomAmenity)
+        public List<int> AmenityIds { get; set; } = new List<int>();
     }
 
 }

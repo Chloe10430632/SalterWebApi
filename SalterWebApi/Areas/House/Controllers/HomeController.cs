@@ -77,5 +77,16 @@ namespace SalterWebApi.Areas.House.Controllers
 
             return StatusCode(500, "新增評論時發生錯誤");
         }
+
+        [HttpPost("create-full-house")]
+        public async Task<IActionResult> CreateFullHouse([FromBody] HouseCreateDTO dto)
+        {
+            var result = await _homService.CreateFullHouseAsync(dto);
+            if (result)
+            {
+                return Ok(new { message = "房子及相關資訊新增成功！" });
+            }
+            return StatusCode(500, "新增房子時發生錯誤");
+        }
     }
 }
