@@ -36,7 +36,7 @@ namespace ForumServiceHelper.Service
             _cloudinaryApiSecret = config["Cloudinary:ApiSecret"];
         }
 
-        public async Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(PostsQueryModel query)
+        public async Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(int userId,PostsQueryModel query)
         {
             query.SortBy = query.SortBy.ToUpper();
             query.TakeSize = (query.TakeSize <= 0 || query.TakeSize > 5) ? 5 : query.TakeSize;
@@ -51,14 +51,14 @@ namespace ForumServiceHelper.Service
                 posts = posts.Where(p => p.Content.Contains(kw) || p.Board.Title.Contains(kw));
             }
 
-            if(query.SortBy == SortTypes.Follow && query.UserId == 0)
+            if(query.SortBy == SortTypes.Follow && userId == 0)
                 throw new ArgumentException("欲瀏覽追蹤貼文，請先登入喔!");
 
             //處理 Follow 邏輯(使用 Join 效率更高)
-            if (query.SortBy == SortTypes.Follow && query.UserId>0)
+            if (query.SortBy == SortTypes.Follow && userId > 0)
             {
                 var followedBoardIds = _dbPosts.GetDbContext().ForumBoardInteractions
-                    .Where(bi => bi.UserId == query.UserId && bi.Type == BoardInteractionTypes.Follow)
+                    .Where(bi => bi.UserId == userId && bi.Type == BoardInteractionTypes.Follow)
                     .Select(bi => bi.BoardId);
                 posts = posts.Where(p => followedBoardIds.Contains(p.BoardId));
             }
@@ -69,10 +69,13 @@ namespace ForumServiceHelper.Service
                 UserName = p.User.UserName,
                 AvatarUrl = p.User.ProfilePicture,
                 BoardTitle = p.Board.Title,
+                LocationTitle = p.Location.Name,
                 ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
                 CreatedAt = p.CreatedAt,
-                ImageUrls = p.ForumPostsImages.Select(img => img.ImageUrl).ToList(),
+                ImageUrls = p.ForumPostsImages.OrderBy(img=>img.SortIndex).Select(img => img.ImageUrl).ToList(),
                 LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+                CollectCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
+                ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
                 CommentCount = p.ForumComments.Count(),
                 ViewCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.View),
                 PostTags = p.ForumPostTagDetails.Select(pt => pt.Tag.TagName).ToList()
