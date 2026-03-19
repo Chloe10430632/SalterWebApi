@@ -68,6 +68,7 @@ namespace ForumServiceHelper.Service
                 PostId = p.PostId,
                 UserName = p.User.UserName,
                 AvatarUrl = p.User.ProfilePicture,
+                BoardId = p.BoardId,
                 BoardTitle = p.Board.Title,
                 LocationTitle = p.Location.Name,
                 ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,

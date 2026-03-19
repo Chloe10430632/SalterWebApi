@@ -12,6 +12,7 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         public int PostId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
+        public int BoardId { get; set; }
         public string BoardTitle { get; set; } = "預設";
         public string LocationTitle { get; set; } = "預設";
         public string ContentPreview { get; set; } = string.Empty; // 內容摘要
