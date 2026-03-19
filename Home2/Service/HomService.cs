@@ -18,14 +18,16 @@ namespace HomeServiceHelper.Service
         private readonly IGenericHomeRepository<HomRoomType> _roomTypeRepo;
         private readonly IGenericHomeRepository<HomRoomImage> _houseImageRepo;
         private readonly IGenericHomeRepository<HomReview> _reviewRepo;
-        private readonly IGenericHomeRepository<HomRoomTypeAmenity> _amenityRepo;
+        private readonly IGenericHomeRepository<HomRoomTypeAmenity> _roomAmenityRepo;
+        private readonly IGenericHomeRepository<HomAmenity> _amenityRepo;
         private readonly SalterDbContext _context;
         public HomService
             (IGenericHomeRepository<HomHouse> houseRepo,
             IGenericHomeRepository<HomRoomType> roomTypeRepo,
             IGenericHomeRepository<HomRoomImage> houseImageRepo,
             IGenericHomeRepository<HomReview> reviewRepo,
-            IGenericHomeRepository<HomRoomTypeAmenity> amenityRepo,
+            IGenericHomeRepository<HomRoomTypeAmenity> roomAmenityRepo,
+                IGenericHomeRepository<HomAmenity> amenityRepo,
             SalterDbContext context
             )
         {
@@ -35,13 +37,14 @@ namespace HomeServiceHelper.Service
             _reviewRepo = reviewRepo;
             _context = context;
             _amenityRepo = amenityRepo;
+            _roomAmenityRepo = roomAmenityRepo;
         }
 
         //取得所有房子及其房型的基本資訊
         public async Task<IEnumerable<HouseDetailViewDTO>> GetAllHousesAsync()
         {
-            var rooms = await _roomTypeRepo.GetAllHouse();
-            var houses = await _houseRepo.GetAllHouse();
+            var rooms = await _roomTypeRepo.GetAll();
+            var houses = await _houseRepo.GetAll();
 
             var result = from h in houses
                          join r in rooms
@@ -55,7 +58,8 @@ namespace HomeServiceHelper.Service
                              Location = h.Location,
                              Citie = h.Citie,
                              District = h.District,
-                             Description = r.Description
+                             RoomDescription = r.Description,
+                             HouseDescription = h.Description
                          };
             return result.ToList();
         }
@@ -63,57 +67,77 @@ namespace HomeServiceHelper.Service
         // 根據搜尋條件（城市、可容納人數）篩選房子及其房型的基本資訊
         public async Task<IEnumerable<HouseDetailViewDTO>> SearchHousesAsync(HouseSearchDTO search)
         {
-            var rooms = await _roomTypeRepo.GetAllHouse();
-            var houses = await _houseRepo.GetAllHouse();
+            // 1. 抓取所有基礎資料
+            var houses = await _houseRepo.GetAll(); // 拿 HomHouse
+            var rooms = await _roomTypeRepo.GetAll(); // 拿 HomRoomType
+            var images = await _houseImageRepo.GetAll(); // 拿 HomRoomImage
+            var roomAmenities = await _roomAmenityRepo.GetAll(); // 拿 HomRoomTypeAmenity
+            var amenities = await _amenityRepo.GetAll(); // 拿 HomAmenity (為了拿設備名稱)
 
+            // 2. 開始 Join 與篩選
             var query = from h in houses
-                        join r in rooms
-                        on h.HouseId equals r.HouseId
+                        join r in rooms on h.HouseId equals r.HouseId
                         select new { h, r };
 
+            // 篩選城市
             if (!string.IsNullOrEmpty(search.Citie))
             {
                 query = query.Where(x => x.h.Citie.Contains(search.Citie));
             }
+            // 篩選人數
             if (search.PeopleCount.HasValue)
             {
-                query = query.Where(x => x.r.Capacity <= search.PeopleCount.Value);
+                query = query.Where(x => x.r.Capacity >= search.PeopleCount.Value);
+                 //房型容量 >= 需求人數
             }
 
+            // 組裝完整的 DTO
             var result = query.Select(x => new HouseDetailViewDTO
             {
                 RoomTypeId = x.r.RoomTypeId,
-                Name = x.r.Name,
+                Name = x.r.Name, // 確保欄位名正確
                 PricePerNight = x.r.PricePerNight,
                 Capacity = x.r.Capacity,
                 Location = x.h.Location,
                 Citie = x.h.Citie,
                 District = x.h.District,
-                Description = x.r.Description
+                RoomDescription = x.r.Description,
+                HouseDescription = x.h.Description,
+                //這裡補上圖片：過濾出屬於這個 RoomType 的所有網址
+                AllImages = images
+                    .Where(img => img.RoomTypeId == x.r.RoomTypeId)
+                    .Select(img => img.ImagePath)
+                    .ToList(),
+
+                // 這裡補上設備：透過關聯表找到對應的設備名稱
+                Amenities = (from ra in roomAmenities
+                             join a in amenities on ra.AmenityId equals a.AmenityId
+                             where ra.RoomTypeId == x.r.RoomTypeId
+                             select a.Name).ToList()
             });
+
             return result.ToList();
         }
 
         // 根據房型ID取得該房型的詳細資訊（包含房子資訊、所有圖片、評論等）
         public async Task<HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId)
         {
-            // 先取得該房型的基本資訊
-            var rooms = await _roomTypeRepo.GetAllHouse();
+            // 1. 取得基本資料 (維持原樣)
+            var rooms = await _roomTypeRepo.GetAll();
+            var roomAmenities = await _roomAmenityRepo.GetAll();
+            var amenities = await _amenityRepo.GetAll();
+
             var r = rooms.FirstOrDefault(x => x.RoomTypeId == roomTypeId);
             if (r == null) return null;
 
-            // 取得該房型所屬的房子資訊
-            var houses = await _houseRepo.GetAllHouse();
+            var houses = await _houseRepo.GetAll();
             var h = houses.FirstOrDefault(x => x.HouseId == r.HouseId);
 
-            // 取得該房型的所有圖片
-            var allImages = await _houseImageRepo.GetAllHouse();
-            var images = allImages.Where(x => x.RoomTypeId == roomTypeId)
-                .Select(x => x.ImagePath)
-                .ToList();
+            // 2. 取得圖片、評論 (維持原樣)
+            var allImages = await _houseImageRepo.GetAll();
+            var images = allImages.Where(x => x.RoomTypeId == roomTypeId).Select(x => x.ImagePath).ToList();
 
-            // 取得該房型的評論
-            var reviews = await _reviewRepo.GetAllHouse();
+            var reviews = await _reviewRepo.GetAll();
             var roomReviews = reviews.Where(rv => rv.RoomTypeId == roomTypeId)
                 .Select(rv => new ReviewItemDTO
                 {
@@ -122,7 +146,20 @@ namespace HomeServiceHelper.Service
                     CreatedTime = rv.CreatedTime
                 }).ToList();
 
-            // 組合成完整的房型詳細資訊 DTO
+            // 3. ✨ 重點改進：同時取得「名稱」和「ID」
+            // 這個是給詳情頁顯示文字用的 (原本的)
+            var amenitiesNameList = (from ra in roomAmenities
+                                     join a in amenities on ra.AmenityId equals a.AmenityId
+                                     where ra.RoomTypeId == roomTypeId
+                                     select a.Name).ToList();
+
+            // 🔥 這是新增的：給編輯頁「勾選」用的 ID 陣列
+            var amenityIds = roomAmenities
+                             .Where(ra => ra.RoomTypeId == roomTypeId)
+                             .Select(ra => ra.AmenityId)
+                             .ToList();
+
+            // 4. 組合成 DTO
             return new HouseDetailViewDTO
             {
                 RoomTypeId = r.RoomTypeId,
@@ -130,10 +167,15 @@ namespace HomeServiceHelper.Service
                 Capacity = r.Capacity,
                 PricePerNight = r.PricePerNight,
                 ViewCount = r.ViewCount,
-                Description = r.Description,
+                RoomDescription = r.Description,
+                HouseDescription = h?.Description, // 建議加個 ? 防止 null
                 Location = h?.Location,
                 District = h?.District,
                 Citie = h?.Citie,
+
+                Amenities = amenitiesNameList, // 文字陣列
+                AmenityIds = amenityIds,       // 補上這個數字陣列
+
                 AllImages = images,
                 Reviews = roomReviews
             };
@@ -142,7 +184,7 @@ namespace HomeServiceHelper.Service
         // 取得所有房子所在的城市列表（去重復後）
         public async Task<IEnumerable<string?>> GetAllCityAsync()
         {
-            var houses = await _houseRepo.GetAllHouse();
+            var houses = await _houseRepo.GetAll();
 
             return houses.Where(h => !string.IsNullOrEmpty(h.Citie)).
                 Select(h => h.Citie)
@@ -153,8 +195,8 @@ namespace HomeServiceHelper.Service
         // 取得瀏覽次數最高的前幾個房型的基本資訊
         public async Task<IEnumerable<HouseDetailViewDTO>> GetTopRoomsAsync(int count)
         {
-            var rooms = await _roomTypeRepo.GetAllHouse();
-            var houses = await _houseRepo.GetAllHouse();
+            var rooms = await _roomTypeRepo.GetAll();
+            var houses = await _houseRepo.GetAll();
 
             var query = from h in houses
                         join r in rooms
@@ -169,7 +211,8 @@ namespace HomeServiceHelper.Service
                             Location = h.Location,
                             Citie = h.Citie,
                             District = h.District,
-                            Description = r.Description
+                            RoomDescription = r.Description,
+                            HouseDescription = h.Description
                         };
             return query.Take(count).ToList();
         }
@@ -190,6 +233,13 @@ namespace HomeServiceHelper.Service
             await _reviewRepo.AddAsync(newReview);
 
             return true;
+        }
+
+        //查詢所有設備
+        public async Task<IEnumerable<HomAmenity>> GetAllAmenitiesAsync()
+        {
+            return await _amenityRepo.GetAll();
+
         }
 
         //新增資料API：一次新增房子、房型、圖片等相關資料，並確保資料的一致性（使用交易）
@@ -253,10 +303,10 @@ namespace HomeServiceHelper.Service
                             RoomTypeId = roomType.RoomTypeId, // 關聯剛剛產生的房型
                             AmenityId = amenityId             // 對應 HomAmenity 表的 ID
                         };
-                        await _amenityRepo.AddAsync(roomAmenity);
+                        await _roomAmenityRepo.AddAsync(roomAmenity);
                     }
                     // 最後統一儲存所有設備關聯
-                    await _amenityRepo.SaveAsync();
+                    await _roomAmenityRepo.SaveAsync();
                 }
 
                 await transaction.CommitAsync();
@@ -268,6 +318,82 @@ namespace HomeServiceHelper.Service
                 return false;
             }
 
+        }
+
+        //更新房型API
+        public async Task<bool> UpdateFullHouseAsync(HouseUpdateDTO dto)
+        {
+            try
+            {
+                // 抓取資料庫中現有的房型資料
+                var room = await _roomTypeRepo.GetByIdAsync(dto.RoomTypeId);
+                if (room == null) return false;
+
+                // 更新房型基本欄位 (將 DTO 的值賦給 Entity)
+                room.Name = dto.RoomName;
+                room.PricePerNight = dto.PricePerNight;
+                room.Capacity = dto.Capacity;
+                room.Description = dto.RoomDescription;
+
+                // 執行 Repository 的 Update
+                await _roomTypeRepo.UpdateAsync(room);
+
+                // 更新房屋基本資料 (地址資訊通常在 HomHouse 表)
+                var house = await _houseRepo.GetByIdAsync(room.HouseId);
+                if (house != null)
+                {
+                    house.Citie = dto.Citie;
+                    house.District = dto.District;
+                    house.Description = dto.HouseDescription;
+                    house.Location = dto.Location;
+                    await _houseRepo.UpdateAsync(house);
+                }
+
+                //先刪除該房型所有舊圖，再插入 DTO 帶來的新圖
+                var allImages = await _houseImageRepo.GetAll();
+                var oldImages = allImages.Where(x => x.RoomTypeId == dto.RoomTypeId);
+                foreach (var img in oldImages)
+                {
+                    await _houseImageRepo.DeleteByIdAsync(img.ImageId);
+                }
+
+                foreach (var path in dto.ImageUrls) // 這是前端 textarea 傳回來的網址陣列
+                {
+                    if (!string.IsNullOrWhiteSpace(path))
+                    {
+                        await _houseImageRepo.AddAsync(new HomRoomImage
+                        {
+                            RoomTypeId = dto.RoomTypeId,
+                            ImagePath = path,
+                            CreatedTime = DateTime.Now
+                        });
+                    }
+                }
+
+                // 先刪除舊關聯，再插入新勾選的 ID
+                var allRoomAmenities = await _roomAmenityRepo.GetAll();
+                var oldAmenities = allRoomAmenities.Where(x => x.RoomTypeId == dto.RoomTypeId);
+                foreach (var am in oldAmenities)
+                {
+                    await _roomAmenityRepo.DeleteByIdAsync(am.RoomTypeAmenityId);
+                }
+
+                foreach (var amId in dto.AmenityIds)
+                {
+                    await _roomAmenityRepo.AddAsync(new HomRoomTypeAmenity
+                    {
+                        RoomTypeId = dto.RoomTypeId,
+                        AmenityId = amId
+                    });
+                }
+
+                return true; // 全部順利完成
+            }
+            catch (Exception ex)
+            {
+                // 這裡可以記錄錯誤日誌 (Log)
+                return false;
+            }
         }
     }
 }

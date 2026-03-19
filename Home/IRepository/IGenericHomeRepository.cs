@@ -9,7 +9,7 @@ namespace HomeRepositoryHelper.IRepository
 {
     public interface IGenericHomeRepository<Table> where Table : class
     {
-        public Task<IEnumerable<Table>> GetAllHouse();
+        public Task<IEnumerable<Table>> GetAll();
         public  Task<Table?> GetByIdAsync(int id);
         public Task<Table> AddAsync(Table entity);
         public Task DeleteByIdAsync(int id);
