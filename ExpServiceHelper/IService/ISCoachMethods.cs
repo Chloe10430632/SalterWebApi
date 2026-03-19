@@ -1,4 +1,5 @@
-﻿using ExpServiceHelper.DTO;
+﻿using Azure;
+using ExpServiceHelper.DTO;
 using ExpServiceHelper.Service;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace ExpServiceHelper.IService
         /**排序-最新*/
         Task<List<DCoachInfo>> GetCoachNewest();
         /**排序-熱門*/
-        Task<List<DCoachInfo>> CoachRecommand();
+        Task<List<DCoachInfo>> CoachPopular(int page,int pageSize);
         #endregion
 
         #region ~~教練~~

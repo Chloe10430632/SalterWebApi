@@ -36,9 +36,9 @@ namespace SalterWebApi.Areas.Experience
         #region ~~入口~~
             #region 排序
             [HttpGet("PopRank")]
-            public async Task<IActionResult> PopRank()
+            public async Task<IActionResult> PopRank(int page = 1, int pageSize = 6)
             {
-                var result = await _sCoachMethods.CoachRecommand();
+            var result = await _sCoachMethods.CoachPopular(page, pageSize);
                 return Ok(result);
             }
 
@@ -128,7 +128,7 @@ namespace SalterWebApi.Areas.Experience
         [HttpGet("Recommand{id}")]
             public async Task<IActionResult> RecommandCoaches(int id)
             {
-                var result = await _sCoachMethods.CoachRecommand();
+                var result = await _sCoachMethods.CoachRecommand(id);
                 if (result == null || result.Count == 0)
                     return NotFound("教練們休息中");
                 return Ok(result);

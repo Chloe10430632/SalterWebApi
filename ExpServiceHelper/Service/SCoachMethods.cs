@@ -1,4 +1,5 @@
-﻿using ExpServiceHelper.DTO;
+﻿using Azure;
+using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -87,7 +88,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region~~排序-熱門~~
-        public async Task<List<DCoachInfo>> CoachRecommand()
+        public async Task<List<DCoachInfo>> CoachPopular(int page,int pageSize)
         {
             // 1. 只拿「排序需要」的資料
             var rankedCoachesQuery = _context.ExpCoaches
@@ -99,7 +100,8 @@ namespace ExpServiceHelper.Service
                 })
                 .OrderByDescending(x => x.Avg)
                 .ThenByDescending(x => x.Count)
-                .Take(12)
+                .Skip((page-1)*pageSize)
+                .Take(pageSize)
                 .Select(x => x.Entity); // 【關鍵】排序完後，我們只要回傳教練實體
 
             // 2. 既然拿到了「前12名的教練實體」，直接接上你的擴充方法！
@@ -230,7 +232,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 系統推薦教練  //似乎不會篩選 會跑所有教練
+        #region 系統推薦教練  
         public async Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId)
         {
             // 1. 先把「當前教練」的地區與專長抓出來（這是我們的基準點）
