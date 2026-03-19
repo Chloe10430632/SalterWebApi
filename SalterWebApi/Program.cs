@@ -20,6 +20,7 @@ using Microsoft.OpenApi.Models;
 using SalterEFModels.EFModels;
 using SalterWebApi.Middlewares;
 using Scalar.AspNetCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using TripRepositoryHelper.IRepository;
 using TripRepositoryHelper.Repository;
@@ -31,11 +32,11 @@ using UserRepositoryHelper.Repository;
 using UserServiceHelper.IService;
 using UserServiceHelper.Service;
 
-System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 
-System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
-System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
