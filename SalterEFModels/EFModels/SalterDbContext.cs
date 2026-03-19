@@ -167,7 +167,7 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
 
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CardActivityType>(entity =>
@@ -575,6 +575,10 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.CourseTemplateId).HasColumnName("course_template_id");
             entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
             entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at");
+
+            entity.HasOne(d => d.CourseTemplate).WithMany(p => p.ExpCoursePhotos)
+                .HasForeignKey(d => d.CourseTemplateId)
+                .HasConstraintName("FK_ExpCoursePhotos_ExpCourseTemplates");
         });
 
         modelBuilder.Entity<ExpCourseSession>(entity =>
@@ -617,7 +621,6 @@ public partial class SalterDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("location");
             entity.Property(e => e.LocationId).HasColumnName("location_id");
-            entity.Property(e => e.PhotoId).HasColumnName("photo_id");
             entity.Property(e => e.Price)
                 .HasColumnType("decimal(7, 0)")
                 .HasColumnName("price");
@@ -633,10 +636,6 @@ public partial class SalterDbContext : DbContext
             entity.HasOne(d => d.LocationNavigation).WithMany(p => p.ExpCourseTemplates)
                 .HasForeignKey(d => d.LocationId)
                 .HasConstraintName("FK_ExpCourseTemplates_TripLocations");
-
-            entity.HasOne(d => d.Photo).WithMany(p => p.ExpCourseTemplates)
-                .HasForeignKey(d => d.PhotoId)
-                .HasConstraintName("FK_ExpCourseTemplates_ExpCoursePhotos");
         });
 
         modelBuilder.Entity<ExpEquipment>(entity =>

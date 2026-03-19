@@ -10,71 +10,13 @@ namespace ExpRepositoryHelper.Repository
         private readonly SalterDbContext _dbContext;
         public RCoachIndex(SalterDbContext dbContext) { _dbContext = dbContext; }
 
-        
-
-        public async Task<DateTime?> CoachCreateTime(int coachID)
-        {
-            return await _dbContext.ExpCoaches
-                .Where(c => c.Id == coachID)
-                .Select(c => c.CreatedAt)
-                .FirstOrDefaultAsync();
-                
-        }
-
-        public async Task<string> CoachDistrict(int coachID)
-        {
-            var districts = await _dbContext.ExpCoaches
-                            .Where(c => c.Id == coachID)
-                            .SelectMany(c => c.TripDistricts) // 展開集合
-                            .Select(d => d.Name)      // 只取名稱
-                            .ToListAsync();                   // 先轉成 List
-
-            // 將 List<string> 合併為單一字串，以逗號隔開
-            return string.Join(", ", districts);
-        }
-
-        public async Task<string?> CoachSpeciallity(int coachID)
-        {
-            var speciallity = await _dbContext.ExpCoaches
-                             .Where(c => c.Id == coachID)
-                             .SelectMany(c => c.Specialities)
-                             .Select(s => s.SportsName)
-                             .ToListAsync();
-            return string.Join("," , speciallity);
-        }
-
-        public async Task<int> CommentCount(int coachID)
-        {
-            var ccount = await _dbContext.ExpReviews
-                         .Where(r => r.CoachId == coachID)
-                         .Select(r => r.ReviewContent)
-                         .CountAsync();
-            return ccount;
-        }
-
-        public async Task<List<int>> CommentScore(int coachID)
-        {
-            return await _dbContext.ExpReviews
-                         .Where(r =>r.CoachId == coachID)
-                         .Select(r => r.Rating ?? 0) //如果回傳是null 就變成0
-                         .ToListAsync();
-        }
-       
-        public async Task<int> FavoriteCoachCount(int coachID)
-        {
-           var favcount = await _dbContext.ExpFavorites
-                 .Where(f => f.CoachId == coachID)
-                 .Select(f => f.FavoritedAt)
-                 .CountAsync();
-
-            return favcount;
-        }
-
-       
         public async Task<bool> ExistAsync(int userID, int coachID)
         {
-          return await _dbContext.ExpFavorites.AnyAsync((f => f.UserId == userID && f.CoachId == coachID));
+            //return await _dbContext.ExpFavorites.AnyAsync((System.Linq.Expressions.Expression<Func<ExpFavorites, bool>>)(f => f.UserId == userID && f.CoachId == coachID));
+            //TODO 檢查結果是否正確
+            return await _dbContext.ExpFavorites.AnyAsync(f => f.UserId == userID && f.CoachId == coachID);
         }
+        //TODO 檢查結果是否正確2
         public async Task AddFavCoach(ExpFavorite favEntity)
         {
             await _dbContext.ExpFavorites.AddAsync(favEntity);
@@ -84,14 +26,16 @@ namespace ExpRepositoryHelper.Repository
         public async Task DeleteFavCoach(int userID, int coachID)
         {
             var target = await _dbContext.ExpFavorites
-            .FirstOrDefaultAsync((f=> f.UserId == userID && f.CoachId == coachID));
+            .FirstOrDefaultAsync(f => f.UserId == userID && f.CoachId == coachID);
             if (target != null)
             {
+                //TODO 檢查結果是否正確3
                 _dbContext.ExpFavorites.Remove(target);
                 await _dbContext.SaveChangesAsync();
             }
         }
 
-       
     }
+
 }
+

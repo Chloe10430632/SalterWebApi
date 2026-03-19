@@ -22,7 +22,7 @@ namespace ExpServiceHelper.Service
         
         public async Task<string?> MyFavCoach(DCoachFav a, int UserId)
         {
-            //用傳進來的 userId//
+            try {//用傳進來的 userId//
             // 1.先檢查
             var isExistde = await _rCoachIndex.ExistAsync(UserId, a.CoachId);
             // 2.取消收藏
@@ -36,13 +36,16 @@ namespace ExpServiceHelper.Service
             {
                 var entity = new ExpFavorite
                 {
-                    UserId = a.UserId,
+                    UserId = UserId,
                     CoachId = a.CoachId,
+                    FavoritedAt = DateTime.Now
                 };
 
                 await _rCoachIndex.AddFavCoach(entity);
                 return "收藏！";
-            }
+            } }
+            catch (Exception ex) { throw new Exception($"{ex.Message}"); }
         }
+        
     }
 }

@@ -13,5 +13,5 @@ public partial class ExpCoursePhoto
 
     public DateTime? UploadedAt { get; set; }
 
-    public virtual ICollection<ExpCourseTemplate> ExpCourseTemplates { get; set; } = new List<ExpCourseTemplate>();
+    public virtual ExpCourseTemplate? CourseTemplate { get; set; }
 }

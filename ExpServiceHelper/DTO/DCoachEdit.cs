@@ -10,7 +10,7 @@ namespace ExpServiceHelper.DTO
     {
         //只放讓user異動的欄位
        
-        public string Name { get; set; } = null!;
+        public string? Name { get; set; } 
         public string? AvatarUrl { get; set; }
         public string? Introduction { get; set; }
         public int? DistrictId { get; set; }
