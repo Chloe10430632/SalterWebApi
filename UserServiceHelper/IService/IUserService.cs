@@ -13,13 +13,15 @@ namespace UserServiceHelper.IService
 
         Task<bool> UpdateProfileAsync(UserEditViewModel model);
 
-        Task<bool> RegisterAsync(UserRegisterViewModel Rmodel);
+        Task<bool> RegisterAsync(UserRegisterViewModel model);
 
         Task<string?> LoginAsync(UserLoginViewModel model);
 
         Task<string?> GoogleLoginAsync(string idToken);
 
         Task<(bool success, string message)> VerifyRegistrationOtpAsync(string email, string otp);
+
+        Task<bool> ResendOtpAsync(string email);
 
         Task<bool> SendPasswordResetOtpAsync(string email);
 
