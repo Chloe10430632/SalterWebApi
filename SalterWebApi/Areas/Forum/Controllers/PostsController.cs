@@ -45,12 +45,12 @@ namespace SalterWebApi.Areas.Forum.Controllers
             query ??= new PostsQueryModel();
 
             var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(claimId, out int userId))
-                query.UserId = userId;
-            else
-                query.UserId = 0;
+            if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
+            {
+                userId = 0;
+            }
 
-            var postList = await _postsService.GetAllPostsAsync(query);
+            var postList = await _postsService.GetAllPostsAsync(userId, query);
             return Ok(postList);
         }
 

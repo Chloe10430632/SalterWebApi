@@ -12,11 +12,15 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         public int PostId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
+        public int BoardId { get; set; }
         public string BoardTitle { get; set; } = "預設";
+        public string LocationTitle { get; set; } = "預設";
         public string ContentPreview { get; set; } = string.Empty; // 內容摘要
         public List<string> ImageUrls { get; set; } = new();
         public DateTime CreatedAt { get; set; }
         public int LikeCount { get; set; }
+        public int CollectCount { get; set; }
+        public int ShareCount { get; set; }
         public int CommentCount { get; set; }
         public int ViewCount { get; set; }
         public List<string> PostTags { get; set; } = new();
