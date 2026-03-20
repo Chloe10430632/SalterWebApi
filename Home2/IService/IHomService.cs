@@ -1,4 +1,5 @@
 ﻿using HomeServiceHelper.Models.DTO.ViewModels;
+using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,13 @@ namespace HomeServiceHelper.IService
     {
         Task<IEnumerable<HouseDetailViewDTO>> GetAllHousesAsync();
         Task<IEnumerable<HouseDetailViewDTO>> SearchHousesAsync(HouseSearchDTO search);
+        Task<IEnumerable<HomAmenity>> GetAllAmenitiesAsync();
         Task <HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId);
         Task<IEnumerable<string?>> GetAllCityAsync();
         Task<IEnumerable<HouseDetailViewDTO>> GetTopRoomsAsync(int count);
         Task<bool> AddReviewAsync(ReviewCreateDTO dto);
+        Task<bool> CreateFullHouseAsync(HouseCreateDTO dto);
+        Task<bool> UpdateFullHouseAsync(HouseUpdateDTO dto);
+
     }
 }

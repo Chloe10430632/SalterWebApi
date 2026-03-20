@@ -42,7 +42,7 @@ namespace HomeRepositoryHelper.Repository
             }
         }
 
-        public async Task<IEnumerable<Table>> GetAllHouse()
+        public async Task<IEnumerable<Table>> GetAll()
         {
             return await _entity.AsNoTracking().ToListAsync();
         }
