@@ -24,14 +24,14 @@ namespace SalterWebApi.Areas.Forum.Controllers
         }
 
         //貼文互動Api
-        [Authorize]
+        //[Authorize]
         [HttpPost]
         public async Task<IActionResult> HandleInteraction([FromBody] PostInteractionCreateModel dto)
         {
             var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
             {
-                return Unauthorized("無效的使用者身分");
+                userId = 0;
             }
 
             var result = await _interactionService.ProcessInteractionAsync(userId, dto);
