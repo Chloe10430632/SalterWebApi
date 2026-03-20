@@ -1,4 +1,5 @@
-﻿using ExpServiceHelper.DTO;
+﻿using Azure;
+using ExpServiceHelper.DTO;
 using ExpServiceHelper.Service;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace ExpServiceHelper.IService
         /**排序-最新*/
         Task<List<DCoachInfo>> GetCoachNewest();
         /**排序-熱門*/
-        Task<List<DCoachInfo>> CoachRecommand();
+        Task<List<DCoachInfo>> CoachPopular(int page,int pageSize);
         #endregion
 
         #region ~~教練~~
@@ -44,20 +45,24 @@ namespace ExpServiceHelper.IService
         #endregion
         #endregion
 
-        #region 課程
+        #region ~~課程~~
         #region 課程模板建立
-        Task<DAPIResponse<int>> CreateTemplate(DCourseCreate dto, int coachId);
+        Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int coachId);
         #endregion
         #region 課程模板編輯
         Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId);
         #endregion
-        #region 課程介紹get{id}
+        #region  課程上架 
+        Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId);
         #endregion
-        #region 課程刪除
+        #region 課程展示
+        Task<DCourseOpenSession> ThisCourse(int coachId, int courseId);
         #endregion
-        #region 預約課程
         #endregion
+
+        #region 評論
         #region 新增評論
+        Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId);
         #endregion
         #region 編輯評論
         #endregion
@@ -65,7 +70,10 @@ namespace ExpServiceHelper.IService
         #endregion
         #endregion
 
+
         #region 交易
+        #region 預約課程
+        #endregion
         #region 支付 
         #endregion
         #region 歷史交易紀錄 
