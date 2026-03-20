@@ -51,11 +51,21 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 入口
+        #region~~搜尋-名字~~
+        public async Task<List<DCoachInfo>> GetCoachName(string key) { 
+            var result = await _context.ExpCoaches
+                .Where(c =>c.Name.Contains(key))
+                .SelectCoachInfo()
+                .ToListAsync();
+            return result;
+        }
+        #endregion
+
         #region~~搜尋-地區~~
-        public async Task<List<DCoachInfo>> GetCoachDist(string keyDistrict)
+        public async Task<List<DCoachInfo>> GetCoachDist(string key)
         {
             var result = await _context.ExpCoaches
-                .Where(c => c.TripDistricts.Any(m => m.Name.Contains(keyDistrict)))
+                .Where(c => c.TripDistricts.Any(m => m.Name.Contains(key)))
                 .SelectCoachInfo() // 呼叫擴充方法
                 .ToListAsync();
 
@@ -65,10 +75,10 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region~~搜尋-專業~~
-        public async Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial)
+        public async Task<List<DCoachInfo>> GetCoachSpecial(string key)
         {
             var result = await _context.ExpCoaches
-                 .Where(c => c.Specialities.Any(s => s.SportsName.Contains(keySpecial)))
+                 .Where(c => c.Specialities.Any(s => s.SportsName.Contains(key)))
                  .SelectCoachInfo()
                  .ToListAsync();
             return result;

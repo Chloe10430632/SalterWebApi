@@ -13,6 +13,8 @@ namespace ExpServiceHelper.IService
     public interface ISCoachMethods
     {
         #region 入口
+        /**搜尋-名字*/
+        Task<List<DCoachInfo>> GetCoachName(string keyName);
         /**搜尋-地區*/
         Task<List<DCoachInfo>> GetCoachDist(string keyDistrict);
 

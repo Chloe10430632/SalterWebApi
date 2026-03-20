@@ -48,23 +48,32 @@ namespace SalterWebApi.Areas.Experience
                 var result = await _sCoachMethods.GetCoachNewest();
                 return Ok(result);
             }
-            #endregion
-            #region 搜尋
-            [HttpGet("SpeSearch")]
-            public async Task<IActionResult> SpeSearch(string keySpecial)
+        #endregion
+        #region 搜尋
+        #region~~搜尋-名字~~
+        [HttpGet("NameSearch")]
+        public async Task<IActionResult> NameSearch([FromQuery] string key) {
+            var result = await _sCoachMethods.GetCoachName(key);
+            //if (result == null || result.Count == 0) 
+                    //throw new KeyNotFoundException("教練雲遊四海去了");//註解掉 因為關鍵字搜尋遇到空白就報錯
+            return Ok(result);
+        }
+        #endregion
+        [HttpGet("SpeSearch")]
+            public async Task<IActionResult> SpeSearch([FromQuery] string key)
             {
-                var result = await _sCoachMethods.GetCoachSpecial(keySpecial);
-                if (result == null || result.Count == 0)
-                    return NotFound("！太難了 教練不會！");
+                var result = await _sCoachMethods.GetCoachSpecial(key);
+               // if (result == null || result.Count == 0)
+                    //throw new KeyNotFoundException("！太難了 教練不會！");
                 return Ok(result);
             }
             [HttpGet("DistSearch")]
-            public async Task<IActionResult> DistSearch(string keyDistrict)
+            public async Task<IActionResult> DistSearch([FromQuery] string key)
             {
-                var result = await _sCoachMethods.GetCoachDist(keyDistrict);
+                var result = await _sCoachMethods.GetCoachDist(key);
                 //check
-                if (keyDistrict == null || result.Count == 0)
-                    return NotFound("！這裡沒有所謂教練這種生物！");
+                //if (result == null || result.Count == 0)
+                    //throw new KeyNotFoundException("！這裡沒有所謂教練這種生物！");
                 return Ok(result);
             }
         #endregion
