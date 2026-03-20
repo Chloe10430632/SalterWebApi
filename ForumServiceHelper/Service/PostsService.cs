@@ -10,13 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SalterEFModels.EFModels;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.ComponentModel;
 
 
 namespace ForumServiceHelper.Service
@@ -52,7 +46,7 @@ namespace ForumServiceHelper.Service
             }
 
             if(query.SortBy == SortTypes.Follow && userId == 0)
-                throw new ArgumentException("欲瀏覽追蹤貼文，請先登入喔!");
+                throw new UnauthorizedAccessException("欲瀏覽追蹤貼文，請先登入喔!");
 
             //處理 Follow 邏輯(使用 Join 效率更高)
             if (query.SortBy == SortTypes.Follow && userId > 0)
@@ -73,8 +67,10 @@ namespace ForumServiceHelper.Service
                 LocationTitle = p.Location.Name,
                 ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
                 CreatedAt = p.CreatedAt,
-                ImageUrls = p.ForumPostsImages.OrderBy(img=>img.SortIndex).Select(img => img.ImageUrl).ToList(),
+                ImageUrls = p.ForumPostsImages.OrderBy(img => img.SortIndex).Select(img => img.ImageUrl).ToList(),
+                IsLiked = userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Like),
                 LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+                IsCollected =  userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Collect),
                 CollectCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
                 ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
                 CommentCount = p.ForumComments.Count(),

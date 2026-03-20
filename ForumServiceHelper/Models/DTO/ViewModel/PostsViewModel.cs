@@ -18,7 +18,9 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         public string ContentPreview { get; set; } = string.Empty; // 內容摘要
         public List<string> ImageUrls { get; set; } = new();
         public DateTime CreatedAt { get; set; }
+        public bool IsLiked { get; set; }
         public int LikeCount { get; set; }
+        public bool IsCollected { get; set; }
         public int CollectCount { get; set; }
         public int ShareCount { get; set; }
         public int CommentCount { get; set; }

@@ -26,6 +26,9 @@ namespace SalterWebApi.Middlewares
             // 根據異常類型決定狀態碼與標題
             var (statusCode, title) = exception switch
             {
+                //尚未登入UnauthorizedAccessException時，回傳401
+                UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "登入逾時或尚未登入"),
+
                 // 當 Service 拋出 KeyNotFoundException 時，回傳 404
                 KeyNotFoundException => (StatusCodes.Status404NotFound, "找不到資源"),
 
