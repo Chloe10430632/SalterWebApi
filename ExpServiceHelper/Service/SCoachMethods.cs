@@ -426,7 +426,8 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 課程上架 
+        #region 課程選時間上架 
+        //TODO
         public async Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId)
         {
             //先找有沒有模板
@@ -473,6 +474,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 課程展示
+        //TODO
         public async Task<DCourseOpenSession> ThisCourse(int coachId, int courseId)
         {
             var result = await _context.ExpCourseSessions
@@ -480,11 +482,11 @@ namespace ExpServiceHelper.Service
                     .Select(c => new DCourseOpenSession
                     {
                         TemplateId = c.Id,
-                        CoachId = c.CoachId,
+                        //CoachId = c.CoachId,
                         TimeSlot = c.TimeSlot,
                         MaxStudents = c.MaxParticipants,
                         SelectedDates = new List<DateOnly> { c.SessionDate.Value },
-                        UpdatedAt = c.UpdatedAt
+                       // UpdatedAt = c.UpdatedAt
                     }).FirstOrDefaultAsync();
             return result;
         }

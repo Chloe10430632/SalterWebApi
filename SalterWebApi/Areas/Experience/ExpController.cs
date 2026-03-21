@@ -199,25 +199,44 @@ namespace SalterWebApi.Areas.Experience
         #region 課程
         #region 課程模板建立
         [Authorize]
-        [HttpPost("AddCourseT")]
-        public async Task<IActionResult> addCourseT([FromBody] DCourseCreate dto) {
+            [HttpPost("AddCourseT")]
+            public async Task<IActionResult> addCourseT([FromBody] DCourseCreate dto) {
            
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdStr))
+                    return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+
+                if (int.TryParse(userIdStr, out int currentUserId))
+                {
+                    var result = await _sCoachMethods.CreateTemplate(dto, currentUserId);
+                    if (result.IsSuccess) return Ok(new { message = "課程模板建好啦！" });
+                }
+                    return BadRequest(new { message = "申請失敗，請檢查資料是否正確" });
+            }
+
+        #endregion
+        #region 課程選時間上架 
+        [Authorize]
+            [HttpPost("CourseTime")]
+            public async Task<IActionResult> OpenTimeCourse([FromBody] DCourseOpenSession dto) {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr))
                 return Unauthorized(new { message = "無效的憑證，請重新登入" });
-            
 
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (int.TryParse(userIdStr, out int currentUserId))
-            {
-                var result = await _sCoachMethods.CreateTemplate(dto, currentUserId);
-                if (result.IsSuccess) return Ok(new { message = "課程模板建好啦！" });
+            if (int.TryParse(userIdStr, out int currentUserId)) {
+                var result = await _sCoachMethods.OpenSession(dto, currentUserId);
+                if (result.IsSuccess) return Ok(result);
             }
-                return BadRequest(new { message = "申請失敗，請檢查資料是否正確" });
+            return BadRequest(new { message = "申請失敗，請檢查資料是否正確" });
         }
-            
+
         #endregion
+
+
         #region 課程介紹get{id}
         #endregion
         #region 課程編輯post{id}

@@ -51,11 +51,11 @@ namespace ExpServiceHelper.IService
         #region 課程模板建立
         Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int coachId);
         #endregion
-        #region 課程模板編輯
-        Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId);
-        #endregion
         #region  課程上架 
         Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId);
+        #endregion
+        #region 課程模板編輯
+        Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId);
         #endregion
         #region 課程展示
         Task<DCourseOpenSession> ThisCourse(int coachId, int courseId);
