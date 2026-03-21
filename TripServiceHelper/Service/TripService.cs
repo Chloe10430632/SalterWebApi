@@ -409,7 +409,9 @@ public class TripService : ITripService
             DistrictName = ttl.Location?.District?.Name ?? "",
             LocationRole = ttl.LocationRole,
             Note = ttl.Note,
-            SortOrder = ttl.SortOrder
+            SortOrder = ttl.SortOrder,
+            Lat = ttl.Location?.Lat,
+            Lng = ttl.Location?.Lng,
         }).ToList();
 
         return ServiceResult<List<TripLocationDto>>.Success(result);

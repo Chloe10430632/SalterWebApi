@@ -82,6 +82,8 @@ public class TripLocationDto
     public string? LocationRole { get; set; }
     public string? Note { get; set; }
     public int SortOrder { get; set; }
+    public decimal? Lat { get; set; }  
+    public decimal? Lng { get; set; }
 }
 
 public class TripLocationSearchDto
