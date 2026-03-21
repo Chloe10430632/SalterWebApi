@@ -96,7 +96,7 @@ namespace SalterWebApi.Areas.Experience
                 var result = await _sCoachMethods.CreateCoach(dto, currentUserId);
 
                 if (result.IsSuccess) return Ok(new { message = "申請成功！歡迎加入教練行列" });
-                return BadRequest(new { message = "申請失敗，請檢查資料是否正確" });
+                return BadRequest(new { message = "你已經是教練了" });
             }
             return BadRequest( new { message = "ID 格式不正確" });
         }
@@ -197,6 +197,27 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 課程
+        #region 課程模板建立
+        [Authorize]
+        [HttpPost("AddCourseT")]
+        public async Task<IActionResult> addCourseT([FromBody] DCourseCreate dto) {
+           
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr))
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            
+
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                var result = await _sCoachMethods.CreateTemplate(dto, currentUserId);
+                if (result.IsSuccess) return Ok(new { message = "課程模板建好啦！" });
+            }
+                return BadRequest(new { message = "申請失敗，請檢查資料是否正確" });
+        }
+            
+        #endregion
         #region 課程介紹get{id}
         #endregion
         #region 課程編輯post{id}
@@ -224,28 +245,28 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         //測試mapping
-    //    [HttpGet("test-mapping")]
-    //    public async Task<IActionResult> TestMapping()
-    //    {
-    //        var coachData = await _context.ExpCoaches
-    //.Include(c => c.Specialities)  // 這裡就是你程式碼裡的 d.Specialities
-    //.Include(c => c.TripDistricts) // 這裡就是你程式碼裡的 d.TripDistricts
-    //.Select(c => new
-    //{
-    //    CoachName = c.Name,
-    //    // 把專長名稱抓成清單
-    //    Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
-    //    // 把地區名稱抓成清單
-    //    Districts = c.TripDistricts.Select(d => d.Name).ToList()
-    //})
-    //.ToListAsync();
-    //        return Ok(coachData);
-    //        //var districtData = await _context.TripDistricts
-    //        //.Include(d => d.CoachDists) // 對應你程式碼裡的 p.CoachDists
-    //        //.ToListAsync();
-    //        //return Ok(districtData);
+        //    [HttpGet("test-mapping")]
+        //    public async Task<IActionResult> TestMapping()
+        //    {
+        //        var coachData = await _context.ExpCoaches
+        //.Include(c => c.Specialities)  // 這裡就是你程式碼裡的 d.Specialities
+        //.Include(c => c.TripDistricts) // 這裡就是你程式碼裡的 d.TripDistricts
+        //.Select(c => new
+        //{
+        //    CoachName = c.Name,
+        //    // 把專長名稱抓成清單
+        //    Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+        //    // 把地區名稱抓成清單
+        //    Districts = c.TripDistricts.Select(d => d.Name).ToList()
+        //})
+        //.ToListAsync();
+        //        return Ok(coachData);
+        //        //var districtData = await _context.TripDistricts
+        //        //.Include(d => d.CoachDists) // 對應你程式碼裡的 p.CoachDists
+        //        //.ToListAsync();
+        //        //return Ok(districtData);
 
-    //    }
+        //    }
 
 
 

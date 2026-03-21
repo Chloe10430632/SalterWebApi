@@ -105,7 +105,7 @@ namespace ExpServiceHelper.Service
                 .Select(c => new
                 {
                     Entity = c, // 把整顆教練實體帶著
-                    Avg = c.ExpReviews.Any() ? c.ExpReviews.Average(r => (double)r.Rating) : 0,
+                    Avg = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                     Count = c.ExpReviews.Count()
                 })
                 .OrderByDescending(x => x.Avg)
@@ -184,7 +184,7 @@ namespace ExpServiceHelper.Service
                          CoachName = c.Name,
                          AvatarUrl = c.AvatarUrl,
                          District = c.TripDistricts.Select(m => m.Name).ToList(),
-                         AvgRating = c.ExpReviews.Any() ? c.ExpReviews.Average(r => (double)r.Rating) : 0,
+                         AvgRating = c.ExpReviews.Any() ? Math.Round( c.ExpReviews.Average(r => (double)r.Rating) ,1): 0,
                          ReviewCount = c.ExpReviews.Count(),
                          Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
                          Introduction = c.Introduction,
@@ -301,7 +301,7 @@ namespace ExpServiceHelper.Service
                     District = f.Coach.TripDistricts.Select(d => d.Name).ToList(),
                     Specialities = f.Coach.Specialities.Select(sm => sm.SportsName).ToList(),
                     AvgRating = f.Coach.ExpReviews.Any()
-                        ? f.Coach.ExpReviews.Average(r => (double)r.Rating)
+                        ? Math.Round( f.Coach.ExpReviews.Average(r => (double)r.Rating), 1)
                         : 0,
                     ReviewCount = f.Coach.ExpReviews.Count()
                 }).ToListAsync();
@@ -314,12 +314,24 @@ namespace ExpServiceHelper.Service
 
         #region~~課程~~
         #region 課程模板建立
-        public async Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int coachId)
+        public async Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int userId)
         {
-            //主表圖表分開處理
-            var t = new ExpCourseTemplate
+            try {
+                var coachExists = await _context.ExpCoaches
+                    .FirstOrDefaultAsync(c => c.UserId == userId);
+
+                if (coachExists == null)
+                {
+                    return new DAPIResponse<string>
+                    {
+                        IsSuccess = false,
+                        Message = "教練不存在"
+                    };
+                }
+                //主表圖表分開處理
+                var t = new ExpCourseTemplate
             {
-                CoachId = coachId,
+                CoachId = coachExists.Id,
                 Title = dto.Title,
                 Description = dto.Description,
                 Difficulty = dto.Difficulty,
@@ -328,11 +340,12 @@ namespace ExpServiceHelper.Service
                 CreatedAt = DateTime.Now
             };
             //有傳圖片再做這步
-            if (dto.PhotoUrls != null)
+            if (dto.PhotoUrls != null && dto.PhotoUrls.Any())
             {
                 foreach (var pic in dto.PhotoUrls)
                 {
-                    t.ExpCoursePhotos.Add(new ExpCoursePhoto
+                        if (string.IsNullOrWhiteSpace(pic)) continue;
+                        t.ExpCoursePhotos.Add(new ExpCoursePhoto
                     {
                         PhotoUrl = pic,
                         UploadedAt = DateTime.Now
@@ -348,7 +361,13 @@ namespace ExpServiceHelper.Service
             {
                 IsSuccess = true,
                 Message = "新課程模板做好啦 ！"
-            };
+            }; 
+            
+            }
+            catch (Exception ex) { throw new Exception(ex.InnerException?.Message); }
+
+
+            
         }
         #endregion
 
