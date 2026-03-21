@@ -56,6 +56,7 @@ public interface ITripRepository
     Task<TripTripLocation?> UpdateLocationAsync(TripTripLocation entity);
     Task<TripTripLocation?> GetLocationByIdAsync(int locationId);
     Task<bool> DeleteLocationAsync(int locationId);
+    Task<List<TripLocation>> GetAllLocationsAsync(string? keyword);
     #endregion
 
     #region 提醒

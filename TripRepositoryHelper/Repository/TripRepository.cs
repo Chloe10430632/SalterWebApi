@@ -343,6 +343,19 @@ public class TripRepository : ITripRepository
     }
     public async Task<TripTripLocation?> GetLocationByIdAsync(int locationId)
     => await _db.TripTripLocations.FindAsync(locationId);
+
+    public async Task<List<TripLocation>> GetAllLocationsAsync(string? keyword)
+    {
+        var q = _db.TripLocations
+            .Include(l => l.District)
+                .ThenInclude(d => d.City) 
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(keyword))
+            q = q.Where(l => l.Name.Contains(keyword));
+
+        return await q.OrderBy(l => l.Name).ToListAsync();
+    }
     #endregion
 
     #region 提醒

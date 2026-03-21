@@ -468,6 +468,20 @@ public class TripService : ITripService
         return ServiceResult.Success("地點刪除成功");
     }
 
+    public async Task<List<TripLocationSearchDto>> GetAllLocationsAsync(string? keyword)
+    {
+        var list = await _repo.GetAllLocationsAsync(keyword);
+        return list.Select(l => new TripLocationSearchDto
+        {
+            Id = l.Id,
+            Name = l.Name,
+            AddressText = l.AddressText,
+            CityName = l.District?.City?.Name,
+            DistrictName = l.District?.Name,
+            Lat = (double?)l.Lat,
+            Lng = (double?)l.Lng
+        }).ToList();
+    }
     #endregion
 
     #region 提醒

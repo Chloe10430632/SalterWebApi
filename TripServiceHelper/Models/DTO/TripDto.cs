@@ -83,6 +83,17 @@ public class TripLocationDto
     public string? Note { get; set; }
     public int SortOrder { get; set; }
 }
+
+public class TripLocationSearchDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string? AddressText { get; set; }
+    public string? CityName { get; set; }
+    public string? DistrictName { get; set; }
+    public double? Lat { get; set; }
+    public double? Lng { get; set; }
+}
 #endregion
 
 #region 列表結果（含分頁）

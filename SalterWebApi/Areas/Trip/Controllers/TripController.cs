@@ -390,6 +390,14 @@ public class TripController : ControllerBase
         return Ok(ApiResponse<List<TripDistrictDto>>.Ok(data));
     }
 
+    // GET api/trip/trip/locations/all
+    [AllowAnonymous]
+    [HttpGet("locations/all")]
+    public async Task<IActionResult> GetAllLocations([FromQuery] string? keyword)
+    {
+        var data = await _service.GetAllLocationsAsync(keyword);
+        return Ok(ApiResponse<List<TripLocationSearchDto>>.Ok(data));
+    }
     #endregion
 
     #region 方法
