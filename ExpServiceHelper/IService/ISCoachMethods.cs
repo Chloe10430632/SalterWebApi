@@ -52,7 +52,7 @@ namespace ExpServiceHelper.IService
         Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int coachId);
         #endregion
         #region  課程上架 
-        Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId);
+        Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
         #endregion
         #region 課程模板編輯
         Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId);

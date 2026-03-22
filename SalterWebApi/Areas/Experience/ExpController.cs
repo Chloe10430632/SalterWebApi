@@ -219,8 +219,8 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #region 課程選時間上架 
         [Authorize]
-            [HttpPost("CourseTime")]
-            public async Task<IActionResult> OpenTimeCourse([FromBody] DCourseOpenSession dto) {
+            [HttpPost("CourseTime{templateId}")]
+            public async Task<IActionResult> OpenTimeCourse([FromBody] DCourseOpenSession dto, int templateId) {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr))
                 return Unauthorized(new { message = "無效的憑證，請重新登入" });
@@ -228,8 +228,12 @@ namespace SalterWebApi.Areas.Experience
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             if (int.TryParse(userIdStr, out int currentUserId)) {
-                var result = await _sCoachMethods.OpenSession(dto, currentUserId);
-                if (result.IsSuccess) return Ok(result);
+                try { 
+                    var result = await _sCoachMethods.OpenSession(dto, templateId, currentUserId);
+                    if (result.IsSuccess) return Ok(result);
+                        return BadRequest(new { message = result.Message });
+                }
+                catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             }
             return BadRequest(new { message = "申請失敗，請檢查資料是否正確" });
         }

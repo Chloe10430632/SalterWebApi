@@ -154,7 +154,7 @@ namespace ExpServiceHelper.Service
                 Name = dto.Name,
                 AvatarUrl = dto.AvatarUrl,
                 Introduction = dto.Introduction,
-                CityId = dto.CityId,
+                //CityId = dto.CityId,
                 DistrictId = dto.DistrictId,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
@@ -215,7 +215,6 @@ namespace ExpServiceHelper.Service
             if (!string.IsNullOrEmpty(dto.Name)) { thisCoach.Name = dto.Name; }
             if (!string.IsNullOrEmpty(dto.AvatarUrl)) { thisCoach.AvatarUrl = dto.AvatarUrl; }
             if (!string.IsNullOrEmpty(dto.Introduction)) { thisCoach.Introduction = dto.Introduction; }
-            if (dto.CityId.HasValue) { thisCoach.CityId = dto.CityId; }
             if (dto.DistrictId.HasValue) { thisCoach.DistrictId = dto.DistrictId; }
 
             thisCoach.UpdatedAt = DateTime.Now;
@@ -231,8 +230,6 @@ namespace ExpServiceHelper.Service
                     Name = c.Name,
                     AvatarUrl = c.AvatarUrl,
                     Introduction = c.Introduction,
-                    CityId = c.CityId,
-                    CityName = c.City.Name,
                     DistrictId = c.DistrictId,
                     DistrictName = c.District.Name
                 }).FirstOrDefaultAsync();
@@ -250,7 +247,7 @@ namespace ExpServiceHelper.Service
                 .Where(c => c.Id == thisCoachId)
                 .Select(c => new
                 {
-                    CityId = c.CityId,
+                    District = c.DistrictId,
                     // 抓出他所有的專長 ID
                     SpecialityIds = c.Specialities.Select(s => s.SportsName).ToList()
                 })
@@ -260,7 +257,7 @@ namespace ExpServiceHelper.Service
             // 2. 開始找「臭味相投」的教練
             var query = _context.ExpCoaches
                 .Where(c => c.Id != thisCoachId) // 排除自己
-                .Where(c => c.CityId == currentCoachInfo.CityId &&
+                .Where(c => c.DistrictId == currentCoachInfo.District &&
                             c.Specialities.Any(s => currentCoachInfo.SpecialityIds.Contains(s.SportsName)));
             // 3. 執行隨機排序並取前 3 名
             // 提示：在 LINQ to Entities 中，Guid.NewGuid() 常用來模擬隨機排序//
@@ -273,7 +270,7 @@ namespace ExpServiceHelper.Service
                     CoachName = c.Name,
                     AvatarUrl = c.AvatarUrl,
                     // 這裡假設你有關聯到 TripDistricts
-                    City = c.Name,
+                    District = c.TripDistricts.Select(d => d.Name).ToList(),
                     Specialities = c.Specialities
                                     .Select(s => s.SportsName)
                                     .ToList()
@@ -297,7 +294,6 @@ namespace ExpServiceHelper.Service
                     CoachId = f.CoachId,
                     CoachName = f.Coach.Name, // 透過導覽屬性抓教練名
                     AvatarUrl = f.Coach.AvatarUrl,
-                    City = f.Coach.City.Name,
                     District = f.Coach.TripDistricts.Select(d => d.Name).ToList(),
                     Specialities = f.Coach.Specialities.Select(sm => sm.SportsName).ToList(),
                     AvgRating = f.Coach.ExpReviews.Any()
@@ -321,13 +317,8 @@ namespace ExpServiceHelper.Service
                     .FirstOrDefaultAsync(c => c.UserId == userId);
 
                 if (coachExists == null)
-                {
-                    return new DAPIResponse<string>
-                    {
-                        IsSuccess = false,
-                        Message = "教練不存在"
-                    };
-                }
+                    return new DAPIResponse<string> { IsSuccess = false,Message = "教練不存在"};
+                
                 //主表圖表分開處理
                 var t = new ExpCourseTemplate
             {
@@ -345,11 +336,10 @@ namespace ExpServiceHelper.Service
                 foreach (var pic in dto.PhotoUrls)
                 {
                         if (string.IsNullOrWhiteSpace(pic)) continue;
-                        t.ExpCoursePhotos.Add(new ExpCoursePhoto
-                    {
-                        PhotoUrl = pic,
-                        UploadedAt = DateTime.Now
-                    });
+                        t.ExpCoursePhotos.Add(new ExpCoursePhoto {
+                                                PhotoUrl = pic,
+                                                UploadedAt = DateTime.Now
+                                            });
                 }
             }
             //save--EF 會幫你動用 Transaction，確保模板跟照片「同時成功」或「同時失敗」)
@@ -371,6 +361,76 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+
+        #region 課程選時間上架 
+        //TODO
+        public async Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId)
+        {
+            //找有沒有模板
+            var t = await _context.ExpCourseTemplates.FirstOrDefaultAsync(t => t.Id == TemplateId);
+            if (t == null) { throw new Exception("凡人不能看的天書"); }
+            //使用者和教練對得上
+            var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.Id == t.CoachId);
+            if (coach == null || coach.UserId != currentUserId)
+                return new DAPIResponse<string> { IsSuccess = false, Message = "你沒有權限為此課程開課喔！" };
+
+
+            //選時間和人數
+            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+            DateOnly day60 = today.AddDays(60);
+
+            foreach (var date in dto.SelectedDates)
+            {
+
+                if (date < today || date > day60) continue;
+                //找有沒有衝堂
+                bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
+                    s.CoachId == t.CoachId &&
+                    s.SessionDate == date &&
+                    s.TimeSlot == dto.TimeSlot);
+                if (isConflict) throw new Exception("尚未習得隱分身之術 你逆");
+
+                var newSession = new ExpCourseSession
+                {
+                    CourseTemplateId = TemplateId,
+                    CoachId = t.CoachId,
+                    SessionDate = date,
+                    TimeSlot = dto.TimeSlot,
+                    MaxParticipants = dto.MaxStudents,
+                    CurrentParticipants = 0,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                 _context.ExpCourseSessions.AddAsync(newSession);
+            }
+            await _context.SaveChangesAsync();
+            return new DTO.DAPIResponse<string>
+            {
+                IsSuccess = true,
+                Message = "課程開放報名~"
+            };
+
+        }
+        #endregion
+
+        #region 課程展示
+        //TODO
+        public async Task<DCourseOpenSession> ThisCourse(int coachId, int courseId)
+        {
+            var result = await _context.ExpCourseSessions
+                    .Where(c => c.CoachId == coachId && c.Id == courseId)
+                    .Select(c => new DCourseOpenSession
+                    {
+                       // TemplateId = c.Id,
+                        //CoachId = c.CoachId,
+                        TimeSlot = c.TimeSlot,
+                        MaxStudents = c.MaxParticipants,
+                        SelectedDates = new List<DateOnly> { c.SessionDate.Value },
+                       // UpdatedAt = c.UpdatedAt
+                    }).FirstOrDefaultAsync();
+            return result;
+        }
+        #endregion
         #region 課程模板編輯
         public async Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId)
         {
@@ -425,73 +485,6 @@ namespace ExpServiceHelper.Service
             return dto;
         }
         #endregion
-
-        #region 課程選時間上架 
-        //TODO
-        public async Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId)
-        {
-            //先找有沒有模板
-            var t = await _context.ExpCourseTemplates.FirstOrDefaultAsync(t => t.Id == TemplateId);
-            if (t == null) { throw new Exception("凡人不能看的天書"); }
-
-
-            //選時間和人數
-            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-            DateOnly day60 = today.AddDays(60);
-
-            foreach (var date in dto.SelectedDates)
-            {
-
-                if (date < today || date > day60) continue;
-                //找有沒有衝堂
-                bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
-                    s.CoachId == t.CoachId &&
-                    s.SessionDate == date &&
-                    s.TimeSlot == dto.TimeSlot);
-                if (isConflict) throw new Exception("尚未習得隱分身之術 你逆");
-
-                var newSession = new ExpCourseSession
-                {
-                    CourseTemplateId = TemplateId,
-                    CoachId = t.CoachId,
-                    SessionDate = date,
-                    TimeSlot = dto.TimeSlot,
-                    MaxParticipants = dto.MaxStudents,
-                    CurrentParticipants = 0,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
-                };
-                await _context.ExpCourseSessions.AddAsync(newSession);
-            }
-            await _context.SaveChangesAsync();
-            return new DTO.DAPIResponse<string>
-            {
-                IsSuccess = true,
-                Message = "課程開放報名~",
-            };
-
-        }
-        #endregion
-
-        #region 課程展示
-        //TODO
-        public async Task<DCourseOpenSession> ThisCourse(int coachId, int courseId)
-        {
-            var result = await _context.ExpCourseSessions
-                    .Where(c => c.CoachId == coachId && c.Id == courseId)
-                    .Select(c => new DCourseOpenSession
-                    {
-                        TemplateId = c.Id,
-                        //CoachId = c.CoachId,
-                        TimeSlot = c.TimeSlot,
-                        MaxStudents = c.MaxParticipants,
-                        SelectedDates = new List<DateOnly> { c.SessionDate.Value },
-                       // UpdatedAt = c.UpdatedAt
-                    }).FirstOrDefaultAsync();
-            return result;
-        }
-        #endregion
-
         #endregion
 
         #region ~~評論~~
