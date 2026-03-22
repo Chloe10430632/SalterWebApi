@@ -70,6 +70,7 @@ namespace ExpServiceHelper.IService
         Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId);
         #endregion
         #region 編輯評論
+        Task<DAPIResponse<DReview>> EditReview(DReview dto, int userId, int courseId, int reviewId);
         #endregion
         #region 刪除評論
         #endregion

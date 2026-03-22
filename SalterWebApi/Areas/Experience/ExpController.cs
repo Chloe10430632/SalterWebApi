@@ -22,6 +22,7 @@ namespace SalterWebApi.Areas.Experience
     public class ExpController : ControllerBase
     {
         #region 
+
         #endregion
         #region DI
         private readonly ISCoachIndex _sCoachIndex;
@@ -36,13 +37,15 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #region ~~入口~~
         #region 排序
+        #region 熱門排序 
         [HttpGet("PopRank")]
         public async Task<IActionResult> PopRank(int page = 1, int pageSize = 6)
         {
             var result = await _sCoachMethods.CoachPopular(page, pageSize);
             return Ok(result);
         }
-
+        #endregion
+        #region 最新排序 
         [HttpGet("NewRank")]
         public async Task<IActionResult> NewRank()
         {
@@ -50,34 +53,52 @@ namespace SalterWebApi.Areas.Experience
             return Ok(result);
         }
         #endregion
+
+        #endregion
         #region 搜尋
+
         #region~~搜尋-名字~~
         [HttpGet("NameSearch")]
         public async Task<IActionResult> NameSearch([FromQuery] string key)
         {
-            var result = await _sCoachMethods.GetCoachName(key);
-            //if (result == null || result.Count == 0) 
-            //throw new KeyNotFoundException("教練雲遊四海去了");//註解掉 因為關鍵字搜尋遇到空白就報錯
-            return Ok(result);
+            try {
+                var result = await _sCoachMethods.GetCoachName(key);
+                return Ok(result);
+            }
+            catch (Exception ex) {
+                BadRequest(new { message = ex.Message });
+            }
+            return BadRequest(new { message = "請檢查資料是否正確" });
         }
         #endregion
+
+        #region~~搜尋-專業~~
         [HttpGet("SpeSearch")]
         public async Task<IActionResult> SpeSearch([FromQuery] string key)
         {
-            var result = await _sCoachMethods.GetCoachSpecial(key);
-            // if (result == null || result.Count == 0)
-            //throw new KeyNotFoundException("！太難了 教練不會！");
-            return Ok(result);
+            try {
+                var result = await _sCoachMethods.GetCoachSpecial(key);
+                return Ok(result);
+            }
+            catch (Exception ex) { BadRequest(new { message = ex.Message }); }
+            return BadRequest(new { message = "請檢查資料是否正確" });
         }
+        #endregion
+
+        #region~~搜尋-地區~~
         [HttpGet("DistSearch")]
         public async Task<IActionResult> DistSearch([FromQuery] string key)
         {
-            var result = await _sCoachMethods.GetCoachDist(key);
-            //check
-            //if (result == null || result.Count == 0)
-            //throw new KeyNotFoundException("！這裡沒有所謂教練這種生物！");
-            return Ok(result);
+            try {
+                var result = await _sCoachMethods.GetCoachDist(key); 
+                return Ok(result);
+            }
+            catch (Exception ex) { BadRequest(new { message = ex.Message }); }
+            return BadRequest(new { message = "請檢查資料是否正確" });
         }
+
+        #endregion
+
         #endregion
         #endregion
 
@@ -279,7 +300,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 課程時段刪除
-        
+
         [Authorize]
         [HttpDelete("DeleteSession{sessionId}")]
         public async Task<IActionResult> deleteThisSession(int courseSessionId)
@@ -328,69 +349,65 @@ namespace SalterWebApi.Areas.Experience
         public async Task<IActionResult> AddReview([FromBody] DReview dto, int courseId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId)) {
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId))
+            {
                 return Unauthorized(new DAPIResponse<string> { IsSuccess = false, Message = "無效的憑證，請重新登入" });
             }
 
             if (!ModelState.IsValid) return BadRequest(new DAPIResponse<string> { IsSuccess = false, Message = "資料格式錯誤" });
 
             var result = await _sCoachMethods.CreateReview(dto, currentUserId, courseId);
-            if (result.IsSuccess) return Ok(result);
-             return BadRequest(new DAPIResponse<string>
-             {
-                 IsSuccess = false,
-                 Message = "新增失敗"
-             });
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(new DAPIResponse<string>
+            {
+                IsSuccess = false,
+                Message = "新增失敗"
+            });
         }
 
+        #endregion
+        #region 編輯評論
+        [Authorize]
+        [HttpPut("EditReview{reviewId}")]
+        public async Task<IActionResult> EditThisRevwew(DReview dto, int courseId, int reviewId)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId))
+            {
+                return Unauthorized(new DAPIResponse<string> { IsSuccess = false, Message = "無效的憑證，請重新登入" });
+            }
+            if (!ModelState.IsValid) return BadRequest(new DAPIResponse<string> { IsSuccess = false, Message = "資料格式錯誤" });
+
+            var result = await _sCoachMethods.EditReview(dto, currentUserId, courseId, reviewId);
+            if (result.IsSuccess)
+                return Ok(result);
+            return BadRequest(new DAPIResponse<string>
+            {
+                IsSuccess = false,
+                Message = "編輯失敗"
+            });
+        }
+
+        #endregion
+        #region 刪除評論
+        #endregion
+
+        #endregion
+
+        #region 交易
+        #region 預約課程
+        #endregion
+        #region 支付 
+        #endregion
+        #region 歷史交易紀錄 
+        #endregion
+        #endregion
+
+        #region 營運 
+        #endregion
+
+
+
     }
-            #endregion
-            #region 編輯評論
-            #endregion
-            #region 刪除評論
-            #endregion
-
-            #endregion
-
-            #region 交易
-            #region 預約課程
-            #endregion
-            #region 支付 
-            #endregion
-            #region 歷史交易紀錄 
-            #endregion
-            #endregion
-
-            #region 營運 
-            #endregion
-
-            //測試mapping
-            //    [HttpGet("test-mapping")]
-            //    public async Task<IActionResult> TestMapping()
-            //    {
-            //        var coachData = await _context.ExpCoaches
-            //.Include(c => c.Specialities)  // 這裡就是你程式碼裡的 d.Specialities
-            //.Include(c => c.TripDistricts) // 這裡就是你程式碼裡的 d.TripDistricts
-            //.Select(c => new
-            //{
-            //    CoachName = c.Name,
-            //    // 把專長名稱抓成清單
-            //    Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
-            //    // 把地區名稱抓成清單
-            //    Districts = c.TripDistricts.Select(d => d.Name).ToList()
-            //})
-            //.ToListAsync();
-            //        return Ok(coachData);
-            //        //var districtData = await _context.TripDistricts
-            //        //.Include(d => d.CoachDists) // 對應你程式碼裡的 p.CoachDists
-            //        //.ToListAsync();
-            //        //return Ok(districtData);
-
-            //    }
-
-
-
-
-        
-    
 }
