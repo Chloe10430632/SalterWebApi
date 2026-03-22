@@ -802,6 +802,7 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.Rating).HasColumnName("rating");
             entity.Property(e => e.ReviewContent).HasColumnName("review_content");
             entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
+            entity.Property(e => e.UpdateAt).HasColumnName("update_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.Coach).WithMany(p => p.ExpReviews)

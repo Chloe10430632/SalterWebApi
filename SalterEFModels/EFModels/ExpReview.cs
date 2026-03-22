@@ -21,6 +21,8 @@ public partial class ExpReview
 
     public bool? IsHidden { get; set; }
 
+    public DateTime? UpdateAt { get; set; }
+
     public virtual ExpCoach? Coach { get; set; }
 
     public virtual ExpCourseOrder? CourseOrder { get; set; }

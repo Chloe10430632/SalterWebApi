@@ -497,7 +497,6 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 課程展示介紹
-        //TODO
         public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId, int coachId)
         {
             var result = await _context.ExpCourseSessions
@@ -522,7 +521,7 @@ namespace ExpServiceHelper.Service
 
         #region ~~評論~~
         #region 新增評論
-        public async Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId)
+        public async Task<DAPIResponse<string>> CreateReview(DReview dto,int userId, int courseOId)
         {
             //先去「訂單表 (ExpCourseOrders)」確認有沒有這筆訂單，順便把 CoachId 拿回來
             var order = await _context.ExpCourseOrders
@@ -551,22 +550,45 @@ namespace ExpServiceHelper.Service
                 Message = "~感謝大大撥冗評論~"
             };
         }
-
-        
-        #endregion
         #endregion
 
-
-
-
-        #region 評論
-        #region 新增評論
-        #endregion
         #region 編輯評論
+        public async Task<DAPIResponse<DReview>> EditReview(DReview dto, int userId, int courseId, int reviewId) {
+            var r = await _context.ExpReviews.FirstOrDefaultAsync(r => r.Id == reviewId && r.UserId == userId);
+            if (r == null) return new DAPIResponse<DReview> { IsSuccess = false, Message = "找不倒評論" };
+
+            //進行修改：直接把 DTO 的資料倒進去 Entity(原本的那筆)
+            r.ReviewContent = dto.ReviewContent;
+            r.Rating = dto.Rating;
+            r.UpdateAt = DateTime.Now;
+            
+          
+            await _context.SaveChangesAsync();
+            return new DAPIResponse<DReview>
+            {
+                IsSuccess = true,
+                Message = $"更新成功，Reviewed at {userId}",
+                Data = dto
+            };
+        }
         #endregion
+
         #region 刪除評論
+        public async Task<DAPIResponse<string>> DeleteReview(int userId, int reviewId) { 
+            var review = await _context.ExpReviews.FirstOrDefaultAsync( r => r.Id == reviewId && r.UserId == userId);
+            if (review == null)
+                throw new Exception("沒有對應的資料");
+            await _context.SaveChangesAsync();
+            return new DAPIResponse<string> { IsSuccess = true, Message = "成功刪除評論" };
+        }
         #endregion
+
         #endregion
+
+
+
+
+      
 
         #region 交易流程
         #region 預約課程

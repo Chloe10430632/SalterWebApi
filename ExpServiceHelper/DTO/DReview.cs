@@ -8,8 +8,8 @@ namespace ExpServiceHelper.DTO
 {
     public class DReview
     {
-        public int? Rating { get; set; }
-        public string? ReviewContent { get; set; }
+        public int Rating { get; set; }
+        public string ReviewContent { get; set; }
 
     }
 }
