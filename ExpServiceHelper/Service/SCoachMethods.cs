@@ -496,9 +496,9 @@ namespace ExpServiceHelper.Service
 
         #endregion
 
-        #region 課程展示
+        #region 課程展示介紹
         //TODO
-        public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int coachId, int courseId)
+        public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId, int coachId)
         {
             var result = await _context.ExpCourseSessions
                     .Where(c => c.CoachId == coachId && c.Id == courseId)
@@ -513,7 +513,7 @@ namespace ExpServiceHelper.Service
             return new DTO.DAPIResponse<DCourseInfo>
             {
                 IsSuccess = true,
-                Message = "課程開放報名~",
+                Message = "課程展示中",
                 Data = result
             };
         }

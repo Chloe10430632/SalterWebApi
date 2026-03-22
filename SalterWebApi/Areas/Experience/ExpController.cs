@@ -267,7 +267,6 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 課程時段刪除
-        #endregion
         [Authorize]
         [HttpDelete("DeleteSession{sessionId}")]
         public async Task<IActionResult> deleteThisSession(int courseSessionId) {
@@ -287,8 +286,22 @@ namespace SalterWebApi.Areas.Experience
             }
             return BadRequest(new { message = "刪除失敗" });
         }
-        #region 課程介紹get{id}
         #endregion
+
+        #region 課程展示介紹
+        [HttpGet("CourseInfo{courseId}")]
+        public async Task<IActionResult> CourseInfo(int courseId, int coachId) {
+            if (courseId == 0 ||coachId == 0) return NotFound("新課程還在趕工中");
+            try {
+                var result = await _sCoachMethods.ThisCourse(courseId, coachId);
+                if (result == null) return NotFound("找不到相關課程資訊");
+                return Ok(result); 
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+            
+        }
+        #endregion
+
         #region 預約課程
         #endregion
         #region 新增評論
