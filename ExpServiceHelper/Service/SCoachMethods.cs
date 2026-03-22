@@ -234,7 +234,8 @@ namespace ExpServiceHelper.Service
                     DistrictName = c.District.Name
                 }).FirstOrDefaultAsync();
 
-            return new DAPIResponse<DCoachEdit> { IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = resultData };
+            return new DAPIResponse<DCoachEdit> {
+                IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = resultData };
 
         }
         #endregion
@@ -310,14 +311,14 @@ namespace ExpServiceHelper.Service
 
         #region~~課程~~
         #region 課程模板建立
-        public async Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int userId)
+        public async Task<DAPIResponse<DCourseCreate>> CreateTemplate(DCourseCreate dto, int userId)
         {
             try {
                 var coachExists = await _context.ExpCoaches
                     .FirstOrDefaultAsync(c => c.UserId == userId);
 
                 if (coachExists == null)
-                    return new DAPIResponse<string> { IsSuccess = false,Message = "教練不存在"};
+                    return new DAPIResponse<DCourseCreate> { IsSuccess = false,Message = "教練不存在"};
                 
                 //主表圖表分開處理
                 var t = new ExpCourseTemplate
@@ -347,10 +348,11 @@ namespace ExpServiceHelper.Service
             //update
             await _context.SaveChangesAsync();
 
-            return new DAPIResponse<string>
+            return new DAPIResponse<DCourseCreate>
             {
                 IsSuccess = true,
-                Message = "新課程模板做好啦 ！"
+                Message = "新課程模板做好啦 ！",
+                Data = dto
             }; 
             
             }
@@ -361,78 +363,8 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-
-        #region 課程選時間上架 
-        //TODO
-        public async Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId)
-        {
-            //找有沒有模板
-            var t = await _context.ExpCourseTemplates.FirstOrDefaultAsync(t => t.Id == TemplateId);
-            if (t == null) { throw new Exception("凡人不能看的天書"); }
-            //使用者和教練對得上
-            var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.Id == t.CoachId);
-            if (coach == null || coach.UserId != currentUserId)
-                return new DAPIResponse<string> { IsSuccess = false, Message = "你沒有權限為此課程開課喔！" };
-
-
-            //選時間和人數
-            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-            DateOnly day60 = today.AddDays(60);
-
-            foreach (var date in dto.SelectedDates)
-            {
-
-                if (date < today || date > day60) continue;
-                //找有沒有衝堂
-                bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
-                    s.CoachId == t.CoachId &&
-                    s.SessionDate == date &&
-                    s.TimeSlot == dto.TimeSlot);
-                if (isConflict) throw new Exception("尚未習得隱分身之術 你逆");
-
-                var newSession = new ExpCourseSession
-                {
-                    CourseTemplateId = TemplateId,
-                    CoachId = t.CoachId,
-                    SessionDate = date,
-                    TimeSlot = dto.TimeSlot,
-                    MaxParticipants = dto.MaxStudents,
-                    CurrentParticipants = 0,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
-                };
-                 _context.ExpCourseSessions.AddAsync(newSession);
-            }
-            await _context.SaveChangesAsync();
-            return new DTO.DAPIResponse<string>
-            {
-                IsSuccess = true,
-                Message = "課程開放報名~"
-            };
-
-        }
-        #endregion
-
-        #region 課程展示
-        //TODO
-        public async Task<DCourseOpenSession> ThisCourse(int coachId, int courseId)
-        {
-            var result = await _context.ExpCourseSessions
-                    .Where(c => c.CoachId == coachId && c.Id == courseId)
-                    .Select(c => new DCourseOpenSession
-                    {
-                       // TemplateId = c.Id,
-                        //CoachId = c.CoachId,
-                        TimeSlot = c.TimeSlot,
-                        MaxStudents = c.MaxParticipants,
-                        SelectedDates = new List<DateOnly> { c.SessionDate.Value },
-                       // UpdatedAt = c.UpdatedAt
-                    }).FirstOrDefaultAsync();
-            return result;
-        }
-        #endregion
         #region 課程模板編輯
-        public async Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId)
+        public async Task<DAPIResponse<DCourseTempEdit>> EditTemplate(DCourseTempEdit dto, int TemplateId, int currentUserId)
         {
             var t = _context.ExpCourseTemplates
                 .Include(x => x.ExpCoursePhotos)
@@ -482,7 +414,82 @@ namespace ExpServiceHelper.Service
 
 
             await _context.SaveChangesAsync();
-            return dto;
+            return new DTO.DAPIResponse<DCourseTempEdit> { IsSuccess = true, Message = "修改成功", Data =dto };
+        }
+        #endregion
+
+
+        #region 課程選時間上架 
+        public async Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId)
+        {
+            //找有沒有模板
+            var t = await _context.ExpCourseTemplates.FirstOrDefaultAsync(t => t.Id == TemplateId);
+            if (t == null) { throw new Exception("凡人不能看的天書"); }
+            //使用者和教練對得上
+            var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.Id == t.CoachId);
+            if (coach == null || coach.UserId != currentUserId)
+                return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = true, Message = "修改成功"};
+
+
+            //選時間和人數
+            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+            DateOnly day60 = today.AddDays(60);
+
+            foreach (var date in dto.SelectedDates)
+            {
+
+                if (date < today || date > day60) continue;
+                //找有沒有衝堂
+                bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
+                    s.CoachId == t.CoachId &&
+                    s.SessionDate == date &&
+                    s.TimeSlot == dto.TimeSlot);
+                if (isConflict) throw new Exception("尚未習得隱分身之術 你逆");
+
+                var newSession = new ExpCourseSession
+                {
+                    CourseTemplateId = TemplateId,
+                    CoachId = t.CoachId,
+                    SessionDate = date,
+                    TimeSlot = dto.TimeSlot,
+                    MaxParticipants = dto.MaxStudents,
+                    CurrentParticipants = 0,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                 _context.ExpCourseSessions.AddAsync(newSession);
+            }
+            await _context.SaveChangesAsync();
+            return new DTO.DAPIResponse<DCourseOpenSession>
+            {
+                IsSuccess = true,
+                Message = "課程開放報名~",
+                Data = dto
+            };
+
+        }
+        #endregion
+
+        #region 課程展示
+        //TODO
+        public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int coachId, int courseId)
+        {
+            var result = await _context.ExpCourseSessions
+                    .Where(c => c.CoachId == coachId && c.Id == courseId)
+                    .Select(c => new DCourseInfo
+                    {
+                        CoachId = c.CoachId,
+                        SelectedDates = new List<DateOnly> { c.SessionDate.Value },
+                        TimeSlot = c.TimeSlot,
+                        MaxStudents = c.MaxParticipants,
+                        UpdatedAt = c.UpdatedAt
+                    }).FirstOrDefaultAsync();
+            return new DTO.DAPIResponse<DCourseInfo>
+            {
+                IsSuccess = true,
+                Message = "課程開放報名~",
+                Data = result
+            };
         }
         #endregion
         #endregion
@@ -518,6 +525,8 @@ namespace ExpServiceHelper.Service
                 Message = "~感謝大大撥冗評論~"
             };
         }
+
+        
         #endregion
         #endregion
 

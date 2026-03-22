@@ -49,16 +49,16 @@ namespace ExpServiceHelper.IService
 
         #region ~~課程~~
         #region 課程模板建立
-        Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int coachId);
-        #endregion
-        #region  課程上架 
-        Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
+        Task<DAPIResponse<DCourseCreate>> CreateTemplate(DCourseCreate dto, int coachId);
         #endregion
         #region 課程模板編輯
-        Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId);
+        Task<DAPIResponse<DCourseTempEdit>> EditTemplate(DCourseTempEdit dto, int TemplateId, int currentUserId);
+        #endregion
+        #region  課程上架 
+        Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
         #endregion
         #region 課程展示
-        Task<DCourseOpenSession> ThisCourse(int coachId, int courseId);
+        Task<DAPIResponse<DCourseInfo>> ThisCourse(int coachId, int courseId);
         #endregion
         #endregion
 
