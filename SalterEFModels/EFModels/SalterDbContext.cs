@@ -166,7 +166,7 @@ public partial class SalterDbContext : DbContext
     public virtual DbSet<UserUser> UserUsers { get; set; }
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
-   
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -489,10 +489,6 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.City).WithMany(p => p.ExpCoaches)
-                .HasForeignKey(d => d.CityId)
-                .HasConstraintName("FK_ExpCoaches_TripCities");
-
             entity.HasOne(d => d.District).WithMany(p => p.ExpCoaches)
                 .HasForeignKey(d => d.DistrictId)
                 .HasConstraintName("FK_ExpCoaches_TripDistricts");
@@ -554,7 +550,7 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.CourseSession).WithMany(p => p.ExpCourseOrders)
                 .HasForeignKey(d => d.CourseSessionId)
-                .HasConstraintName("FK__ExpCourse__cours__1D7B6025");
+                .HasConstraintName("FK_ExpCourseOrders_ExpCourseSessions");
 
             entity.HasOne(d => d.ExpTransaction).WithMany(p => p.ExpCourseOrders)
                 .HasForeignKey(d => d.ExpTransactionId)
@@ -585,9 +581,7 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83FEE318725");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
             entity.Property(e => e.CourseTemplateId).HasColumnName("course_template_id");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
@@ -601,7 +595,7 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.CourseTemplate).WithMany(p => p.ExpCourseSessions)
                 .HasForeignKey(d => d.CourseTemplateId)
-                .HasConstraintName("FK__ExpCourse__cours__214BF109");
+                .HasConstraintName("FK_ExpCourseSessions_ExpCourseTemplates");
         });
 
         modelBuilder.Entity<ExpCourseTemplate>(entity =>
@@ -1012,12 +1006,11 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
-                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ForumComments_ForumComments");
 
             entity.HasOne(d => d.Post).WithMany(p => p.ForumComments)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_forumComments_forumPosts");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumComments)
