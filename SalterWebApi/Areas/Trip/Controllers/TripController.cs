@@ -320,7 +320,17 @@ public class TripController : ControllerBase
             return NotFound(ApiResponse<string>.Fail(result.Message, 404));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
-
+    [HttpPut("{id}/locations/sort")]
+    public async Task<IActionResult> UpdateLocationSort(int id, [FromBody] TripLocationSortDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.UpdateLocationSortAsync(id, dto, userId.Value);
+        if (!result.IsSuccess)
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+        return Ok(ApiResponse<string>.Ok(result.Message));
+    }       
     #endregion
 
     #region 提醒

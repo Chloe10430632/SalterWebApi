@@ -57,6 +57,13 @@ public interface ITripRepository
     Task<TripTripLocation?> GetLocationByIdAsync(int locationId);
     Task<bool> DeleteLocationAsync(int locationId);
     Task<List<TripLocation>> GetAllLocationsAsync(string? keyword);
+    Task<TripCity?> GetCityByNameAsync(string name);
+    Task<TripDistrict?> GetDistrictByNameAsync(string name, int cityId);
+    Task<TripLocation?> GetLocationByGooglePlaceIdAsync(string? placeId);
+    Task<TripLocation> CreateTripLocationAsync(TripLocation location);
+    Task<TripCity> CreateCityAsync(TripCity city);
+    Task<TripDistrict> CreateDistrictAsync(TripDistrict district);
+    Task UpdateLocationSortAsync(List<(int locationId, int sortOrder)> items);
     #endregion
 
     #region 提醒

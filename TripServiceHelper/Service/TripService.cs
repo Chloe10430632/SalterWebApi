@@ -424,10 +424,58 @@ public class TripService : ITripService
         if (!isOrganizer && !isMember)
             return ServiceResult.Fail("只有行程成員可以新增地點", 403);
 
+        // 臺 → 台 名稱對應
+        var normalizedCity = dto.CityName?.Replace("臺", "台") ?? "";
+        var normalizedDistrict = dto.DistrictName?.Replace("臺", "台") ?? "";
+
+        // 找不到城市就新增
+        var city = await _repo.GetCityByNameAsync(normalizedCity);
+        if (city == null)
+        {
+            city = await _repo.CreateCityAsync(new TripCity
+            {
+                Name = normalizedCity,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            });
+        }
+
+        // 找不到區域就新增
+        var district = await _repo.GetDistrictByNameAsync(normalizedDistrict, city.Id);
+        if (district == null)
+        {
+            district = await _repo.CreateDistrictAsync(new TripDistrict
+            {
+                Name = normalizedDistrict,
+                CityId = city.Id,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            });
+        }
+
+        // 檢查 GooglePlaceId 是否已存在
+        var location = await _repo.GetLocationByGooglePlaceIdAsync(dto.GooglePlaceId);
+        if (location == null)
+        {
+            location = new TripLocation
+            {
+                GooglePlaceId = dto.GooglePlaceId,
+                Name = dto.LocationName,
+                AddressText = dto.AddressText ?? "",
+                Lat = dto.Lat ?? 0,
+                Lng = dto.Lng ?? 0,
+                CityId = city.Id,
+                DistrictId = district.Id,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            await _repo.CreateTripLocationAsync(location);
+        }
+
         var entity = new TripTripLocation
         {
             TripId = tripId,
-            LocationId = dto.LocationId,
+            LocationId = location.Id,
             LocationRole = dto.LocationRole,
             Note = dto.Note,
             SortOrder = dto.SortOrder,
@@ -470,6 +518,16 @@ public class TripService : ITripService
         return ServiceResult.Success("地點刪除成功");
     }
 
+    public async Task<ServiceResult> UpdateLocationSortAsync(int tripId, TripLocationSortDto dto, int userId)
+    {
+        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+        var isMember = await _repo.IsMemberAsync(tripId, userId);
+        if (!isOrganizer && !isMember)
+            return ServiceResult.Fail("只有行程成員可以編輯地點", 403);
+
+        await _repo.UpdateLocationSortAsync(dto.Items.Select(x => (x.LocationId, x.SortOrder)).ToList());
+        return ServiceResult.Success("排序更新成功");
+    }
     public async Task<List<TripLocationSearchDto>> GetAllLocationsAsync(string? keyword)
     {
         var list = await _repo.GetAllLocationsAsync(keyword);

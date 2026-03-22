@@ -356,6 +356,61 @@ public class TripRepository : ITripRepository
 
         return await q.OrderBy(l => l.Name).ToListAsync();
     }
+    public async Task<TripCity?> GetCityByNameAsync(string name)
+    => await _db.TripCities.FirstOrDefaultAsync(c => c.Name == name);
+
+    public async Task<TripDistrict?> GetDistrictByNameAsync(string name, int cityId)
+        => await _db.TripDistricts.FirstOrDefaultAsync(d => d.Name == name && d.CityId == cityId);
+
+    public async Task<TripLocation?> GetLocationByGooglePlaceIdAsync(string? placeId)
+    {
+        if (string.IsNullOrEmpty(placeId)) return null;
+        return await _db.TripLocations.FirstOrDefaultAsync(l => l.GooglePlaceId == placeId);
+    }
+
+    public async Task<TripLocation> CreateTripLocationAsync(TripLocation location)
+    {
+        _db.TripLocations.Add(location);
+        await _db.SaveChangesAsync();
+        return location;
+    }
+    public async Task<TripCity> CreateCityAsync(TripCity city)
+    {
+        _db.TripCities.Add(city);
+        await _db.SaveChangesAsync();
+        return city;
+    }
+
+    public async Task<TripDistrict> CreateDistrictAsync(TripDistrict district)
+    {
+        _db.TripDistricts.Add(district);
+        await _db.SaveChangesAsync();
+        return district;
+    }
+    public async Task UpdateLocationSortAsync(List<(int locationId, int sortOrder)> items)
+    {
+        foreach (var (locationId, _) in items)
+        {
+            var entity = await _db.TripTripLocations.FindAsync(locationId);
+            if (entity != null)
+            {
+                entity.SortOrder = -entity.SortOrder;
+                entity.UpdatedAt = DateTime.Now;
+            }
+        }
+        await _db.SaveChangesAsync();
+
+        foreach (var (locationId, sortOrder) in items)
+        {
+            var entity = await _db.TripTripLocations.FindAsync(locationId);
+            if (entity != null)
+            {
+                entity.SortOrder = sortOrder;
+                entity.UpdatedAt = DateTime.Now;
+            }
+        }
+        await _db.SaveChangesAsync();
+    }
     #endregion
 
     #region 提醒
