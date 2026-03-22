@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using static System.Collections.Specialized.BitVector32;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ExpServiceHelper.Service
@@ -418,7 +419,6 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-
         #region 課程選時間上架 
         public async Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId)
         {
@@ -428,7 +428,7 @@ namespace ExpServiceHelper.Service
             //使用者和教練對得上
             var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.Id == t.CoachId);
             if (coach == null || coach.UserId != currentUserId)
-                return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = true, Message = "修改成功"};
+                return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "冒牌教練!"};
 
 
             //選時間和人數
@@ -457,7 +457,7 @@ namespace ExpServiceHelper.Service
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
-                 _context.ExpCourseSessions.AddAsync(newSession);
+                await _context.ExpCourseSessions.AddAsync(newSession);
             }
             await _context.SaveChangesAsync();
             return new DTO.DAPIResponse<DCourseOpenSession>
@@ -468,6 +468,32 @@ namespace ExpServiceHelper.Service
             };
 
         }
+        #endregion
+
+        #region 課程時段刪除
+        public async Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId)
+        {
+            var session = await _context.ExpCourseSessions.FirstOrDefaultAsync(s => s.Id == courseSessionId);
+            if (session == null)
+                throw new Exception("沒有對應的資料");
+
+            var c = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.UserId == currentUserId);
+            if (c == null || session.CoachId != c.Id)
+                return new DAPIResponse<string> { IsSuccess = false, Message = "權限不足，您只能刪除自己的課程" };
+
+            if (session.CurrentParticipants > 0)
+                return new DAPIResponse<string>
+                {
+                    IsSuccess = false,
+                    Message = "有學生報名了，不能耍任性"
+                };
+
+            _context.ExpCourseSessions.Remove(session);
+            await _context.SaveChangesAsync();
+            return new DAPIResponse<string> { IsSuccess = true, Message = "成功刪除時段" };
+
+        }
+
         #endregion
 
         #region 課程展示
