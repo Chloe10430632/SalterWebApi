@@ -218,6 +218,7 @@ namespace SalterWebApi.Areas.Experience
 
         #endregion
         #region 課程選時間上架 
+        //TODO
         [Authorize]
             [HttpPost("CourseTime{templateId}")]
             public async Task<IActionResult> OpenTimeCourse([FromBody] DCourseOpenSession dto, int templateId) {
