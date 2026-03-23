@@ -545,6 +545,7 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.CourseSessionId).HasColumnName("course_session_id");
             entity.Property(e => e.ExpTransactionId).HasColumnName("expTransaction_id");
             entity.Property(e => e.ReservedAt).HasColumnName("reserved_at");
+            entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 

@@ -586,10 +586,31 @@ namespace ExpServiceHelper.Service
 
         #endregion
 
+        #region 交易流程
+        #region 新增預約課程
+        //public async Task<DAPIResponse<string>> CourseReserve(DCourseOrder dto, int userId, int courseSessionId) {
+        //    var reserve = await _context.ExpCourseOrders
+        //                  .Where(r => r.CourseSessionId == courseSessionId && r.UserId == userId)
+        //                  .Select(r => new { 
+        //                    TransactionId =  r.ExpTransactionId,
+        //                  })
+        //                  .FirstOrDefaultAsync();
+        //    if (reserve == null) {
+        //        return new DAPIResponse<string> { IsSuccess = false, Message = "沒有課程可以評論" };
+        //    }
+        //    var ReserveCourse = new ExpCourseOrder {
+        //        UserId = userId,
+        //        CoachId = ,
+        //        CourseSessionId = courseSessionId,
+        //        ReservedAt = DateTime.Now
+        //    };
+        //    await _context.ExpCourseOrders.AddAsync(ReserveCourse);
+        //    await _context.SaveChangesAsync();
+        //}
+        #endregion
+        #endregion
 
 
-
-      
 
         #region 交易流程
         #region 預約課程
