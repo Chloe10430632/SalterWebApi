@@ -637,13 +637,15 @@ namespace ExpServiceHelper.Service
             };
         }
         #endregion
+        #region 歷史交易紀錄 
+
+        #endregion
         #endregion
 
 
 
         #region 交易流程
-        #region 預約課程
-        #endregion
+
         #region 支付 
         #endregion
         #region 歷史交易紀錄 

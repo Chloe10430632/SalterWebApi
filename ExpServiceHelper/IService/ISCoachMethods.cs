@@ -80,6 +80,7 @@ namespace ExpServiceHelper.IService
 
         #region 交易
         #region 預約課程
+        Task<DAPIResponse<string>> CourseReserve(DCourseOrder dto, int userId, int courseSessionId);
         #endregion
         #region 支付 
         #endregion
