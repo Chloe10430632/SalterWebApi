@@ -578,6 +578,7 @@ namespace ExpServiceHelper.Service
             var review = await _context.ExpReviews.FirstOrDefaultAsync( r => r.Id == reviewId && r.UserId == userId);
             if (review == null)
                 throw new Exception("沒有對應的資料");
+            _context.ExpReviews.Remove(review);
             await _context.SaveChangesAsync();
             return new DAPIResponse<string> { IsSuccess = true, Message = "成功刪除評論" };
         }

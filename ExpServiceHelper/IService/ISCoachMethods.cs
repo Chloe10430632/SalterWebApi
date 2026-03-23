@@ -73,6 +73,7 @@ namespace ExpServiceHelper.IService
         Task<DAPIResponse<DReview>> EditReview(DReview dto, int userId, int courseId, int reviewId);
         #endregion
         #region 刪除評論
+        Task<DAPIResponse<string>> DeleteReview(int userId, int reviewId);
         #endregion
         #endregion
 

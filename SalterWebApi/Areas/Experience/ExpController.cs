@@ -261,8 +261,7 @@ namespace SalterWebApi.Areas.Experience
 
             if (int.TryParse(userIdStr, out int currentUserId))
             {
-                try
-                {
+                try {
                     var result = await _sCoachMethods.EditTemplate(dto, tempId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
                     return BadRequest(new { message = result.Message });
@@ -342,7 +341,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 評論
-
+        //TODO尚未測試
         #region 新增評論
         [Authorize]
         [HttpPost("AddReview")]
@@ -373,8 +372,7 @@ namespace SalterWebApi.Areas.Experience
         public async Task<IActionResult> EditThisRevwew(DReview dto, int courseId, int reviewId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId))
-            {
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId)) {
                 return Unauthorized(new DAPIResponse<string> { IsSuccess = false, Message = "無效的憑證，請重新登入" });
             }
             if (!ModelState.IsValid) return BadRequest(new DAPIResponse<string> { IsSuccess = false, Message = "資料格式錯誤" });
@@ -391,6 +389,24 @@ namespace SalterWebApi.Areas.Experience
 
         #endregion
         #region 刪除評論
+        [Authorize]
+        [HttpDelete("DeleteReview{reviewId}")]
+        public async Task<IActionResult> DeleteReview(int reviewId) {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId)){
+                    return Unauthorized(new DAPIResponse<string> {
+                        IsSuccess = false, Message = "無效的憑證，請重新登入" });
+            }
+                try {
+                    var result = await _sCoachMethods.DeleteReview(currentUserId,reviewId);
+                    if (result.IsSuccess) return Ok(result);
+                    return BadRequest(new { message = result.Message });
+                }
+                catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+            
+        }
+        
+
         #endregion
 
         #endregion
