@@ -6,6 +6,7 @@
         public string? BoardTitle { get; set; }
         public string? BoardImgUrl { get; set; }
         public int BoardSort { get; set; }
+        public bool isFollowed { get; set; }
         public int ViewCount { get; set; }
         public int FollowCount { get; set; }
     }

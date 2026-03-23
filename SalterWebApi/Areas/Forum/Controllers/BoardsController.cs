@@ -4,6 +4,7 @@ using ForumServiceHelper.Models.DTO.QueryModel;
 using ForumServiceHelper.Models.DTO.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using SalterEFModels.EFModels;
+using System.Security.Claims;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -27,7 +28,12 @@ namespace SalterWebApi.Areas.Forum.Controllers
         [HttpGet]
         public async Task<ActionResult<IList<BoardsViewModel>>> Get([FromQuery] BoardsQueryModel query)
         {
-            var boardsList = await _boardsService.GetAllBoardsAsync(query);
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
+            {
+                userId = 0;
+            }
+            var boardsList = await _boardsService.GetAllBoardsAsync(userId,query);
             return Ok(boardsList);
         }
 
@@ -35,7 +41,12 @@ namespace SalterWebApi.Areas.Forum.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<BoardsViewModel>> GetForumBoardCategory(int id)
         {
-             var boardData = await _boardsService.GetDetailsAsync(id);
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
+            {
+                userId = 0;
+            }
+            var boardData = await _boardsService.GetDetailsAsync(userId,id);
 
             if(boardData == null)
             {
@@ -44,6 +55,8 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
             return boardData;
         }
-       
+
+      
+
     }
 }

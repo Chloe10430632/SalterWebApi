@@ -29,7 +29,7 @@ namespace SalterWebApi.Areas.Forum.Controllers
             var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
             {
-                return Unauthorized("無效的使用者身分");
+                throw new UnauthorizedAccessException("您的身份驗證已過期或有誤，請重新登入!");
             }
 
             var result = await _interactionService.ProcessInteractionAsync(userId, dto);

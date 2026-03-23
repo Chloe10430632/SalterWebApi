@@ -24,14 +24,14 @@ namespace SalterWebApi.Areas.Forum.Controllers
         }
 
         //貼文互動Api
-        //[Authorize]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> HandleInteraction([FromBody] PostInteractionCreateModel dto)
         {
             var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
             {
-                userId = 0;
+                throw new UnauthorizedAccessException("您的身份驗證已過期或有誤，請重新登入!");
             }
 
             var result = await _interactionService.ProcessInteractionAsync(userId, dto);

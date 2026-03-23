@@ -10,8 +10,6 @@ namespace ForumServiceHelper.Models.DTO.CreateModel
 {
     public class PostCreateModel
     {
-        public int UserId { get; set; }
-
         public int BoardId { get; set; }
 
         public string Content { get; set; } = string.Empty;

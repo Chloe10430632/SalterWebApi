@@ -78,11 +78,7 @@ namespace ForumServiceHelper.Service
                 };
             }
 
-            // 奇數次：執行新增
-            if (userId > 0)
-            {
-                await CreateNewInteraction(userId, dto, "ACTIVE");
-            }
+             await CreateNewInteraction(userId, dto, "ACTIVE");
             return new PostInteractionResponseModel
             {
                 Success = true,
@@ -99,7 +95,7 @@ namespace ForumServiceHelper.Service
             {
                 return new PostInteractionResponseModel { Success = true, Message = "此貼文先前已分享過" };
             }
-            if (userId > 0)
+           
                 await CreateNewInteraction(userId, dto, "ACTIVE");
             return new PostInteractionResponseModel { Success = true, Message = "分享紀錄已儲存" };
         }
@@ -127,7 +123,7 @@ namespace ForumServiceHelper.Service
         // 處理【瀏覽】：單純新增紀錄
         public async Task<PostInteractionResponseModel> HandleViewInteraction(int userId, PostInteractionCreateModel dto)
         {
-            if (userId > 0)
+          
                 await CreateNewInteraction(userId, dto, "ACTIVE");
             return new PostInteractionResponseModel { Success = true, Message = "瀏覽紀錄已更新" };
         }

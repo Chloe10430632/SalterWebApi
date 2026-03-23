@@ -67,10 +67,11 @@ namespace SalterWebApi.Areas.Forum.Controllers
         }
 
         [HttpPost("Images")] //有檔案上傳[FromForm]
-        //[Authorize]
+        [Authorize]
         public async Task<IActionResult> UploadPostImagesToCloudinary([FromForm] List<IFormFile> files)
         {
-            // 1. 基礎檢查
+            int userId = GetUserId(); //驗證身份
+
             if (files == null || files.Count == 0)
             {
                 throw new ArgumentException("請選擇要上傳的檔案");
@@ -82,9 +83,7 @@ namespace SalterWebApi.Areas.Forum.Controllers
             {
                 throw new Exception("圖片上傳失敗!");
             }
-
-            // 4. 回傳網址列表給前端
-            // 前端拿到這組 string[] 後，再塞進 PostCreateModel.ImageUrls 
+         
             return Created(string.Empty, imageUrls);
         }
 
@@ -93,37 +92,45 @@ namespace SalterWebApi.Areas.Forum.Controllers
         [Authorize]
         public async Task<ActionResult<ForumPost>> PostForumPost([FromBody]PostCreateModel data)
         {
-            // 既然有 [Authorize]，這裡的 userId 一定有值
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            data.UserId = userId;
+            int userId = GetUserId();
 
-            int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data);
-                return Created(string.Empty, new { isSuccess = true, PostId = postIdOrErrorResult });
+            int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(userId, data);
+            return Created(string.Empty, new { isSuccess = true, PostId = postIdOrErrorResult });
         }
+       
 
         // PUT: api/Posts/5
         [HttpPut("{id}")]
-        //[Authorize]
+        [Authorize]
         public async Task<IActionResult> PutForumPost(int id, [FromBody] PostCreateModel data)
         {
-            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int userId = GetUserId();
 
-            if (string.IsNullOrEmpty(claimId))
-                data.UserId = 0;
-            else
-                data.UserId = int.Parse(claimId);
-
-            int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(data, id);
+            int postIdOrErrorResult = await _postsService.CheckAndCreateAsync(userId,data, id);
                 return Ok(new { isSuccess = true, PostId = postIdOrErrorResult });
         }
 
         // DELETE: api/Posts/5
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteForumPost(int id)
         {
-            bool result =  await _postsService.CheckAndDeleteAsync(id);
+            int userId = GetUserId();
+            bool result =  await _postsService.CheckAndDeleteAsync(userId,id);
             return NoContent(); 
         }
 
+
+        //封裝取得UserId方法
+        private int GetUserId()
+        {
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
+            {
+                throw new UnauthorizedAccessException("您的身份驗證已過期或有誤，請重新登入!");
+            }
+
+            return userId;
+        }
     }
 }
