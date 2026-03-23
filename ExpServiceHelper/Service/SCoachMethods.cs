@@ -625,8 +625,6 @@ namespace ExpServiceHelper.Service
             };
             //課程報名人+1
             session.CurrentParticipants += 1;
-
-
            
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();
@@ -638,7 +636,25 @@ namespace ExpServiceHelper.Service
         }
         #endregion
         #region 歷史交易紀錄 
-
+        public async Task<List<DTransac>> TransacList(int userId) {
+            using (var db = new SalterDbContext()) {
+                var history = await db.ExpTransactions
+                            .Where(h => h.SenderUserId == userId)
+                            .Select(h => new DTransac { 
+                                TransactionId = h.Id,
+                                CourseName = h.ExpCourseOrders.FirstOrDefault().CourseSession.CourseTemplate.Title,
+                                CoaId = h.ExpCourseOrders.FirstOrDefault().CourseSession.CoachId,
+                                Amount = h.Amount,
+                                Status = h.Status ==0 ? "等待付款" :
+                                        h.Status == 1 ? "交易成功" : "已取消",
+                                OrderDate = h.CreatedAt
+                            })
+                            .OrderByDescending(h => h.OrderDate)
+                            .ToListAsync();
+                return  history;
+            }
+        
+        }
         #endregion
         #endregion
 
