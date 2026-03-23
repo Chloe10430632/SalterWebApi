@@ -12,6 +12,6 @@ namespace ExpServiceHelper.DTO
         public DateTime? ReservedAt { get; set; }
         public int? ExpTransactionId { get; set; }
         public DateTime? UpdatedAt { get; set; }
-
+        public int? Status { get; set; }
     }
 }

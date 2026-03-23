@@ -588,25 +588,54 @@ namespace ExpServiceHelper.Service
 
         #region 交易流程
         #region 新增預約課程
-        //public async Task<DAPIResponse<string>> CourseReserve(DCourseOrder dto, int userId, int courseSessionId) {
-        //    var reserve = await _context.ExpCourseOrders
-        //                  .Where(r => r.CourseSessionId == courseSessionId && r.UserId == userId)
-        //                  .Select(r => new { 
-        //                    TransactionId =  r.ExpTransactionId,
-        //                  })
-        //                  .FirstOrDefaultAsync();
-        //    if (reserve == null) {
-        //        return new DAPIResponse<string> { IsSuccess = false, Message = "沒有課程可以評論" };
-        //    }
-        //    var ReserveCourse = new ExpCourseOrder {
-        //        UserId = userId,
-        //        CoachId = ,
-        //        CourseSessionId = courseSessionId,
-        //        ReservedAt = DateTime.Now
-        //    };
-        //    await _context.ExpCourseOrders.AddAsync(ReserveCourse);
-        //    await _context.SaveChangesAsync();
-        //}
+        public async Task<DAPIResponse<string>> CourseReserve(DCourseOrder dto, int userId, int courseSessionId)
+        {
+           //找這堂課，順便拿教練ID
+            var session = await _context.ExpCourseSessions
+                          .FirstOrDefaultAsync( r => r.Id == dto.CourseSessionId );
+            if (session == null) {
+                return new DAPIResponse<string> { IsSuccess = false, Message = "沒有課程可以評論" };
+            }
+            //核對課堂名額
+            if (session.CurrentParticipants >= session.MaxParticipants) {
+                return new DAPIResponse<string> { IsSuccess = false, Message = "額滿了 你晚了一步QQ" };
+            }
+
+            //建立一筆 ExpTransaction，取得 TransactionId
+            decimal? coursePrice = session.CourseTemplate.Price;
+            var transac = new ExpTransaction {
+                SenderUserId = userId,
+                ReceiveUserId = session.CoachId, // 從場次拿教練 ID
+                Amount = coursePrice,            // 假設金額，之後可從 Template 抓
+                Status = 0,                      // 0: 已建立/待付款
+                TypeId = 3,                     
+                CreatedAt = DateTime.Now
+            };
+            await _context.ExpTransactions.AddAsync( transac );
+            await _context.SaveChangesAsync();
+
+            //建立預約實體 (Entity)
+            var reserve = new ExpCourseOrder {
+                UserId = userId,
+                CourseSessionId = courseSessionId,
+                ReservedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                ExpTransactionId = transac.Id,
+                Status = 0
+            };
+            //課程報名人+1
+            session.CurrentParticipants += 1;
+
+
+           
+            await _context.ExpCourseOrders.AddAsync(reserve);
+            await _context.SaveChangesAsync();
+            return new DAPIResponse<string> {
+              IsSuccess = true,
+              Message = "預約成功，請繳費完成報名",
+              Data = reserve.ToString()
+            };
+        }
         #endregion
         #endregion
 
