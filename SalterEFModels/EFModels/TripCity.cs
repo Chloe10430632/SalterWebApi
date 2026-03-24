@@ -13,8 +13,6 @@ public partial class TripCity
 
     public DateTime UpdatedAt { get; set; }
 
-    public virtual ICollection<ExpCoach> ExpCoaches { get; set; } = new List<ExpCoach>();
-
     public virtual ICollection<TripDistrict> TripDistricts { get; set; } = new List<TripDistrict>();
 
     public virtual ICollection<TripLocation> TripLocations { get; set; } = new List<TripLocation>();

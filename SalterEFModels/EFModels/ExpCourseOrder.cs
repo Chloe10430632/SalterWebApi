@@ -15,6 +15,8 @@ public partial class ExpCourseOrder
 
     public int? UserId { get; set; }
 
+    public int? Status { get; set; }
+
     public int? ExpTransactionId { get; set; }
 
     public virtual ExpCourseSession? CourseSession { get; set; }

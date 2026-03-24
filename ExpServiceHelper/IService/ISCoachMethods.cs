@@ -13,6 +13,8 @@ namespace ExpServiceHelper.IService
     public interface ISCoachMethods
     {
         #region 入口
+        /**搜尋-名字*/
+        Task<List<DCoachInfo>> GetCoachName(string keyName);
         /**搜尋-地區*/
         Task<List<DCoachInfo>> GetCoachDist(string keyDistrict);
 
@@ -47,16 +49,19 @@ namespace ExpServiceHelper.IService
 
         #region ~~課程~~
         #region 課程模板建立
-        Task<DAPIResponse<string>> CreateTemplate(DCourseCreate dto, int coachId);
+        Task<DAPIResponse<DCourseCreate>> CreateTemplate(DCourseCreate dto, int coachId);
         #endregion
         #region 課程模板編輯
-        Task<DCourseEdit> EditTemplate(DCourseEdit dto, int TemplateId);
+        Task<DAPIResponse<DCourseTempEdit>> EditTemplate(DCourseTempEdit dto, int TemplateId, int currentUserId);
         #endregion
         #region  課程上架 
-        Task<DAPIResponse<string>> OpenSession(DCourseOpenSession dto, int TemplateId);
+        Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
+        #endregion
+        #region 課程時段刪除
+        Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId);
         #endregion
         #region 課程展示
-        Task<DCourseOpenSession> ThisCourse(int coachId, int courseId);
+        Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId, int coachId);
         #endregion
         #endregion
 
@@ -65,14 +70,17 @@ namespace ExpServiceHelper.IService
         Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId);
         #endregion
         #region 編輯評論
+        Task<DAPIResponse<DReview>> EditReview(DReview dto, int userId, int courseId, int reviewId);
         #endregion
         #region 刪除評論
+        Task<DAPIResponse<string>> DeleteReview(int userId, int reviewId);
         #endregion
         #endregion
 
 
         #region 交易
         #region 預約課程
+        Task<DAPIResponse<string>> CourseReserve(DCourseOrder dto, int userId, int courseSessionId);
         #endregion
         #region 支付 
         #endregion

@@ -27,8 +27,6 @@ public partial class ExpCoach
 
     public int? CityId { get; set; }
 
-    public virtual TripCity? City { get; set; }
-
     public virtual TripDistrict? District { get; set; }
 
     public virtual ICollection<ExpCourseTemplate> ExpCourseTemplates { get; set; } = new List<ExpCourseTemplate>();
