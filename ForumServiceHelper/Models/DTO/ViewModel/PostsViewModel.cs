@@ -31,8 +31,6 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
     // 詳情專用：繼承列表並擴充留言與詳細數據
     public class PostDetailViewModel : PostListViewModel
     {
-        public int BookmarkCount { get; set; }
-        public int ShareCount { get; set; }
         public string FullContent { get; set; } = string.Empty;
         public List<CommentPreviewDto> Comments { get; set; } = new();
     }

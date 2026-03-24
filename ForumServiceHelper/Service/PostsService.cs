@@ -97,7 +97,7 @@ namespace ForumServiceHelper.Service
             return await postListQuery.Take(query.TakeSize).ToListAsync();
         }
 
-        public async Task<PostDetailViewModel?> GetPostDetailAsync(int postId)
+        public async Task<PostDetailViewModel?> GetPostDetailAsync(int userId, int postId)
         {
             return await _dbPosts.GetAll()
         .Where(p => p.PostId == postId)
@@ -106,19 +106,22 @@ namespace ForumServiceHelper.Service
             PostId = p.PostId,
             UserName = p.User.UserName,
             AvatarUrl = p.User.ProfilePicture,
+            BoardId = p.BoardId,
             BoardTitle = p.Board.Title,
+            LocationTitle = p.Location.Name,
             ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
             CreatedAt = p.CreatedAt,
-            ImageUrls = p.ForumPostsImages.Select(img => img.ImageUrl).ToList(),
+            ImageUrls = p.ForumPostsImages.OrderBy(img => img.SortIndex).Select(img => img.ImageUrl).ToList(),
+            IsLiked = userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Like),
             LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+            IsCollected = userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Collect),
+            CollectCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
+            ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
             CommentCount = p.ForumComments.Count(),
             ViewCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.View),
             PostTags = p.ForumPostTagDetails.Select(pt => pt.Tag.TagName).ToList(),
-
-            BookmarkCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
-            ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
             FullContent = p.Content,
-
+       
             // 處理父子留言結構
             Comments = p.ForumComments
                 .Where(c => c.ParentCommentId == null)
