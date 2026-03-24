@@ -1,6 +1,8 @@
 ﻿using Azure;
+using CloudinaryDotNet.Actions;
 using ExpServiceHelper.DTO;
 using ExpServiceHelper.Service;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,10 +30,10 @@ namespace ExpServiceHelper.IService
 
         #region ~~教練~~
         #region 申請成為教練
-        Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId);
+        Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId, List<ImageUploadResult> pic);
         #endregion
         #region 教練編輯
-        Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId);
+        Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId, List<ImageUploadResult> pic);
         #endregion
         #region 詳細自介
         Task<DCoachInfo> ThisCoachInfo(int coachId);

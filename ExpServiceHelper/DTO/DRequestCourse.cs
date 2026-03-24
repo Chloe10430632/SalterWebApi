@@ -16,7 +16,7 @@ namespace ExpServiceHelper.DTO
         public string? Location { get; set; }
 
         // 這裡改用 IFormFile 接收實體檔案
-        public List<IFormFile>? ImageFiles { get; set; }
+        public List<IFormFile>? ImageFiles { get; set; } = new List<IFormFile>();
         public string PublicId { get; set; }
     }
 }

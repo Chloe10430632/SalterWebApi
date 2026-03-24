@@ -17,5 +17,6 @@ namespace ExpServiceHelper.DTO
         public DateTime? UpdatedAt { get; set; }
         //
         public IFormFile? AvatarFile { get; set; }
+        public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();
     }
 }

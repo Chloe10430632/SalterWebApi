@@ -1,4 +1,5 @@
 ﻿using Azure;
+using CloudinaryDotNet.Actions;
 using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
 using ExpServiceHelper.Service;
@@ -129,7 +130,7 @@ namespace ExpServiceHelper.Service
         #region~~教練~~
 
         #region 申請加入教練(新增)  
-        public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
+        public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId, List<ImageUploadResult> pic)
         {
             // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
             bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
@@ -187,7 +188,8 @@ namespace ExpServiceHelper.Service
                      {
                          CoachId = c.Id,
                          CoachName = c.Name,
-                         //AvatarUrl = c.AvatarUrl,
+                         //TODO 頭像型別問題
+                         // AvatarUrl = c.AvatarUrl,
                          District = c.TripDistricts.Select(m => m.Name).ToList(),
                          AvgRating = c.ExpReviews.Any() ? Math.Round( c.ExpReviews.Average(r => (double)r.Rating) ,1): 0,
                          ReviewCount = c.ExpReviews.Count(),
@@ -204,7 +206,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片?? 
-        public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId)
+        public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId, List<ImageUploadResult> pic)
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
             var thisCoach = await _context.ExpCoaches
@@ -213,6 +215,12 @@ namespace ExpServiceHelper.Service
             if (thisCoach == null)
             {
                 return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
+            }
+
+            //處理圖片
+            string picUrl = dto.AvatarUrl;
+            if (picUrl != null) {
+                
             }
 
             // 2.(賦值)：把前端傳來的 dto 資料塞進資料庫的 entity 裡
@@ -227,20 +235,21 @@ namespace ExpServiceHelper.Service
             // 3. 存檔：這時候 EF 就會知道 thisCoach 被動過了，發出 UPDATE 指令
             await _context.SaveChangesAsync();
 
-            // 4. 回傳：因為有只放id的欄位 所以要回傳抓新的對應名字
-            var resultData = await _context.ExpCoaches
-                .Where(c => c.Id == thisCoach.Id)
-                .Select(c => new DCoachEdit
-                {
-                    Name = c.Name,
-                    AvatarUrl = c.AvatarUrl,
-                    Introduction = c.Introduction,
-                    DistrictId = c.DistrictId,
-                    DistrictName = c.District.Name
-                }).FirstOrDefaultAsync();
+            //// 4. 回傳：因為有只放id的欄位 所以要回傳抓新的對應名字
+            //var resultData = await _context.ExpCoaches
+            //    .Where(c => c.Id == thisCoach.Id)
+            //    .Select(c => new DCoachEdit
+            //    {
+            //        Name = c.Name,
+            //        AvatarUrl = c.AvatarUrl,
+            //        Introduction = c.Introduction,
+            //        DistrictId = c.DistrictId,
+            //        DistrictName = c.District.Name
+
+            //    }).FirstOrDefaultAsync();
 
             return new DAPIResponse<DCoachEdit> {
-                IsSuccess = true, Message = "更新成功！教練大人進化了！", Data = resultData };
+                IsSuccess = true, Message = "更新成功！教練大人進化了！" };//, Data = resultData
 
         }
         #endregion
@@ -339,14 +348,14 @@ namespace ExpServiceHelper.Service
             //有傳圖片再做這步
             if (dto.PhotoUrls != null && dto.PhotoUrls.Any())
             {
-                foreach (var pic in dto.PhotoUrls)
-                {
-                        if (string.IsNullOrWhiteSpace(pic)) continue;
-                        t.ExpCoursePhotos.Add(new ExpCoursePhoto {
-                                                PhotoUrl = pic,
-                                                UploadedAt = DateTime.Now
-                                            });
-                }
+                //foreach (var pic in dto.PhotoUrls)
+                //{
+                //        if (string.IsNullOrWhiteSpace(pic)) continue;
+                //        t.ExpCoursePhotos.Add(new ExpCoursePhoto {
+                //                                PhotoUrl = pic,
+                //                                UploadedAt = DateTime.Now
+                //                            });
+                //}
             }
             //save--EF 會幫你動用 Transaction，確保模板跟照片「同時成功」或「同時失敗」)
             _context.ExpCourseTemplates.Add(t);
@@ -390,30 +399,30 @@ namespace ExpServiceHelper.Service
 
                 // 2. 找出「要刪除」的照片 (情境 2 & 4)
                 // 那些在資料庫裡，但不在前端名單中的
-                var photosToRemove = originPhoto
-                    .Where(p => !dto.PhotoUrls.Contains(p.PhotoUrl))
-                    .ToList();
+                //var photosToRemove = originPhoto
+                //    .Where(p => !dto.PhotoUrls.Contains(p.PhotoUrl))
+                //    .ToList();
 
-                foreach (var p in photosToRemove)
-                {
-                    _context.ExpCoursePhotos.Remove(p);
-                }
+                //foreach (var p in photosToRemove)
+                //{
+                //    _context.ExpCoursePhotos.Remove(p);
+                //}
 
-                // 3. 找出「要新增」的照片 (情境 1 & 3 & 4)
-                // 那些在前端名單中，但不在資料庫裡的
-                var urlsToAdd = dto.PhotoUrls
-                    .Where(url => !existingUrls.Contains(url))
-                    .ToList();
+                //// 3. 找出「要新增」的照片 (情境 1 & 3 & 4)
+                //// 那些在前端名單中，但不在資料庫裡的
+                //var urlsToAdd = dto.PhotoUrls
+                //    .Where(url => !existingUrls.Contains(url))
+                //    .ToList();
 
-                foreach (var url in urlsToAdd)
-                {
-                    t.ExpCoursePhotos.Add(new ExpCoursePhoto
-                    {
-                        PhotoUrl = url,
-                        UploadedAt = DateTime.Now
-                        // course_template_id 會由 EF Core 自動幫你關聯，不用手填！
-                    });
-                }
+                //foreach (var url in urlsToAdd)
+                //{
+                //    t.ExpCoursePhotos.Add(new ExpCoursePhoto
+                //    {
+                //        PhotoUrl = url,
+                //        UploadedAt = DateTime.Now
+                //        // course_template_id 會由 EF Core 自動幫你關聯，不用手填！
+                //    });
+                //}
             }
             t.UpdatedAt = DateTime.Now;
 
