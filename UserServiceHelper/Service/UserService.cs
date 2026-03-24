@@ -317,6 +317,18 @@ namespace UserServiceHelper.Service
             return saved;
         }
 
+        public async Task<(bool success, string message)> VerifyPasswordResetOtpAsync(string email, string otp)
+        {
+            var user = await _dbUser.GetDbContext().UserUsers
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null) return (false, "找不到使用者");
+            if (user.PasswordResetOtp != otp) return (false, "驗證碼錯誤");
+            if (user.PasswordResetExpiresAt < DateTime.Now) return (false, "驗證碼已過期");
+
+            return (true, "驗證成功");
+        }
+
 
         public async Task<bool> ResetPasswordAsync(string email, string otp, string newPassword)
         {
@@ -328,7 +340,8 @@ namespace UserServiceHelper.Service
 
             // 驗證成功，雜湊新密碼
             user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
-
+            user.IsActive = true;
+            user.EmailVerifiedAt = DateTime.Now;
             // 清空 OTP 確保安全性
             user.PasswordResetOtp = null;
             user.PasswordResetExpiresAt = null;

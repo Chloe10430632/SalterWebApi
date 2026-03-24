@@ -219,6 +219,14 @@ namespace SalterWebApi.Areas.User.Controllers
             return Ok(new { message = "驗證碼已寄出" });
         }
 
+        [HttpPost("VerifyPasswordResetOtp")]
+        public async Task<IActionResult> VerifyResetOtp([FromBody] UserOtpVerifyViewModel model)
+        {
+            var (success, message) = await _userService.VerifyPasswordResetOtpAsync(model.Email, model.Otp);
+            if (!success) return BadRequest(new { message });
+            return Ok(new { message });
+        }
+
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordViewModel model)
         {

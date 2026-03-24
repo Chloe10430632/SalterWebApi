@@ -25,6 +25,8 @@ namespace UserServiceHelper.IService
 
         Task<bool> SendPasswordResetOtpAsync(string email);
 
+        Task<(bool success, string message)> VerifyPasswordResetOtpAsync(string email, string otp);
+
         Task<bool> ResetPasswordAsync(string email, string otp, string newPassword);
 
 
