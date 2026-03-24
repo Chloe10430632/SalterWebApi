@@ -424,7 +424,6 @@ public class TripService : ITripService
         if (!isOrganizer && !isMember)
             return ServiceResult.Fail("只有行程成員可以新增地點", 403);
 
-        // 臺 → 台 名稱對應
         var normalizedCity = dto.CityName?.Replace("臺", "台") ?? "";
         var normalizedDistrict = dto.DistrictName?.Replace("臺", "台") ?? "";
 
@@ -488,20 +487,24 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationUpdateDto dto, int userId)
     {
-        var entity = await _repo.GetLocationByIdAsync(locationId);
-        if (entity == null) return ServiceResult.Fail("找不到地點", 404);
-
-        var isOrganizer = await _repo.IsOrganizerAsync(entity.TripId, userId);
-        var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
-        if (!isOrganizer && !isMember)
-            return ServiceResult.Fail("只有行程成員可以編輯地點", 403);
-
-        entity.LocationRole = dto.LocationRole ?? entity.LocationRole;
-        entity.Note = dto.Note ?? entity.Note;
-        entity.SortOrder = dto.SortOrder??entity.SortOrder;
-        entity.UpdatedAt = DateTime.Now;
-        await _repo.UpdateLocationAsync(entity);
-        return ServiceResult.Success("地點更新成功");
+        try
+        {
+            var entity = await _repo.GetLocationByIdAsync(locationId);
+            if (entity == null) return ServiceResult.Fail("找不到地點", 404);
+            var isOrganizer = await _repo.IsOrganizerAsync(entity.TripId, userId);
+            var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
+            if (!isOrganizer && !isMember)
+                return ServiceResult.Fail("只有行程成員可以編輯地點", 403);
+            entity.LocationRole = dto.LocationRole ?? entity.LocationRole;
+            entity.Note = dto.Note ?? entity.Note;
+            entity.UpdatedAt = DateTime.Now;
+            await _repo.UpdateLocationAsync(entity);
+            return ServiceResult.Success("地點更新成功");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail(ex.InnerException?.Message ?? ex.Message, 500);
+        }
     }
 
     public async Task<ServiceResult> DeleteLocationAsync(int locationId, int userId)
