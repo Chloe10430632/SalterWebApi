@@ -1008,11 +1008,12 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ForumComments_ForumComments");
 
             entity.HasOne(d => d.Post).WithMany(p => p.ForumComments)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_forumComments_forumPosts");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumComments)
