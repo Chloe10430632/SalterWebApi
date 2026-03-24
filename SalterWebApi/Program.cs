@@ -40,6 +40,9 @@ JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 從設定檔抓取前端網址
+var allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins");
+
 
 //雲端資料庫連接字串DI
 //builder.Services.AddDbContext<SalterDbContext>(options =>
@@ -147,25 +150,19 @@ builder.Services.AddSwaggerGen(options =>
 
 
 //解決瀏覽器預設同源政策：定義存取的來源白名單 liveserver預設5500，angular4200
-builder.Services.AddCors(option =>
+builder.Services.AddCors(options =>
 {
-    option.AddPolicy("Allow5500",
-        policy =>
-        {
-            policy.WithOrigins("http://127.0.0.1:5500")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .WithExposedHeaders("Location");
-        });
-    option.AddPolicy("Allow4200",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .WithExposedHeaders("Location");
-        });
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy.WithOrigins(allowedOrigins) // 這裡變動態了！
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .WithExposedHeaders("Location");
+    });
 });
+
+
+
 
 // 使用Middleware做全域的Exception處理
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -181,7 +178,7 @@ app.UseRouting();
 
 //使用開放其他來源的自定義政策
 //app.UseCors("Allow5500");
-app.UseCors("Allow4200");
+app.UseCors("CorsPolicy");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
