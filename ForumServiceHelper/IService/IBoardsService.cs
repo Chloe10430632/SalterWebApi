@@ -11,8 +11,8 @@ namespace ForumServiceHelper.IService
 {
     public interface IBoardsService
     {
-        public Task<IList<BoardsViewModel>> GetAllBoardsAsync(BoardsQueryModel query);
-        public Task<BoardsViewModel?> GetDetailsAsync(int id);
+        public Task<IList<BoardsViewModel>> GetAllBoardsAsync(int userId, BoardsQueryModel query);
+        public Task<BoardsViewModel?> GetDetailsAsync(int userId, int id);
         //public IQueryable<BoardListItemViewModel> GetAllOrSearch(string searchKeyWord);
 
         //public BoardStatsViewModel GetBoardsStatus(); //看板管理數據統計資料

@@ -19,9 +19,9 @@ namespace ForumServiceHelper.IService
 
         public Task<List<string>> UploadToCloudinaryAsync(List<IFormFile> images);
 
-        public Task<int> CheckAndCreateAsync(PostCreateModel data, int? postId = null);
+        public Task<int> CheckAndCreateAsync(int userId,PostCreateModel data, int? postId = null);
 
-        public Task<bool> CheckAndDeleteAsync(int postId);
+        public Task<bool> CheckAndDeleteAsync(int userId, int postId);
 
     }
 }

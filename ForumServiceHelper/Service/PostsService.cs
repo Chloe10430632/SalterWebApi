@@ -10,13 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SalterEFModels.EFModels;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.ComponentModel;
 
 
 namespace ForumServiceHelper.Service
@@ -52,7 +46,7 @@ namespace ForumServiceHelper.Service
             }
 
             if(query.SortBy == SortTypes.Follow && userId == 0)
-                throw new ArgumentException("欲瀏覽追蹤貼文，請先登入喔!");
+                throw new UnauthorizedAccessException("欲瀏覽追蹤貼文，請先登入喔!");
 
             //處理 Follow 邏輯(使用 Join 效率更高)
             if (query.SortBy == SortTypes.Follow && userId > 0)
@@ -73,8 +67,10 @@ namespace ForumServiceHelper.Service
                 LocationTitle = p.Location.Name,
                 ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
                 CreatedAt = p.CreatedAt,
-                ImageUrls = p.ForumPostsImages.OrderBy(img=>img.SortIndex).Select(img => img.ImageUrl).ToList(),
+                ImageUrls = p.ForumPostsImages.OrderBy(img => img.SortIndex).Select(img => img.ImageUrl).ToList(),
+                IsLiked = userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Like),
                 LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+                IsCollected =  userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Collect),
                 CollectCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
                 ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
                 CommentCount = p.ForumComments.Count(),
@@ -183,7 +179,7 @@ namespace ForumServiceHelper.Service
             return imageUrls;
         }
 
-        public async Task<int> CheckAndCreateAsync(PostCreateModel data, int? postId = null) //AddOrUpdate
+        public async Task<int> CheckAndCreateAsync(int userId, PostCreateModel data, int? postId = null) //AddOrUpdate
         {
             if (string.IsNullOrWhiteSpace(data.Content))
             {
@@ -207,7 +203,7 @@ namespace ForumServiceHelper.Service
 
                 if (post == null) throw new KeyNotFoundException($"找不到 ID 為 {postId} 的貼文");
 
-                if(post.UserId!=data.UserId)
+                if(post.UserId!= userId)
                     throw new ArgumentException($"您沒有權限修改他人貼文!");
 
                 // 更新欄位內容
@@ -227,7 +223,7 @@ namespace ForumServiceHelper.Service
                 // 新增模式
                 post = new ForumPost
                 {
-                    UserId = data.UserId,
+                    UserId = userId,
                     BoardId = data.BoardId,
                     Content = data.Content,
                     LocationId = data.LocationId,
@@ -288,10 +284,10 @@ namespace ForumServiceHelper.Service
             return post.PostId;
         }
 
-        public async Task<bool> CheckAndDeleteAsync(int postId)
+        public async Task<bool> CheckAndDeleteAsync(int userId,int postId)
         {
             // 1. 抓出貼文主體，同時 Include 所有關聯表
-            // 這是關鍵：必須把關聯資料一併載入，EF 才知道要刪除哪些東西
+            // 把關聯資料一併載入，EF 才知道要刪除哪些東西
             var post = await _dbPosts.GetDbContext().ForumPosts
                 .Include(p => p.ForumPostsImages)
                 .Include(p => p.ForumPostTagDetails)
@@ -299,24 +295,26 @@ namespace ForumServiceHelper.Service
 
             if (post == null) throw new KeyNotFoundException($"找不到 ID 為 {postId} 的貼文");
 
-           
-                // 2. 先刪除圖片關聯
-                if (post.ForumPostsImages.Any())
+            if (post.UserId != userId)
+                throw new ArgumentException($"您沒有權限刪除他人貼文!");
+
+            // 2. 先刪除圖片關聯
+            if (post.ForumPostsImages.Any())
                 {
                     _dbPosts.GetDbContext().ForumPostsImages.RemoveRange(post.ForumPostsImages);
                 }
 
-                // 3. 刪除標籤明細關聯
-                if (post.ForumPostTagDetails.Any())
-                {
-                    _dbPosts.GetDbContext().ForumPostTagDetails.RemoveRange(post.ForumPostTagDetails);
-                }
+            // 3. 刪除標籤明細關聯
+            if (post.ForumPostTagDetails.Any())
+            {
+                _dbPosts.GetDbContext().ForumPostTagDetails.RemoveRange(post.ForumPostTagDetails);
+            }
 
-                // 4. 最後刪除貼文主體
-                _dbPosts.GetDbContext().ForumPosts.Remove(post);
+            // 4. 最後刪除貼文主體
+            _dbPosts.GetDbContext().ForumPosts.Remove(post);
 
-                // 5. 統一存檔 (這會包在同一個 Transaction 中)
-                return await _dbPosts.SaveChangesAsync();
+            // 5. 統一存檔 (這會包在同一個 Transaction 中)
+            return await _dbPosts.SaveChangesAsync();
            
         }
     }

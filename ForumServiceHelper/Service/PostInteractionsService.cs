@@ -78,8 +78,7 @@ namespace ForumServiceHelper.Service
                 };
             }
 
-            // 奇數次：執行新增
-            await CreateNewInteraction(userId, dto, "ACTIVE");
+             await CreateNewInteraction(userId, dto, "ACTIVE");
             return new PostInteractionResponseModel
             {
                 Success = true,
@@ -96,8 +95,8 @@ namespace ForumServiceHelper.Service
             {
                 return new PostInteractionResponseModel { Success = true, Message = "此貼文先前已分享過" };
             }
-
-            await CreateNewInteraction(userId, dto, "ACTIVE");
+           
+                await CreateNewInteraction(userId, dto, "ACTIVE");
             return new PostInteractionResponseModel { Success = true, Message = "分享紀錄已儲存" };
         }
 
@@ -105,14 +104,16 @@ namespace ForumServiceHelper.Service
         public async Task<PostInteractionResponseModel> HandleReportInteraction(
             int userId, PostInteractionCreateModel dto, ForumPostInteraction? existing)
         {
+            if (userId == 0) throw new UnauthorizedAccessException("檢舉必須要登入喔!");
+
             if (existing != null)
             {
-                return new PostInteractionResponseModel { Success = false, Message = "您已提交過檢舉，請靜候後台審核" };
+                throw new ArgumentException("您已對這篇文章提交過檢舉，請靜候後台審核");
             }
 
             if (string.IsNullOrWhiteSpace(dto.ReportReason))
             {
-                return new PostInteractionResponseModel { Success = false, Message = "提交檢舉必須附上原因" };
+                throw new ArgumentException ("提交檢舉必須附上原因" );
             }
 
             await CreateNewInteraction(userId, dto, "PENDING"); // 預設狀態為 PENDING
@@ -122,7 +123,8 @@ namespace ForumServiceHelper.Service
         // 處理【瀏覽】：單純新增紀錄
         public async Task<PostInteractionResponseModel> HandleViewInteraction(int userId, PostInteractionCreateModel dto)
         {
-            await CreateNewInteraction(userId, dto, "ACTIVE");
+          
+                await CreateNewInteraction(userId, dto, "ACTIVE");
             return new PostInteractionResponseModel { Success = true, Message = "瀏覽紀錄已更新" };
         }
 

@@ -22,7 +22,7 @@ namespace ForumServiceHelper.Service
             _dbBoards = dbBoards;
         }
 
-        public async Task<IList<BoardsViewModel>> GetAllBoardsAsync(BoardsQueryModel query)
+        public async Task<IList<BoardsViewModel>> GetAllBoardsAsync(int userId, BoardsQueryModel query)
         {
             var boardQuery = _dbBoards.GetAll();
             //使用 Select 進行投影，讓資料庫執行 COUNT 與 Grouping
@@ -32,6 +32,7 @@ namespace ForumServiceHelper.Service
                 BoardTitle = b.Title,
                 BoardImgUrl = b.ImageUrl,
                 BoardSort = b.SortOrder,
+                isFollowed = userId > 0 && b.ForumBoardInteractions.Any(i => i.UserId == userId && i.Type == BoardInteractionTypes.Follow),
                 // 直接利用導覽屬性計算數量，EF Core高效子查詢，每一筆看板資料跑的時候相關互動進行計算
                 ViewCount = b.ForumBoardInteractions
                      .Count(i => i.Type == BoardInteractionTypes.View),
@@ -58,7 +59,7 @@ namespace ForumServiceHelper.Service
             return await boardsData.ToListAsync();
         }
 
-        public async Task<BoardsViewModel?> GetDetailsAsync(int id)
+        public async Task<BoardsViewModel?> GetDetailsAsync(int userId, int id)
         {
             var query = _dbBoards.GetAll();
            
@@ -70,6 +71,7 @@ namespace ForumServiceHelper.Service
                 BoardTitle = b.Title,
                 BoardImgUrl = b.ImageUrl,
                 BoardSort = b.SortOrder,
+                isFollowed = userId > 0 && b.ForumBoardInteractions.Any(i => i.UserId == userId && i.Type == BoardInteractionTypes.Follow),
                 ViewCount = b.ForumBoardInteractions
                              .Count(i => i.Type == BoardInteractionTypes.View),
                 FollowCount = b.ForumBoardInteractions
