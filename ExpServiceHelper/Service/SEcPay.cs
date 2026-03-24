@@ -17,9 +17,9 @@ namespace ExpServiceHelper.Service
         public SEcPay(SalterDbContext context) {_context = context;}
         #endregion
 
-        public async Task<DAPIResponse<string>> GetPaymentForm(int transactionId) {
+        public async Task<DAPIResponse<string>> GetPaymentForm(DPaymentRequest dto) {
             
-            var transac = await _context.ExpTransactions.FindAsync(transactionId);
+            var transac = await _context.ExpTransactions.FindAsync(dto.TransactionId);
             if (transac == null) return new DAPIResponse<string> {
                 IsSuccess = false, Message = "查無該筆交易" };
 
@@ -27,19 +27,19 @@ namespace ExpServiceHelper.Service
             //給.WithItems用
             var items = new List<Item> {
                     new Item{
-                        Name = "體驗活動費用",
-                        Price = (int)transac.Amount
+                        Name = dto.ItemName,
+                        Price = (int)transac.Amount,
                     }
             };
             var config = new PaymentConfiguration();
             var payment = config.Send.ToApi("https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5")
                             .Send.ToMerchant("2000132") // MerchantID
                             .Send.UsingHash("5294y06JbISpM5x9", "v77hoKGq4kWxJt9M") // HashKey, HashIV
-                            .Return.ToServer("https://你的網址/api/Experience/Checkout/PayResult")
-                            .Return.ToClient("https://你的網址/Experience/Checkout/Finish")
+                            .Return.ToServer($"{dto.BaseUrl}/PayResult")
+                            .Return.ToClient($"{dto.BaseUrl}/Finish")
                             .Transaction.New(
-                                    no: "Exp" + transac.Id.ToString().PadLeft(10, '0'),
-                                description: "體驗課程預約",
+                                    no:  transac.Id.ToString().PadLeft(10, '0'),
+                                description: $"{dto.TransType}",
                                 date: DateTime.Now)
                             .Transaction.UseMethod(EPaymentMethod.CVS)
                             .Transaction.WithItems(items)

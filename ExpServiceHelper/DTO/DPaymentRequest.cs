@@ -20,5 +20,7 @@ namespace ExpServiceHelper.DTO
         // 4. 你的 API 基礎路徑 (因為每個人的 Area 或 Controller 可能不同)
         // 例如：https://localhost:7000/Experience/Coach
         public string BaseUrl { get; set; }
+        
+        public string TransType { get; set; }
     }
 }
