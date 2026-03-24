@@ -7,7 +7,7 @@ public interface ITripService
     #region 行程
     Task<TripListResultDto> GetTripListAsync(TripQueryDto query);
     Task<TripDetailDto?> GetTripDetailAsync(int tripId);
-    Task<ServiceResult> CreateTripAsync(TripRequestDto dto, int organizerUserId);
+    Task<ServiceResult<int>> CreateTripAsync(TripRequestDto dto, int organizerUserId);
     Task<ServiceResult> UpdateTripAsync(int tripId, TripRequestDto dto, int userId);
     Task<ServiceResult> DeleteTripAsync(int tripId, int userId);
     #endregion

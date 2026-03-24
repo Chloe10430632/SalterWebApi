@@ -117,11 +117,12 @@ public class TripService : ITripService
             await _repo.CreateTripAsync(trip);
             await _repo.AddMemberAsync(trip.Id, organizerUserId, "organizer");
 
-            return ServiceResult.Success("行程建立成功");
+
+            return ServiceResult<int>.Success(trip.Id, "行程建立成功");
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail($"建立失敗：{ex.InnerException?.Message ?? ex.Message}",500);
+            return ServiceResult<int>.Fail($"建立失敗：{ex.InnerException?.Message ?? ex.Message}", 500);
         }
     }
 
