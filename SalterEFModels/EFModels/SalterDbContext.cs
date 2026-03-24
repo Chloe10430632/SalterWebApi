@@ -167,6 +167,9 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=123.192.123.82,1433;Initial Catalog=Salter;User ID=sa;Password=DX9Qu!3wKWXrbyk;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -571,6 +574,9 @@ public partial class SalterDbContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.CourseTemplateId).HasColumnName("course_template_id");
             entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
+            entity.Property(e => e.PublicId)
+                .HasMaxLength(200)
+                .HasColumnName("public_id");
             entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at");
 
             entity.HasOne(d => d.CourseTemplate).WithMany(p => p.ExpCoursePhotos)
@@ -1008,12 +1014,11 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
-                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ForumComments_ForumComments");
 
             entity.HasOne(d => d.Post).WithMany(p => p.ForumComments)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_forumComments_forumPosts");
 
             entity.HasOne(d => d.User).WithMany(p => p.ForumComments)
@@ -1425,9 +1430,7 @@ public partial class SalterDbContext : DbContext
             entity.HasIndex(e => e.IsPinned, "IX_TripAnnouncements_Pinned");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Content)
-    .HasColumnType("nvarchar(max)")
-    .HasColumnName("content");
+            entity.Property(e => e.Content).HasColumnName("content");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
@@ -1607,16 +1610,6 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.City).WithMany(p => p.TripLocations)
-                .HasForeignKey(d => d.CityId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TripLocations_TripCities");
-
-            entity.HasOne(d => d.District).WithMany(p => p.TripLocations)
-                .HasForeignKey(d => d.DistrictId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TripLocations_TripDistricts");
         });
 
         modelBuilder.Entity<TripMember>(entity =>

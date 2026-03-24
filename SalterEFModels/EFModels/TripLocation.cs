@@ -25,10 +25,6 @@ public partial class TripLocation
 
     public DateTime UpdatedAt { get; set; }
 
-    public virtual TripCity City { get; set; } = null!;
-
-    public virtual TripDistrict District { get; set; } = null!;
-
     public virtual ICollection<ExpCourseTemplate> ExpCourseTemplates { get; set; } = new List<ExpCourseTemplate>();
 
     public virtual ICollection<ForumPost> ForumPosts { get; set; } = new List<ForumPost>();

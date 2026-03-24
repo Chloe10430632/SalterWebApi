@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +11,7 @@ namespace ExpServiceHelper.DTO
     {
         public int CoachId { get; set; }
         public string CoachName { get; set; } = null!;
-        public string? AvatarUrl { get; set; }
+        public IFormFile? AvatarUrl { get; set; } //接收前端上傳的檔案
         public List<string?> District { get; set; } = new List<string>();
         public string? City { get; set; }
         public double AvgRating { get; set; }

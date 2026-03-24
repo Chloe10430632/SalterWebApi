@@ -7,10 +7,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ExpServiceHelper.IService;
 
 namespace ExpServiceHelper.Service
 {
-    public class SEcPay
+    public class SEcPay: ISEcPay, IEquatable<SEcPay>
     {
         #region DI 
         private readonly SalterDbContext _context;
@@ -55,6 +56,25 @@ namespace ExpServiceHelper.Service
                 Data = htmlForm
             };
         }
+
+        #region  檢查是不是「同一筆交易」
+        public string MerchantTradeNo { get; set; }
+        public decimal TotalAmount { get; set; }
+
+        public bool Equals(SEcPay? other)
+        {
+            // 1. 如果對方是空的，那一定不相等
+            if (other == null) return false;
+
+            // 2. 定義你的規則：如果交易編號一樣，我們就認為是同一個物件
+            return this.MerchantTradeNo == other.MerchantTradeNo;
+        }
+
+        // 小教練溫馨提醒：實作 Equals 時，通常也會建議覆寫 Object 的 Equals 和 GetHashCode
+        public override bool Equals(object? obj) => Equals(obj as SEcPay);
+        public override int GetHashCode() => MerchantTradeNo?.GetHashCode() ?? 0;
+        #endregion
+
 
         #region 包成html
         private string GenerateHtmlForm(IPayment payment)

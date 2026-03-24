@@ -1,6 +1,9 @@
 ﻿using Azure;
 using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
+using ExpServiceHelper.Service;
+using FluentEcpay;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SalterEFModels.EFModels;
@@ -13,7 +16,6 @@ using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Collections.Specialized.BitVector32;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using FluentEcpay;
 
 namespace ExpServiceHelper.Service
 {
@@ -28,7 +30,8 @@ namespace ExpServiceHelper.Service
             {
                 CoachId = c.Id,
                 CoachName = c.Name,
-                AvatarUrl = c.AvatarUrl,
+               //TODO 頭像型別問題
+                // AvatarUrl = c.Avata,
                 // 提醒：在資料庫層級 string.Join 可能會報錯，建議到記憶體再處理，或者直接選成 List
                 District = c.TripDistricts.Select(m => m.Name).ToList(),
                 Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
@@ -49,7 +52,8 @@ namespace ExpServiceHelper.Service
 
         #region DI
         private readonly SalterDbContext _context;
-        public SCoachMethods(SalterDbContext dbContext) { _context = dbContext; }
+        private readonly SPhoto _sPhoto;
+        public SCoachMethods(SalterDbContext dbContext, SPhoto sPhoto) { _context = dbContext; _sPhoto = sPhoto; }
         #endregion
 
         #region 入口
@@ -123,24 +127,6 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region~~教練~~
-        #region 查看評論
-        public async Task<List<DCoachReview>> CoachReviews(int coachId)
-        {
-            var review = _context.ExpReviews
-                .Where(r => r.CoachId == coachId && r.IsHidden != true)
-                .OrderByDescending(r => r.ReviewedAt)
-                .Select(r => new DCoachReview
-                {
-                    UserName = r.User.UserName,
-                    CoachId = r.CoachId,
-                    CourseOrderId = r.CourseOrderId,
-                    Rating = r.Rating,
-                    ReviewContent = r.ReviewContent,
-                    ReviewedAt = r.ReviewedAt,
-                });
-            return await review.ToListAsync();
-        }
-        #endregion
 
         #region 申請加入教練(新增)  
         public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
@@ -149,14 +135,31 @@ namespace ExpServiceHelper.Service
             bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
             if (exists) return new DAPIResponse<int> { IsSuccess = false, Message = "您已經是教練囉！" };
 
-            // 2. 建立新實體
+            //處理照片
+            string upLoadUrl = null;
+            string upLoadPublicId = null;
+
+            if (dto.AvatarUrl != null)
+            {
+                //呼叫SPhoto
+                var p = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
+                if (p.Any() && p != null) {
+                    upLoadUrl = p[0].SecureUrl.ToString();
+                    upLoadPublicId = p[0].PublicId;
+                }
+                else{
+                    return new DAPIResponse<int> { IsSuccess = false, Message = "圖片上傳失敗" };
+                }
+            }
+
+            //  建立新實體
             var newCoach = new ExpCoach
             {
                 UserId = currentUserId, // 綁定目前的 User
                 Name = dto.Name,
-                AvatarUrl = dto.AvatarUrl,
+                AvatarUrl = upLoadUrl ?? "default_avatar_url",
                 Introduction = dto.Introduction,
-                //CityId = dto.CityId,
+                CityId = dto.CityId,
                 DistrictId = dto.DistrictId,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
@@ -184,7 +187,7 @@ namespace ExpServiceHelper.Service
                      {
                          CoachId = c.Id,
                          CoachName = c.Name,
-                         AvatarUrl = c.AvatarUrl,
+                         //AvatarUrl = c.AvatarUrl,
                          District = c.TripDistricts.Select(m => m.Name).ToList(),
                          AvgRating = c.ExpReviews.Any() ? Math.Round( c.ExpReviews.Average(r => (double)r.Rating) ,1): 0,
                          ReviewCount = c.ExpReviews.Count(),
@@ -585,6 +588,24 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #region 查看評論
+        public async Task<List<DCoachReview>> CoachReviews(int coachId)
+        {
+            var review = _context.ExpReviews
+                .Where(r => r.CoachId == coachId && r.IsHidden != true)
+                .OrderByDescending(r => r.ReviewedAt)
+                .Select(r => new DCoachReview
+                {
+                    UserName = r.User.UserName,
+                    CoachId = r.CoachId,
+                    CourseOrderId = r.CourseOrderId,
+                    Rating = r.Rating,
+                    ReviewContent = r.ReviewContent,
+                    ReviewedAt = r.ReviewedAt,
+                });
+            return await review.ToListAsync();
+        }
+        #endregion
         #endregion
 
         #region 交易流程

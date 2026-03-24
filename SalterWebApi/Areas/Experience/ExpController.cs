@@ -27,12 +27,12 @@ namespace SalterWebApi.Areas.Experience
         #region DI
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
-        //private readonly SalterDbContext _context;
-        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods) //, SalterDbContext db
+        //private readonly SPhoto _sPhoto;
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods) //, SPhoto sPhoto
         {
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
-            //_context = db;
+            //_sPhoto = sPhoto;
         }
         #endregion
         #region ~~入口~~
@@ -106,7 +106,7 @@ namespace SalterWebApi.Areas.Experience
         #region 申請加入教練(新增) 
         [Authorize]
         [HttpPost("BecomeCoach")]
-        public async Task<IActionResult> BecomeCoach(DCoachEdit dto)
+        public async Task<IActionResult> BecomeCoach([FromForm] DCoachEdit dto) //因為有圖片 前端傳送資料時不能用 JSON，必須使用 multipart/form-data
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

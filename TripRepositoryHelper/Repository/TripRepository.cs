@@ -27,8 +27,8 @@ public class TripRepository : ITripRepository
             .Include(t => t.TripFavorites)
             .Include(t => t.TripTripLocations)
                 .ThenInclude(ttl => ttl.Location)
-                    .ThenInclude(l => l.District)
-                        .ThenInclude(d => d.City)
+                    //.ThenInclude(l => l.District)
+                    //    .ThenInclude(d => d.City)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
@@ -38,9 +38,9 @@ public class TripRepository : ITripRepository
             q = q.Where(t => t.TripType == tripType);
         if (!string.IsNullOrEmpty(status))
             q = q.Where(t => t.Status == status);
-        if (cityId.HasValue)
-            q = q.Where(t => t.TripTripLocations.Any(
-                ttl => ttl.Location.District.CityId == cityId.Value));
+        //if (cityId.HasValue)
+        //    q = q.Where(t => t.TripTripLocations.Any(
+                //ttl => ttl.Location.District.CityId == cityId.Value));
         if (startFrom.HasValue)
             q = q.Where(t => t.StartAt >= startFrom.Value);
         if (startTo.HasValue)
@@ -74,8 +74,8 @@ public class TripRepository : ITripRepository
             .Include(t => t.TripGearItems)
             .Include(t => t.TripTripLocations)
                 .ThenInclude(ttl => ttl.Location)
-                    .ThenInclude(l => l.District)
-                        .ThenInclude(d => d.City)
+                    //.ThenInclude(l => l.District)
+                        //.ThenInclude(d => d.City)
             .FirstOrDefaultAsync(t => t.Id == tripId);
     }
 
@@ -312,8 +312,8 @@ public class TripRepository : ITripRepository
     {
         return await _db.TripTripLocations
             .Include(ttl => ttl.Location)
-                .ThenInclude(l => l.District)
-                    .ThenInclude(d => d.City)
+                //.ThenInclude(l => l.District)
+                //    .ThenInclude(d => d.City)
             .Where(ttl => ttl.TripId == tripId)
             .OrderBy(ttl => ttl.SortOrder)
             .ToListAsync();
@@ -347,8 +347,8 @@ public class TripRepository : ITripRepository
     public async Task<List<TripLocation>> GetAllLocationsAsync(string? keyword)
     {
         var q = _db.TripLocations
-            .Include(l => l.District)
-                .ThenInclude(d => d.City) 
+            //.Include(l => l.District)
+            //    .ThenInclude(d => d.City)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
