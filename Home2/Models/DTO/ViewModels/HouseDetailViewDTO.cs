@@ -22,7 +22,7 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
        
 
         public List<string> AllImages { get; set; } = new(); // 所有房型圖片
-        public List<string> Amenities { get; set; } = new(); // 設施清單
+        public List<AmenityItemDTO> Amenities { get; set; } = new(); // 設施清單
         public List<int>? AmenityIds { get; set; }
         public List<ReviewItemDTO> Reviews { get; set; } = new();
 

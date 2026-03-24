@@ -45,6 +45,7 @@ namespace HomeServiceHelper.Service
         {
             var rooms = await _roomTypeRepo.GetAll();
             var houses = await _houseRepo.GetAll();
+            var allImages = await _houseImageRepo.GetAll();
 
             var result = from h in houses
                          join r in rooms
@@ -59,7 +60,12 @@ namespace HomeServiceHelper.Service
                              Citie = h.Citie,
                              District = h.District,
                              RoomDescription = r.Description,
-                             HouseDescription = h.Description
+                             HouseDescription = h.Description,
+
+                             AllImages = allImages.
+                             Where(i => i.RoomTypeId == r.RoomTypeId)
+                             .Select(i => i.ImagePath)
+                             .ToList()
                          };
             return result.ToList();
         }
@@ -113,7 +119,11 @@ namespace HomeServiceHelper.Service
                 Amenities = (from ra in roomAmenities
                              join a in amenities on ra.AmenityId equals a.AmenityId
                              where ra.RoomTypeId == x.r.RoomTypeId
-                             select a.Name).ToList()
+                             select new AmenityItemDTO
+                             {
+                                    Name = a.Name,
+                                    IconCode = a.IconCode
+                             }).ToList()
             });
 
             return result.ToList();
@@ -146,14 +156,18 @@ namespace HomeServiceHelper.Service
                     CreatedTime = rv.CreatedTime
                 }).ToList();
 
-            // 3. ✨ 重點改進：同時取得「名稱」和「ID」
+            // 3.重點改進：同時取得「名稱」和「ID」
             // 這個是給詳情頁顯示文字用的 (原本的)
-            var amenitiesNameList = (from ra in roomAmenities
+            var amenitiesList = (from ra in roomAmenities
                                      join a in amenities on ra.AmenityId equals a.AmenityId
                                      where ra.RoomTypeId == roomTypeId
-                                     select a.Name).ToList();
+                                     select new AmenityItemDTO
+                                     {
+                                         Name = a.Name,
+                                         IconCode = a.IconCode
+                                     }).ToList();
 
-            // 🔥 這是新增的：給編輯頁「勾選」用的 ID 陣列
+            // 這是新增的：給編輯頁「勾選」用的 ID 陣列
             var amenityIds = roomAmenities
                              .Where(ra => ra.RoomTypeId == roomTypeId)
                              .Select(ra => ra.AmenityId)
@@ -173,7 +187,7 @@ namespace HomeServiceHelper.Service
                 District = h?.District,
                 Citie = h?.Citie,
 
-                Amenities = amenitiesNameList, // 文字陣列
+                Amenities = amenitiesList, // 文字陣列
                 AmenityIds = amenityIds,       // 補上這個數字陣列
 
                 AllImages = images,
