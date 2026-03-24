@@ -1,12 +1,12 @@
 ﻿using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
-using ExpServiceHelper.Service;
-using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using ExpServiceHelper.Service;
+using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using SalterEFModels.EFModels;
-using System.Security.Claims;
 using TripServiceHelper.Models.DTOs;
 using static ExpServiceHelper.DTO.DCoachFav;
 
@@ -413,8 +413,6 @@ namespace SalterWebApi.Areas.Experience
 
         #region 交易
         #region 預約課程
-        #endregion
-        #region 支付 
         #endregion
         #region 歷史交易紀錄 
         #endregion

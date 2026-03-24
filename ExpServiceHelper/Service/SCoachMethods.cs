@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Collections.Specialized.BitVector32;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using FluentEcpay;
 
 namespace ExpServiceHelper.Service
 {
@@ -655,6 +656,11 @@ namespace ExpServiceHelper.Service
             }
         
         }
+        #endregion
+
+        #region 結帳 
+        //用套件 + 前台回傳結帳需求時的邏輯
+        //在SECPay
         #endregion
         #endregion
 
