@@ -25,20 +25,20 @@ namespace SalterWebApi.Areas.Experience
         #region DI
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
-        private readonly SalterDbContext _context;
-        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods, SalterDbContext db)
+        //private readonly SalterDbContext _context;
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods) //, SalterDbContext db
         {
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
-            _context = db;
+            //_context = db;
         }
         #endregion
         #region ~~入口~~
             #region 排序
             [HttpGet("PopRank")]
-            public async Task<IActionResult> PopRank()
+            public async Task<IActionResult> PopRank(int page = 1, int pageSize = 6)
             {
-                var result = await _sCoachMethods.CoachRecommand();
+            var result = await _sCoachMethods.CoachPopular(page, pageSize);
                 return Ok(result);
             }
 
@@ -128,7 +128,7 @@ namespace SalterWebApi.Areas.Experience
         [HttpGet("Recommand{id}")]
             public async Task<IActionResult> RecommandCoaches(int id)
             {
-                var result = await _sCoachMethods.CoachRecommand();
+                var result = await _sCoachMethods.CoachRecommand(id);
                 if (result == null || result.Count == 0)
                     return NotFound("教練們休息中");
                 return Ok(result);
@@ -213,62 +213,33 @@ namespace SalterWebApi.Areas.Experience
 
         #region 營運 
         #endregion
-        [HttpGet("test-mapping")]
-        public async Task<IActionResult> TestMapping()
-        {
-            var coachData = await _context.ExpCoaches
-    .Include(c => c.Specialities)  // 這裡就是你程式碼裡的 d.Specialities
-    .Include(c => c.TripDistricts) // 這裡就是你程式碼裡的 d.TripDistricts
-    .Select(c => new
-    {
-        CoachName = c.Name,
-        // 把專長名稱抓成清單
-        Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
-        // 把地區名稱抓成清單
-        Districts = c.TripDistricts.Select(d => d.Name).ToList()
-    })
-    .ToListAsync();
-            return Ok(coachData);
-            //var districtData = await _context.TripDistricts
-            //.Include(d => d.CoachDists) // 對應你程式碼裡的 p.CoachDists
-            //.ToListAsync();
-            //return Ok(districtData);
 
-        }
+        //測試mapping
+    //    [HttpGet("test-mapping")]
+    //    public async Task<IActionResult> TestMapping()
+    //    {
+    //        var coachData = await _context.ExpCoaches
+    //.Include(c => c.Specialities)  // 這裡就是你程式碼裡的 d.Specialities
+    //.Include(c => c.TripDistricts) // 這裡就是你程式碼裡的 d.TripDistricts
+    //.Select(c => new
+    //{
+    //    CoachName = c.Name,
+    //    // 把專長名稱抓成清單
+    //    Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+    //    // 把地區名稱抓成清單
+    //    Districts = c.TripDistricts.Select(d => d.Name).ToList()
+    //})
+    //.ToListAsync();
+    //        return Ok(coachData);
+    //        //var districtData = await _context.TripDistricts
+    //        //.Include(d => d.CoachDists) // 對應你程式碼裡的 p.CoachDists
+    //        //.ToListAsync();
+    //        //return Ok(districtData);
+
+    //    }
 
 
 
 
-        // GET: api/<ExpController>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET api/<ExpController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<ExpController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<ExpController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<ExpController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
     }
 }

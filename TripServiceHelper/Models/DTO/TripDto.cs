@@ -82,6 +82,19 @@ public class TripLocationDto
     public string? LocationRole { get; set; }
     public string? Note { get; set; }
     public int SortOrder { get; set; }
+    public decimal? Lat { get; set; }  
+    public decimal? Lng { get; set; }
+}
+
+public class TripLocationSearchDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string? AddressText { get; set; }
+    public string? CityName { get; set; }
+    public string? DistrictName { get; set; }
+    public double? Lat { get; set; }
+    public double? Lng { get; set; }
 }
 #endregion
 
@@ -175,10 +188,16 @@ public class TripReminderRequestDto
 // 建立用
 public class TripLocationRequestDto
 {
-    public int LocationId { get; set; }
+    public string LocationName { get; set; } = null!;
+    public string? AddressText { get; set; }
+    public string? GooglePlaceId { get; set; }
+    public string? CityName { get; set; }
+    public string? DistrictName { get; set; }
     public string? LocationRole { get; set; }
     public string? Note { get; set; }
     public int SortOrder { get; set; }
+    public decimal? Lat { get; set; }
+    public decimal? Lng { get; set; }
 }
 
 // 更新用
@@ -187,6 +206,17 @@ public class TripLocationUpdateDto
     public string? LocationRole { get; set; }
     public string? Note { get; set; }
     public int? SortOrder { get; set; }
+}
+
+public class TripLocationSortDto
+{
+    public List<TripLocationSortItemDto> Items { get; set; } = new();
+}
+
+public class TripLocationSortItemDto
+{
+    public int LocationId { get; set; }
+    public int SortOrder { get; set; }
 }
 #endregion
 

@@ -44,6 +44,9 @@ public interface ITripService
     Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationUpdateDto dto, int userId);
     Task<ServiceResult> DeleteLocationAsync(int locationId, int userId);
     Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto, int userId);
+    Task<ServiceResult> UpdateLocationSortAsync(int tripId, TripLocationSortDto dto, int userId);
+    Task<List<TripLocationSearchDto>> GetAllLocationsAsync(string? keyword);
+
     #endregion
 
     #region 提醒

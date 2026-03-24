@@ -13,7 +13,7 @@ namespace ForumServiceHelper.IService
 {
     public interface IPostsService
     {
-       public Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(PostsQueryModel query);
+       public Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(int userId,PostsQueryModel query);
 
         public Task<PostDetailViewModel?> GetPostDetailAsync(int postId);
 

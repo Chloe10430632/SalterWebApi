@@ -12,11 +12,8 @@ namespace ExpRepositoryHelper.Repository
 
         public async Task<bool> ExistAsync(int userID, int coachID)
         {
-            //return await _dbContext.ExpFavorites.AnyAsync((System.Linq.Expressions.Expression<Func<ExpFavorites, bool>>)(f => f.UserId == userID && f.CoachId == coachID));
-            //TODO 檢查結果是否正確
             return await _dbContext.ExpFavorites.AnyAsync(f => f.UserId == userID && f.CoachId == coachID);
         }
-        //TODO 檢查結果是否正確2
         public async Task AddFavCoach(ExpFavorite favEntity)
         {
             await _dbContext.ExpFavorites.AddAsync(favEntity);
@@ -29,7 +26,6 @@ namespace ExpRepositoryHelper.Repository
             .FirstOrDefaultAsync(f => f.UserId == userID && f.CoachId == coachID);
             if (target != null)
             {
-                //TODO 檢查結果是否正確3
                 _dbContext.ExpFavorites.Remove(target);
                 await _dbContext.SaveChangesAsync();
             }

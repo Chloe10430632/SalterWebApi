@@ -106,12 +106,12 @@ namespace SalterWebApi.Areas.User.Controllers
 
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromBody] UserRegisterViewModel Rmodel)
+        public async Task<IActionResult> Register([FromBody] UserRegisterViewModel model)
         {
-            if (Rmodel == null)
+            if (model == null)
                 return BadRequest(new { message = "資料格式錯誤" });
 
-            var result = await _userService.RegisterAsync(Rmodel);
+            var result = await _userService.RegisterAsync(model);
 
             if (!result)
             {
@@ -124,14 +124,14 @@ namespace SalterWebApi.Areas.User.Controllers
 
 
         [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] UserLoginViewModel Lmodel)
+        public async Task<IActionResult> Login([FromBody] UserLoginViewModel model)
         {
             if(!ModelState.IsValid)
             {
                 return BadRequest(new { message = "帳號密碼格式錯誤" });
             }
 
-            var token = await _userService.LoginAsync(Lmodel);
+            var token = await _userService.LoginAsync(model);
 
             if(string.IsNullOrEmpty(token))
             {
@@ -161,9 +161,23 @@ namespace SalterWebApi.Areas.User.Controllers
             // 這裡的 model 就會包含前端傳來的 Email 和 Otp
             var result = await _userService.VerifyRegistrationOtpAsync(model.Email, model.Otp);
 
-            if (!result.success) return BadRequest(new { message = "驗證碼錯誤或已過期" });
+            if (!result.success) return BadRequest(new { message = result.message }); // 使用 Service 傳回的訊息
 
             return Ok(new { message = "驗證成功，帳號已啟用，請重新登入" });
+        }
+
+        [HttpPost("ResendOtp")]
+        public async Task<IActionResult> ResendOtp([FromBody] UserResendOtpViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.Email))
+                return BadRequest(new { message = "Email 不能為空" });
+
+            var result = await _userService.ResendOtpAsync(model.Email);
+
+            if (!result)
+                return BadRequest(new { message = "找不到該帳號或帳號已啟用" });
+
+            return Ok(new { message = "新的驗證碼已寄出" });
         }
 
 

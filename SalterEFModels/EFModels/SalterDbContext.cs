@@ -166,7 +166,7 @@ public partial class SalterDbContext : DbContext
     public virtual DbSet<UserUser> UserUsers { get; set; }
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
-
+   
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

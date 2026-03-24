@@ -320,7 +320,17 @@ public class TripController : ControllerBase
             return NotFound(ApiResponse<string>.Fail(result.Message, 404));
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
-
+    [HttpPut("{id}/locations/sort")]
+    public async Task<IActionResult> UpdateLocationSort(int id, [FromBody] TripLocationSortDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.UpdateLocationSortAsync(id, dto, userId.Value);
+        if (!result.IsSuccess)
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+        return Ok(ApiResponse<string>.Ok(result.Message));
+    }       
     #endregion
 
     #region 提醒
@@ -390,6 +400,14 @@ public class TripController : ControllerBase
         return Ok(ApiResponse<List<TripDistrictDto>>.Ok(data));
     }
 
+    // GET api/trip/trip/locations/all
+    [AllowAnonymous]
+    [HttpGet("locations/all")]
+    public async Task<IActionResult> GetAllLocations([FromQuery] string? keyword)
+    {
+        var data = await _service.GetAllLocationsAsync(keyword);
+        return Ok(ApiResponse<List<TripLocationSearchDto>>.Ok(data));
+    }
     #endregion
 
     #region 方法
