@@ -114,6 +114,7 @@ builder.Services.AddScoped<IGenericHomeRepository<HomRoomImage>, GenericHomeRepo
 builder.Services.AddScoped<IGenericHomeRepository<HomReview>, GenericHomeRepository<HomReview>>();
 //Home功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IHomService, HomService>();
+builder.Services.AddScoped<CloudinaryService>();
 
 //Trip功能 : DAL BLL DI
 builder.Services.AddScoped<ITripRepository, TripRepository>();
