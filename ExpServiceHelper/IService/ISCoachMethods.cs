@@ -30,7 +30,7 @@ namespace ExpServiceHelper.IService
 
         #region ~~教練~~
         #region 申請成為教練
-        Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId, List<ImageUploadResult> pic);
+        Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId);
         #endregion
         #region 教練編輯
         Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId, List<ImageUploadResult> pic);

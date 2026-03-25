@@ -117,9 +117,9 @@ namespace SalterWebApi.Areas.Experience
 
             if (int.TryParse(userIdStr, out int currentUserId))
             {
-                //var result = await _sCoachMethods.CreateCoach(dto, currentUserId);//TODO 加上照片參數 //, pic
+                var result = await _sCoachMethods.CreateCoach(dto, currentUserId);
 
-                //if (result.IsSuccess) return Ok(new { message = "申請成功！歡迎加入教練行列" });
+                if (result.IsSuccess) return Ok(new { message = "申請成功！歡迎加入教練行列" });
                 return BadRequest(new { message = "你已經是教練了" });
             }
             return BadRequest(new { message = "ID 格式不正確" });

@@ -130,21 +130,22 @@ namespace ExpServiceHelper.Service
         #region~~教練~~
 
         #region 申請加入教練(新增)  
-        public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId, List<ImageUploadResult> pic)
-        {
-            // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
-            bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
-            if (exists) return new DAPIResponse<int> { IsSuccess = false, Message = "您已經是教練囉！" };
+            public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
+            {
+                // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
+                bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
+                if (exists) return new DAPIResponse<int> { IsSuccess = false, Message = "您已經是教練囉！" };
 
             //處理照片
-            string upLoadUrl = null;
+            string upLoadUrl = "default_avatar_url";
             string upLoadPublicId = null;
 
-            if (dto.AvatarUrl != null)
+            if (dto.AvatarUrl != null && dto.AvatarFile.Length > 0)
             {
                 //呼叫SPhoto
                 var p = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
-                if (p.Any() && p != null) {
+                if (  p != null && p.Any()) {
+                    var result = p.FirstOrDefault();
                     upLoadUrl = p[0].SecureUrl.ToString();
                     upLoadPublicId = p[0].PublicId;
                 }
@@ -158,7 +159,7 @@ namespace ExpServiceHelper.Service
             {
                 UserId = currentUserId, // 綁定目前的 User
                 Name = dto.Name,
-                AvatarUrl = upLoadUrl ?? "default_avatar_url",
+                AvatarUrl = upLoadUrl,
                 Introduction = dto.Introduction,
                 CityId = dto.CityId,
                 DistrictId = dto.DistrictId,
