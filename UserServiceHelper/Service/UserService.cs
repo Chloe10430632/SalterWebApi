@@ -57,11 +57,11 @@ namespace UserServiceHelper.Service
 
         }
 
-        public async Task<bool> UpdateProfileAsync(UserEditViewModel model)
+        public async Task<string?> UpdateProfileAsync(UserEditViewModel model)
         {
             var userInDb = await _dbUser.GetByIdAsync(model.Id);
             if (userInDb == null)
-                return false;
+                return null;
 
             userInDb.UserName = !string.IsNullOrWhiteSpace(model.UserName) ? model.UserName : userInDb.UserName;
             userInDb.Phone = model.Phone;
@@ -71,8 +71,9 @@ namespace UserServiceHelper.Service
             userInDb.UpdatedAt = DateTime.Now;
 
             _dbUser.Update(userInDb);
+            var success = await _dbUser.SaveChangesAsync();
 
-            return await _dbUser.SaveChangesAsync();
+            return success ? GenerateJwtToken(userInDb) : null;
 
         }
 

@@ -73,11 +73,19 @@ namespace SalterWebApi.Areas.User.Controllers
 
             model.Id = int.Parse(currentUserId);
 
-            var success = await _userService.UpdateProfileAsync(model);
+            var newToken = await _userService.UpdateProfileAsync(model);
 
-            if (!success) return BadRequest(new { message = "更新失敗" });
+            if (newToken == null)
+            {
+                // 這裡就是你說的，失敗的訊息由後端給個基本提示，前端再決定怎麼顯示
+                return BadRequest(new { message = "資料更新失敗，請檢查輸入內容" });
+            }
 
-            return Ok(new { message = "更新成功" });
+            return Ok(new
+            {
+                token = newToken,
+                message = "個人資料已成功更新！"
+            });
 
         }
 
