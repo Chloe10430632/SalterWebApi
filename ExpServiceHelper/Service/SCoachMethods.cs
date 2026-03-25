@@ -140,14 +140,14 @@ namespace ExpServiceHelper.Service
             string upLoadUrl = "default_avatar_url";
             string upLoadPublicId = null;
 
-            if (dto.AvatarUrl != null && dto.AvatarFile.Length > 0)
+            if (dto.AvatarFile != null && dto.AvatarFile.Length > 0)
             {
                 //呼叫SPhoto
                 var p = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
                 if (  p != null && p.Any()) {
-                    var result = p.FirstOrDefault();
-                    upLoadUrl = p[0].SecureUrl.ToString();
-                    upLoadPublicId = p[0].PublicId;
+                    var result = p.First();
+                    upLoadUrl = result.SecureUrl.ToString();
+                    upLoadPublicId = result.PublicId;
                 }
                 else{
                     return new DAPIResponse<int> { IsSuccess = false, Message = "圖片上傳失敗" };
@@ -160,6 +160,7 @@ namespace ExpServiceHelper.Service
                 UserId = currentUserId, // 綁定目前的 User
                 Name = dto.Name,
                 AvatarUrl = upLoadUrl,
+                PublicId = upLoadPublicId,
                 Introduction = dto.Introduction,
                 CityId = dto.CityId,
                 DistrictId = dto.DistrictId,

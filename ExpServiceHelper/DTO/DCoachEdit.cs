@@ -11,7 +11,6 @@ namespace ExpServiceHelper.DTO
     {
         //只放讓user異動的欄位
         public string? Name { get; set; } 
-        public string? AvatarUrl { get; set; }
         public string? Introduction { get; set; }
         public int? DistrictId { get; set; }
         public int? CityId { get; set; }
@@ -19,5 +18,6 @@ namespace ExpServiceHelper.DTO
         public string? DistrictName { get; set; }
         //
         public IFormFile? AvatarFile { get; set; }
+        public string? PublicId { get; set; }
     }
 }

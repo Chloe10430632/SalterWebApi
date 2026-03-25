@@ -11,7 +11,6 @@ namespace ExpServiceHelper.DTO
     {
         public int CoachId { get; set; }
         public string CoachName { get; set; } = null!;
-        public IFormFile? AvatarUrl { get; set; } //接收前端上傳的檔案
         public List<string?> District { get; set; } = new List<string>();
         public string? City { get; set; }
         public double AvgRating { get; set; }
@@ -22,7 +21,10 @@ namespace ExpServiceHelper.DTO
 
         //===詳細===//
         public string? Introduction { get; set; }
-     
+        //
+        public IFormFile? AvatarFile { get; set; }
+        public string? PublicId { get; set; }
+
 
     }
 }

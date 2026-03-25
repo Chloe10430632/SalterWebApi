@@ -16,7 +16,8 @@ namespace ExpServiceHelper.DTO
         public int? CurrentStudents { get; set; }
         public DateTime? UpdatedAt { get; set; }
         //
-        public IFormFile? AvatarFile { get; set; }
         public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();
+        public string? PublicId { get; set; }
+
     }
 }

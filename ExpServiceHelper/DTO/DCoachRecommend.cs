@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,8 +11,11 @@ namespace ExpServiceHelper.DTO
     {
         public int CoachId { get; set; }
         public string CoachName { get; set; } = null!;
-        public string? AvatarUrl { get; set; }
         public List<string?> District { get; set; } = new List<string>();
         public List<string> Specialities { get; set; } = new List<string>();//
+         //
+        public IFormFile? AvatarFile { get; set; }
+        public string? PublicId { get; set; }
+
     }
 }

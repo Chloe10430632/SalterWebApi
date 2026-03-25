@@ -15,6 +15,7 @@ namespace ExpServiceHelper.DTO
         public decimal? Price { get; set; }
         public string? Location { get; set; }
         public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();
+        public string? PublicId { get; set; }
 
     }
 }
