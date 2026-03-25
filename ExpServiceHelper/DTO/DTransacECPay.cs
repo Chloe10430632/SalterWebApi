@@ -11,7 +11,7 @@ namespace ExpServiceHelper.DTO
        
             public int? ECId { get; set; } // 資料庫主鍵
 
-            public int? TransactionId { get; set; } // 關聯到你的 ExpTransactions
+            public int TransactionId { get; set; } // 關聯到你的 ExpTransactions
 
             // --- 以下為綠界回傳欄位 ---
 

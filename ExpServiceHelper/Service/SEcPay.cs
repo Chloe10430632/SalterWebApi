@@ -94,9 +94,83 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region   存結果並更新 ExpTransactions 表
-        //public async Task<bool> UpdateTransacForm(Dictionary<string, string> data) { 
+        public async Task<bool> UpdateTransacForm(Dictionary<string, string> data)
+        {
+            try { 
+                
+                //TransacId
+                string merchantTradeNo = data["MerchantTradeNo"];
+                // 取得扣除後 14 位日期後的剩餘字串，即為原始流水號
+                int transactionId = int.Parse(merchantTradeNo.Substring(0, merchantTradeNo.Length - 14));
+
+                // 1. 將 Dictionary 資料對應到 EF Model
+                var payResult = new ExpTthirdPartyPayment {
+                    TransactionId = transactionId,
+                    MerchantTradeNo = merchantTradeNo,
+                    TradeNo = data["TradeNo"],
+                    RtnCode = int.Parse(data["RtnCode"]),
+                    RtnMsg = data["RtnMsg"],
+                    TradeAmt = int.Parse(data["TradeAmt"]),
+                    PaymentDate = DateTime.TryParse(data["PaymentDate"], out var pDate) ? pDate : DateTime.Now,
+                    PaymentType = data["PaymentType"], 
+                    SimulatePaid = int.Parse(data["SimulatePaid"])
+                };
+
+                // 2. 更新 ExpTthird_party_payments(ECPay) 表 
+                 await _context.ExpTthirdPartyPayments.AddAsync(payResult);
+
+                // 3. 更新 ExpTransactions 表 (變更訂單狀態)
+                // 使用剛剛解析出來的流水號去資料庫找這筆交易
+                var transT = await _context.ExpTransactions
+                            .FirstOrDefaultAsync(t => t.Id == transactionId);
+
+                if (transT != null) {
+                    transT.Status = 1;
+                    // --- 根據交易類型 (TransType) 更新對應各自的Orders表 ---//
+                    if (transT.TypeId == null) return false;
+                        int typeId = (int)transT.TypeId;
+                    switch (typeId) {
+                        case 3:
+                            var coachOrder = await _context.ExpCourseOrders
+                                            .Where(o => o.ExpTransactionId == transactionId)
+                                            .ToListAsync();
+                            foreach (var order in coachOrder) { order.Status = 1; }
+                            break;
+
+                        //case 1: //會員
+                        //    var userOrder = await _context.你的order表
+                        //                    .Where(o => o.ExpTransactionId == transactionId)
+                        //                    .ToListAsync();
+                        //    foreach (var order in 你的order表) { order.Status = 1; }
+                        //    break;
+                        //case 2: //討論版
+                        //    var forumOrder = await _context.你的order表
+                        //                    .Where(o => o.ExpTransactionId == transactionId)
+                        //                    .ToListAsync();
+                        //    foreach (var order in 你的order表) { order.Status = 1; }
+                        //    break;
+                        //case 4: //房源
+                        //    var houseOrder = await _context.你的order表
+                        //                    .Where(o => o.ExpTransactionId == transactionId)
+                        //                    .ToListAsync();
+                        //    foreach (var order in 你的order表) { order.Status = 1; }
+                        //    break;
+
+
+                        default:
+                           break;
+                    }
+                }
+
+
+                // 4. 儲存變更
+                await _context.SaveChangesAsync();
+                if (data["RtnCode"] != "1") return false;
+                    return true;
+            }
+            catch (Exception ex) { return false;  }
             
-        //}
+        }
         #endregion       
 
         #region 結帳結果包成html
