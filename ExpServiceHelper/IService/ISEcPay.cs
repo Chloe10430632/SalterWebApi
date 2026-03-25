@@ -9,6 +9,7 @@ namespace ExpServiceHelper.IService
 {
     public interface ISEcPay
     {
-        Task<DAPIResponse<string>> GetPaymentForm(DPaymentRequest dto);
+        Task<DAPIResponse<string>> GetPaymentForm(DTransacRequest dto);
+        public bool CheckMacValue(Dictionary<string, string> data);
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ExpServiceHelper.DTO
 {
-    public class DPaymentRequest
+    public class DTransacRequest
     {
         // 1. 交易 ID (從你的資料庫來的)
         public int TransactionId { get; set; }

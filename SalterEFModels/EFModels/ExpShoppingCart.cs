@@ -5,7 +5,7 @@ namespace SalterEFModels.EFModels;
 
 public partial class ExpShoppingCart
 {
-    public int? ExpEquipmentId1 { get; set; }
+    public int ExpEquipmentId1 { get; set; }
 
     public int? Quantity1 { get; set; }
 

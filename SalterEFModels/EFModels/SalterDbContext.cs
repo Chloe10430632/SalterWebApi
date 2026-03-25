@@ -542,9 +542,7 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F192872B6");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CourseSessionId).HasColumnName("course_session_id");
             entity.Property(e => e.ExpTransactionId).HasColumnName("expTransaction_id");
             entity.Property(e => e.ReservedAt).HasColumnName("reserved_at");
@@ -727,9 +725,7 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK_ExpFavorites_1");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
             entity.Property(e => e.FavoritedAt).HasColumnName("favorited_at");
             entity.Property(e => e.UserId).HasColumnName("user_id");
@@ -749,9 +745,7 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__ExpMessa__3213E83FFC1A4F93");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.MessageContent).HasColumnName("message_content");
             entity.Property(e => e.ReceiverCoachId).HasColumnName("receiver_coach_id");
             entity.Property(e => e.SenderUserId).HasColumnName("sender_user_id");
@@ -798,9 +792,7 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__ExpRevie__3213E83F70B6B9A2");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
             entity.Property(e => e.CourseOrderId).HasColumnName("course_order_id");
             entity.Property(e => e.IsHidden).HasColumnName("is_hidden");
@@ -830,7 +822,9 @@ public partial class SalterDbContext : DbContext
                 .ToTable("ExpShoppingCart");
 
             entity.Property(e => e.CourseSessionId).HasColumnName("courseSession_id");
-            entity.Property(e => e.ExpEquipmentId1).HasColumnName("ExpEquipment_id1");
+            entity.Property(e => e.ExpEquipmentId1)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("ExpEquipment_id1");
             entity.Property(e => e.ExpEquipmentId2).HasColumnName("ExpEquipment_id2");
             entity.Property(e => e.ExpEquipmentId3).HasColumnName("ExpEquipment_id3");
             entity.Property(e => e.ExpEquipmentId4).HasColumnName("ExpEquipment_id4");
@@ -857,9 +851,7 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__ExpTrans__3213E83F43C30E73");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Amount)
                 .HasColumnType("decimal(18, 0)")
                 .HasColumnName("amount");
@@ -902,10 +894,15 @@ public partial class SalterDbContext : DbContext
                 .HasNoKey()
                 .ToTable("ExpTthird_party_payments");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CustomField1).HasMaxLength(100);
+            entity.Property(e => e.Id)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("id");
             entity.Property(e => e.ItemName).HasMaxLength(400);
             entity.Property(e => e.MerchantTradeNo).HasMaxLength(50);
+            entity.Property(e => e.PaymentType).HasMaxLength(50);
             entity.Property(e => e.RtnMsg).HasMaxLength(200);
+            entity.Property(e => e.SimulatePaid).HasDefaultValue(0);
             entity.Property(e => e.TradeDesc).HasMaxLength(200);
             entity.Property(e => e.TradeNo).HasMaxLength(50);
             entity.Property(e => e.TransactionId).HasColumnName("transaction_id");

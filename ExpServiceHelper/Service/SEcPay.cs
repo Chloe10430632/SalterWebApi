@@ -1,30 +1,38 @@
 ﻿using ExpServiceHelper.DTO;
-using SalterEFModels.EFModels;
+using ExpServiceHelper.IService;
 using FluentEcpay;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Identity.Client;
+using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ExpServiceHelper.IService;
 
 namespace ExpServiceHelper.Service
 {
-    public class SEcPay: ISEcPay, IEquatable<SEcPay>
+    public class SEcPay: ISEcPay
     {
         #region DI 
         private readonly SalterDbContext _context;
-        public SEcPay(SalterDbContext context) {_context = context;}
+        private readonly IConfiguration _config;
+        public SEcPay(SalterDbContext context, IConfiguration config) {_context = context; _config = config; }
         #endregion
 
-        public async Task<DAPIResponse<string>> GetPaymentForm(DPaymentRequest dto) {
+        #region 結帳
+        public async Task<DAPIResponse<string>> GetPaymentForm(DTransacRequest dto) {
             
+            var merchantId = _config["ECPay:MerchantID"];
+            var hashKey = _config["ECPay:HashKey"];
+            var hashIV = _config["ECPay:HashIV"];
+            var serviceUrl = _config["ECPay:ServiceUrl"];
+
             var transac = await _context.ExpTransactions.FindAsync(dto.TransactionId);
             if (transac == null) return new DAPIResponse<string> {
                 IsSuccess = false, Message = "查無該筆交易" };
 
-            //設定綠界的身分證 (你的金鑰)--套件提供的入口點
             //給.WithItems用
             var items = new List<Item> {
                     new Item{
@@ -32,17 +40,19 @@ namespace ExpServiceHelper.Service
                         Price = (int)transac.Amount,
                     }
             };
+
+            //設定綠界的身分證 (你的金鑰)--套件提供的入口點
             var config = new PaymentConfiguration();
-            var payment = config.Send.ToApi("https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5")
-                            .Send.ToMerchant("2000132") // MerchantID
-                            .Send.UsingHash("5294y06JbISpM5x9", "v77hoKGq4kWxJt9M") // HashKey, HashIV
+            var payment = config.Send.ToApi(serviceUrl)
+                            .Send.ToMerchant(merchantId) // MerchantID
+                            .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV
                             .Return.ToServer($"{dto.BaseUrl}/PayResult")
                             .Return.ToClient($"{dto.BaseUrl}/Finish")
                             .Transaction.New(
-                                    no:  transac.Id.ToString().PadLeft(10, '0'),
+                                    no: $"{transac.Id}{DateTime.Now:yyyyMMddHHmmss}",
                                 description: $"{dto.TransType}",
                                 date: DateTime.Now)
-                            .Transaction.UseMethod(EPaymentMethod.CVS)
+                            .Transaction.UseMethod(EPaymentMethod.Credit)
                             .Transaction.WithItems(items)
                             .Generate();//封裝
 
@@ -56,50 +66,87 @@ namespace ExpServiceHelper.Service
                 Data = htmlForm
             };
         }
-
-        #region  檢查是不是「同一筆交易」
-        public string MerchantTradeNo { get; set; }
-        public decimal TotalAmount { get; set; }
-
-        public bool Equals(SEcPay? other)
-        {
-            // 1. 如果對方是空的，那一定不相等
-            if (other == null) return false;
-
-            // 2. 定義你的規則：如果交易編號一樣，我們就認為是同一個物件
-            return this.MerchantTradeNo == other.MerchantTradeNo;
-        }
-
-        // 小教練溫馨提醒：實作 Equals 時，通常也會建議覆寫 Object 的 Equals 和 GetHashCode
-        public override bool Equals(object? obj) => Equals(obj as SEcPay);
-        public override int GetHashCode() => MerchantTradeNo?.GetHashCode() ?? 0;
         #endregion
 
+        #region 付款結果驗證
+        public bool CheckMacValue(Dictionary<string, string> data)
+        {
+            var hashKey = _config["ECPay:HashKey"];
+            var hashIV = _config["ECPay:HashIV"];
 
-        #region 包成html
+            var sorted = data
+                .Where(x => x.Key != "CheckMacValue")
+                .OrderBy(x => x.Key)
+                .ToDictionary(x => x.Key, x => x.Value);
+
+            var raw = $"HashKey={hashKey}&" +
+                      string.Join("&", sorted.Select(x => $"{x.Key}={x.Value}")) +
+                      $"&HashIV={hashIV}";
+
+            var encoded = System.Web.HttpUtility.UrlEncode(raw).ToLower();
+
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(encoded));
+            var result = BitConverter.ToString(bytes).Replace("-", "").ToUpper();
+
+            return result == data["CheckMacValue"];
+        }
+        #endregion
+
+        #region   存結果並更新 ExpTransactions 表
+        //public async Task<bool> UpdateTransacForm(Dictionary<string, string> data) { 
+            
+        //}
+        #endregion       
+
+        #region 結帳結果包成html
         private string GenerateHtmlForm(IPayment payment)
         {
-            // 這裡我們用 StringBuilder 來拼湊 HTML
-            var sb = new StringBuilder();
-            sb.AppendLine($"<form id='ecpay-form' action='{payment.URL}' method='post'>");
+            var builder = new StringBuilder();
 
-            // 反射 (Reflection) 抓取所有屬性，自動產生 input
-            foreach (var prop in payment.GetType().GetProperties())
+            builder.Append($@"<form id='ecpay-form' method='POST' action='{payment.URL}'>");
+
+            // 用反射抓所有屬性（這是關鍵）
+            var props = payment.GetType().GetProperties();
+
+            foreach (var prop in props)
             {
                 var value = prop.GetValue(payment);
+
                 if (value != null)
                 {
-                    sb.AppendLine($"<input type='hidden' name='{prop.Name}' value='{value}' />");
+                    builder.Append($@"<input type='hidden' name='{prop.Name}' value='{value}' />");
                 }
             }
 
-            sb.AppendLine("</form>");
-            sb.AppendLine("<script type='text/javascript'>document.getElementById('ecpay-form').submit();</script>");
+            builder.Append(@"
+                            </form>
+                            <script>
+                                document.getElementById('ecpay-form').submit();
+                            </script>");
 
-            return sb.ToString();
+            return builder.ToString();
         }
         #endregion
 
+
+        #region  用不到-檢查是不是「同一筆交易」
+        //public string MerchantTradeNo { get; set; }
+        //public decimal TotalAmount { get; set; }
+
+        //public bool Equals(SEcPay? other)
+        //{
+        //    // 1. 如果對方是空的，那一定不相等
+        //    if (other == null) return false;
+
+        //    // 2. 定義你的規則：如果交易編號一樣，我們就認為是同一個物件
+        //    return this.MerchantTradeNo == other.MerchantTradeNo;
+        //}
+
+        //// 小教練溫馨提醒：實作 Equals 時，通常也會建議覆寫 Object 的 Equals 和 GetHashCode
+        //public override bool Equals(object? obj) => Equals(obj as SEcPay);
+        //public override int GetHashCode() => MerchantTradeNo?.GetHashCode() ?? 0;
+        #endregion
 
         #region  
         #endregion
