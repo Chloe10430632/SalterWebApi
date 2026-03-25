@@ -143,29 +143,18 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
+// 從設定檔抓取前端網址
+var allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins");
 
-
-
-
-//解決瀏覽器預設同源政策：定義存取的來源白名單 liveserver預設5500，angular4200
-builder.Services.AddCors(option =>
+builder.Services.AddCors(options =>
 {
-    option.AddPolicy("Allow5500",
-        policy =>
-        {
-            policy.WithOrigins("http://127.0.0.1:5500")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .WithExposedHeaders("Location");
-        });
-    option.AddPolicy("Allow4200",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .WithExposedHeaders("Location");
-        });
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy.WithOrigins(allowedOrigins) // 這裡變動態了！
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .WithExposedHeaders("Location");
+    });
 });
 
 // 使用Middleware做全域的Exception處理
@@ -173,6 +162,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+app.UseCors("CorsPolicy");
 
 app.UseExceptionHandler(); //全域錯誤處理
 
@@ -200,6 +190,7 @@ if (app.Environment.IsDevelopment())
                .WithPreferredScheme("Bearer");
     });
 }
+
 
 
 

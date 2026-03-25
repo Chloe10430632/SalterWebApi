@@ -48,11 +48,20 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(result);
         }
 
-        [HttpGet("cities")]//透過城市搜尋
+        [HttpGet("cities")]//取得所有城市名
         public async Task<IActionResult> GetCities()
         {
             return Ok(await _homService.GetAllCityAsync());
         }
+
+        [HttpGet("city-groups")]
+        public async Task<ActionResult<List<CityGroupDTO>>> GetCityGroups(string? city)
+        {
+            // 這裡要把 city 傳給 Service
+            var result = await _homService.GetCityGroupPreviewsAsync(city);
+            return Ok(result);
+        }
+
 
         [HttpGet("top/{count}")] //顯示前幾筆的房屋
         public async Task<IActionResult> GetTop(int count = 6)
@@ -118,6 +127,20 @@ namespace SalterWebApi.Areas.House.Controllers
             {
                 return NotFound(new { message = "更新失敗，找不到該房源或系統異常" });
             }
+        }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<HousePreviewDTO>>> Search(string? city, string? keyword, int? guests)
+        {
+            // 呼叫你剛才寫好的 Service 方法
+            var result = await _homService.SearchHousesAsync(city, keyword,guests);
+
+            if (result == null || !result.Any())
+            {
+                return Ok(new List<HousePreviewDTO>()); // 回傳空陣列，不要回傳 404，這樣前端比較好處理
+            }
+
+            return Ok(result);
         }
     }
 }

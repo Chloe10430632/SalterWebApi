@@ -203,9 +203,43 @@ namespace HomeServiceHelper.Service
             return houses.Where(h => !string.IsNullOrEmpty(h.Citie)).
                 Select(h => h.Citie)
                 .Distinct()
+                .OrderBy(c => c) // 可以選擇性地排序
                 .ToList();
         }
 
+        // 取得所有房子所在的城市列表（）
+        public async Task<List<CityGroupDTO>> GetCityGroupPreviewsAsync(string? city = null)
+        {
+            var query = _context.HomRoomTypes
+                .Include(rt => rt.House)
+                .Include(rt => rt.HomRoomImages)
+                .Where(rt => rt.IsActive == true); 
+
+            // 如果前端有傳城市，且不是 "全部"，就在資料庫層級過濾
+            if (!string.IsNullOrEmpty(city) && city != "全部")
+            {
+                query = query.Where(rt => rt.House.Citie == city);
+            }
+
+            // 執行查詢並撈回記憶體 (這時候才真的去資料庫拿資料)
+            var roomTypes = await query.ToListAsync();
+
+            // 進行分組處理
+            return roomTypes
+                .GroupBy(rt => rt.House.Citie)
+                .Select(g => new CityGroupDTO
+                {
+                    CityName = g.Key ?? "未分類",
+                    Houses = g.Take(6).Select(rt => new HousePreviewDTO
+                    {
+                        HouseId = rt.RoomTypeId,
+                        Title = rt.Name ?? "精選房源",
+                        Price = (int)(rt.PricePerNight ?? 0),
+                        District = rt.House.District ?? "",
+                        ImageUrl = rt.HomRoomImages.FirstOrDefault()?.ImagePath ?? ""
+                    }).ToList()
+                }).ToList();
+        }
         // 取得瀏覽次數最高的前幾個房型的基本資訊
         public async Task<IEnumerable<HouseDetailViewDTO>> GetTopRoomsAsync(int count)
         {
@@ -409,6 +443,43 @@ namespace HomeServiceHelper.Service
                 return false;
             }
         }
+
+        //查詢顯示房型
+        public async Task<List<HousePreviewDTO>> SearchHousesAsync(string? city, string? keyword, int? guests)
+        {
+            var query = _context.HomRoomTypes
+                .Include(rt => rt.House)
+                .Include(rt => rt.HomRoomImages)
+                .Where(re => re.IsActive == true)
+                .AsQueryable();
+
+            //篩選城市
+            if (!string.IsNullOrEmpty(city))
+            {
+                query = query.Where(rt => rt.House.Citie == city);
+            }
+            //關鍵字篩選
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(rt => rt.Name.Contains(keyword) || rt.House.District.Contains(keyword));
+            }
+            //人數篩選
+            if (guests.HasValue && guests > 0)
+            {
+                query = query.Where(rt => rt.Capacity >= guests);
+            }
+
+            return await query.Select(rt => new HousePreviewDTO
+            {
+                HouseId = rt.RoomTypeId,
+                Title = rt.Name,
+                Price = (int)(rt.PricePerNight ?? 0),
+                District = rt.House.District,
+                ImageUrl = rt.HomRoomImages.FirstOrDefault().ImagePath
+            }).ToListAsync();
+        }
+
+
     }
 
 
