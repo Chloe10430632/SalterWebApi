@@ -43,7 +43,6 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
         // DELETE api/<CommentsController>/5
         [HttpDelete("{id}")]
-        [Authorize]
         public async Task<IActionResult> DeleteComments(int id)
         {
             int userId = GetUserId();

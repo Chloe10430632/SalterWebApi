@@ -10,6 +10,7 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
     public class PostListViewModel
     {
         public int PostId { get; set; }
+        public int UserId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
         public int BoardId { get; set; }
@@ -37,6 +38,7 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
     public class CommentPreviewDto
     {
         public int CommentId { get; set; }
+        public int CommentUserId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;

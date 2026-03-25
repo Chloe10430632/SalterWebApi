@@ -65,7 +65,7 @@ namespace ForumServiceHelper.Service
                 BoardId = p.BoardId,
                 BoardTitle = p.Board.Title,
                 LocationTitle = p.Location.Name,
-                ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
+                ContentPreview = p.Content.Length > 50 ? p.Content.Substring(0, 50) : p.Content,
                 CreatedAt = p.CreatedAt,
                 ImageUrls = p.ForumPostsImages.OrderBy(img => img.SortIndex).Select(img => img.ImageUrl).ToList(),
                 IsLiked = userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Like),
@@ -104,6 +104,7 @@ namespace ForumServiceHelper.Service
         .Select(p => new PostDetailViewModel
         {
             PostId = p.PostId,
+            UserId = p.UserId,
             UserName = p.User.UserName,
             AvatarUrl = p.User.ProfilePicture,
             BoardId = p.BoardId,
@@ -129,6 +130,7 @@ namespace ForumServiceHelper.Service
                 .Select(c => new CommentPreviewDto
                 {
                     CommentId = c.CommentId,
+                    CommentUserId = c.UserId,
                     UserName = c.User.UserName,
                     Content = c.Content,
                     AvatarUrl = c.User.ProfilePicture,
@@ -139,6 +141,7 @@ namespace ForumServiceHelper.Service
                         .Select(r => new CommentPreviewDto
                         {
                             CommentId = r.CommentId,
+                            CommentUserId = r.UserId,
                             UserName = r.User.UserName,
                             AvatarUrl = r.User.ProfilePicture,
                             Content = r.Content,
@@ -292,6 +295,8 @@ namespace ForumServiceHelper.Service
             // 1. 抓出貼文主體，同時 Include 所有關聯表
             // 把關聯資料一併載入，EF 才知道要刪除哪些東西
             var post = await _dbPosts.GetDbContext().ForumPosts
+                .Include(p=>p.ForumPostInteractions)
+                .Include(p=>p.ForumComments)
                 .Include(p => p.ForumPostsImages)
                 .Include(p => p.ForumPostTagDetails)
                 .FirstOrDefaultAsync(p => p.PostId == postId);
@@ -300,6 +305,16 @@ namespace ForumServiceHelper.Service
 
             if (post.UserId != userId)
                 throw new ArgumentException($"您沒有權限刪除他人貼文!");
+
+            if (post.ForumPostInteractions.Any())
+            {
+                _dbPosts.GetDbContext().ForumPostInteractions.RemoveRange(post.ForumPostInteractions);
+            }
+
+            if (post.ForumComments.Any())
+            {
+                _dbPosts.GetDbContext().ForumComments.RemoveRange(post.ForumComments);
+            }
 
             // 2. 先刪除圖片關聯
             if (post.ForumPostsImages.Any())
@@ -316,9 +331,72 @@ namespace ForumServiceHelper.Service
             // 4. 最後刪除貼文主體
             _dbPosts.GetDbContext().ForumPosts.Remove(post);
 
+                //5.刪除雲端圖片
+            try
+            {
+                // 建立 Cloudinary 連線
+                var account = new Account(_cloudinaryName, _cloudinaryApiKey, _cloudinaryApiSecret);
+                var cloudinary = new Cloudinary(account);
+
+                foreach (var img in post.ForumPostsImages)
+                {
+                    string publicId = ExtractPublicIdFromUrl(img.ImageUrl);
+
+                if (!string.IsNullOrEmpty(publicId))
+                {
+                    var deletionParams = new DeletionParams(publicId);
+                    // 執行非同步刪除
+                    cloudinary.Destroy(deletionParams);
+                }
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
             // 5. 統一存檔 (這會包在同一個 Transaction 中)
             return await _dbPosts.SaveChangesAsync();
-           
+
+
+        }
+
+
+
+
+        // 輔助方法：從完整 URL 提取 PublicId
+        private string ExtractPublicIdFromUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return null;
+
+            try
+            {
+                // 範例：https://res.cloudinary.com/dbyzfq61h/image/upload/v1773155156/Salter/Forum/20260310230550哈哈囉_4648.jpg
+
+                // 1. 先定位到 "upload/"
+                string pattern = "upload/";
+                int uploadIndex = url.IndexOf(pattern);
+                if (uploadIndex == -1) return null;
+
+                // 2. 找到 upload/ 之後的內容：v1773155156/Salter/Forum/20260310230550哈哈囉_4648.jpg
+                string afterUpload = url.Substring(uploadIndex + pattern.Length);
+
+                // 3. 找到第一個斜線，跳過版本號 (v1773155156/)
+                int firstSlashIndex = afterUpload.IndexOf("/");
+                if (firstSlashIndex == -1) return null;
+
+                // 4. 剩下的部分：Salter/Forum/20260310230550哈哈囉_4648.jpg
+                string pathWithExtension = afterUpload.Substring(firstSlashIndex + 1);
+
+                // 5. 去除副檔名：Salter/Forum/20260310230550哈哈囉_4648
+                // 使用 Path.ChangeExtension(path, null) 或是自訂移除
+                string publicId = System.IO.Path.ChangeExtension(pathWithExtension, null);
+
+                return publicId;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }
