@@ -49,7 +49,7 @@ public class TripController : ControllerBase
         var result = await _service.CreateTripAsync(dto, userId.Value);
         if (!result.IsSuccess)
             return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
-        return Ok(ApiResponse<int>.Ok(result.Data)); 
+        return Ok(ApiResponse<int>.Ok(result.Data));
     }
 
     [HttpPut("{id}")]

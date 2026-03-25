@@ -86,14 +86,13 @@ public class TripService : ITripService
         };
     }
 
-    public async Task<ServiceResult> CreateTripAsync(TripRequestDto dto, int organizerUserId)
+    public async Task<ServiceResult<int>> CreateTripAsync(TripRequestDto dto, int organizerUserId)
     {
         // 日期驗證
         if (dto.StartAt < DateTime.Now)
-            return ServiceResult.Fail("開始日期不能早於今天");
-
+            return ServiceResult<int>.Fail("開始日期不能早於今天");
         if (dto.EndAt.HasValue && dto.EndAt.Value <= dto.StartAt)
-            return ServiceResult.Fail("結束日期必須晚於開始日期");
+            return ServiceResult<int>.Fail("結束日期必須晚於開始日期");
 
 
         try
