@@ -671,10 +671,11 @@ namespace ExpServiceHelper.Service
 
         #region 交易流程
         #region 新增預約課程
-        public async Task<DAPIResponse<string>> CourseReserve(DCourseOrder dto, int userId, int courseSessionId)
+        public async Task<DAPIResponse<string>> SessionReserve(DCourseOrder dto, int userId)
         {
            //找這堂課，順便拿教練ID
             var session = await _context.ExpCourseSessions
+                          .Include(s => s.CourseTemplate) 
                           .FirstOrDefaultAsync( r => r.Id == dto.CourseSessionId );
             if (session == null) {
                 return new DAPIResponse<string> { IsSuccess = false, Message = "沒有課程可以評論" };
@@ -686,10 +687,10 @@ namespace ExpServiceHelper.Service
 
             //建立一筆 ExpTransaction，取得 TransactionId
             decimal? coursePrice = session.CourseTemplate.Price;
-            var transac = new ExpTransaction {
+            var transac = new ExpTransaction {  
                 SenderUserId = userId,
                 ReceiveUserId = session.CoachId, // 從場次拿教練 ID
-                Amount = coursePrice,            // 假設金額，之後可從 Template 抓
+                Amount = session.CourseTemplate?.Price ?? 0,            // 假設金額，之後可從 Template 抓
                 Status = 0,                      // 0: 已建立/待付款
                 TypeId = 3,                     
                 CreatedAt = DateTime.Now
@@ -700,7 +701,7 @@ namespace ExpServiceHelper.Service
             //建立預約實體 (Entity)
             var reserve = new ExpCourseOrder {
                 UserId = userId,
-                CourseSessionId = courseSessionId,
+                CourseSessionId = session.Id,
                 ReservedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 ExpTransactionId = transac.Id,

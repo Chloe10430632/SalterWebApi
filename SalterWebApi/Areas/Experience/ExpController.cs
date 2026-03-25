@@ -264,7 +264,6 @@ namespace SalterWebApi.Areas.Experience
                 try {
                     var result = await _sCoachMethods.EditTemplate(dto, tempId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
-                    return BadRequest(new { message = result.Message });
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             }
@@ -289,7 +288,6 @@ namespace SalterWebApi.Areas.Experience
                 {
                     var result = await _sCoachMethods.OpenSession(dto, templateId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
-                    return BadRequest(new { message = result.Message });
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             }
@@ -315,7 +313,6 @@ namespace SalterWebApi.Areas.Experience
                 {
                     var result = await _sCoachMethods.DeleteCourseSession(courseSessionId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
-                    return BadRequest(new { message = result.Message });
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             }
@@ -405,14 +402,33 @@ namespace SalterWebApi.Areas.Experience
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             
         }
-        
+
 
         #endregion
 
         #endregion
 
         #region 交易
+        //TODO 測試
         #region 預約課程
+        [Authorize]
+        [HttpPost("Reserve")]
+        public async Task<IActionResult> MyReserveSession(DCourseOrder dto) {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr))
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                try {
+                    var result = await _sCoachMethods.SessionReserve(dto, currentUserId);
+                    if (result.IsSuccess) return Ok( result);
+                }
+                catch (Exception ex) { return BadRequest(ex.Message); }
+            }
+            return BadRequest(new { message = "失敗失敗" });
+            }
         #endregion
         #region 歷史交易紀錄 
         #endregion
