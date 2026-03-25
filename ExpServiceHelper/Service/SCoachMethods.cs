@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -31,8 +32,7 @@ namespace ExpServiceHelper.Service
             {
                 CoachId = c.Id,
                 CoachName = c.Name,
-               //TODO 頭像型別問題
-                // AvatarUrl = c.Avata,
+                 AvatarUrl = c.AvatarUrl,
                 // 提醒：在資料庫層級 string.Join 可能會報錯，建議到記憶體再處理，或者直接選成 List
                 District = c.TripDistricts.Select(m => m.Name).ToList(),
                 Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
@@ -190,8 +190,7 @@ namespace ExpServiceHelper.Service
                      {
                          CoachId = c.Id,
                          CoachName = c.Name,
-                         //TODO 頭像型別問題
-                         // AvatarUrl = c.AvatarUrl,
+                          AvatarUrl = c.AvatarUrl,
                          District = c.TripDistricts.Select(m => m.Name).ToList(),
                          AvgRating = c.ExpReviews.Any() ? Math.Round( c.ExpReviews.Average(r => (double)r.Rating) ,1): 0,
                          ReviewCount = c.ExpReviews.Count(),
@@ -208,7 +207,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片?? 
-        public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId, List<ImageUploadResult> pic)
+        public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId)
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
             var thisCoach = await _context.ExpCoaches
@@ -220,15 +219,29 @@ namespace ExpServiceHelper.Service
             }
 
             //處理圖片
-            string picUrl = dto.AvatarUrl;
-            if (picUrl != null) {
-                
+            if (dto.AvatarFile != null && dto.AvatarFile.Length > 0)
+            {
+                // A. 刪除舊圖片 (建議在資料表增加一個 PublicId 欄位，否則需從 URL 解析)
+                if (!string.IsNullOrEmpty(thisCoach.AvatarUrl))
+                {
+                    //string oldPublicId = ExtractPublicIdFromUrl(thisCoach.AvatarUrl);
+                    await _sPhoto.DeletePhotoAsync(new List<string> { dto.PublicId});
+                }
+
+                // B. 上傳新圖片
+                var uploadResults = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
+                var uploadResult = uploadResults.FirstOrDefault();
+
+                if (uploadResult != null && uploadResult.Error == null) {
+                    thisCoach.AvatarUrl = uploadResult.SecureUrl.AbsoluteUri;
+                }
+                else {return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "圖片上傳失敗" };
+                }
             }
 
             // 2.(賦值)：把前端傳來的 dto 資料塞進資料庫的 entity 裡
             // 這一步才是真正的「更新」！
             if (!string.IsNullOrEmpty(dto.Name)) { thisCoach.Name = dto.Name; }
-            if (!string.IsNullOrEmpty(dto.AvatarUrl)) { thisCoach.AvatarUrl = dto.AvatarUrl; }
             if (!string.IsNullOrEmpty(dto.Introduction)) { thisCoach.Introduction = dto.Introduction; }
             if (dto.DistrictId.HasValue) { thisCoach.DistrictId = dto.DistrictId; }
 
@@ -237,22 +250,8 @@ namespace ExpServiceHelper.Service
             // 3. 存檔：這時候 EF 就會知道 thisCoach 被動過了，發出 UPDATE 指令
             await _context.SaveChangesAsync();
 
-            //// 4. 回傳：因為有只放id的欄位 所以要回傳抓新的對應名字
-            //var resultData = await _context.ExpCoaches
-            //    .Where(c => c.Id == thisCoach.Id)
-            //    .Select(c => new DCoachEdit
-            //    {
-            //        Name = c.Name,
-            //        AvatarUrl = c.AvatarUrl,
-            //        Introduction = c.Introduction,
-            //        DistrictId = c.DistrictId,
-            //        DistrictName = c.District.Name
-
-            //    }).FirstOrDefaultAsync();
-
             return new DAPIResponse<DCoachEdit> {
-                IsSuccess = true, Message = "更新成功！教練大人進化了！" };//, Data = resultData
-
+                IsSuccess = true, Message = "更新成功！教練大人進化了！" };
         }
         #endregion
 
@@ -286,7 +285,6 @@ namespace ExpServiceHelper.Service
                     CoachId = c.Id,
                     CoachName = c.Name,
                     AvatarUrl = c.AvatarUrl,
-                    // 這裡假設你有關聯到 TripDistricts
                     District = c.TripDistricts.Select(d => d.Name).ToList(),
                     Specialities = c.Specialities
                                     .Select(s => s.SportsName)

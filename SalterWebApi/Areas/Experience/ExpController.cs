@@ -129,7 +129,7 @@ namespace SalterWebApi.Areas.Experience
         #region 編輯自介 
         [Authorize]
         [HttpPut("EditCoach{id}")]
-        public async Task<IActionResult> EditThisCoach([FromBody] DCoachEdit dto)
+        public async Task<IActionResult> EditThisCoach([FromForm] DCoachEdit dto)
         {
             // 1. 抓取 JWS 裡面的 UserId
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -142,9 +142,8 @@ namespace SalterWebApi.Areas.Experience
             // 2. 呼叫 Service，傳入 DTO 和 登入者 ID
             if (int.TryParse(userIdStr, out int currentUserId))
             {
-               //TODO
-                //var result = await _sCoachMethods.EditCoachInfo(dto, currentUserId);
-                //if (result.IsSuccess) return Ok(result);
+                var result = await _sCoachMethods.EditCoachInfo(dto, currentUserId);
+                if (result.IsSuccess) return Ok(result);
             }
             return BadRequest("系統忙碌中");
 

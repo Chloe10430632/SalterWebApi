@@ -13,9 +13,8 @@ namespace ExpServiceHelper.DTO
         public string CoachName { get; set; } = null!;
         public List<string?> District { get; set; } = new List<string>();
         public List<string> Specialities { get; set; } = new List<string>();//
-         //
-        public IFormFile? AvatarFile { get; set; }
-        public string? PublicId { get; set; }
+                                                                            //
+        public string AvatarUrl { get; set; } //顯示用
 
     }
 }

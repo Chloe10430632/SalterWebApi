@@ -19,8 +19,7 @@ namespace ExpServiceHelper.DTO
         public double AvgRating { get; set; }
         public int ReviewCount { get; set; }
         public List<string> Specialities { get; set; } = new List<string>();
-        public IFormFile? AvatarFile { get; set; }
-        public string? PublicId { get; set; }
+        public string? AvatarUrl { get; set; }
 
     }
 }

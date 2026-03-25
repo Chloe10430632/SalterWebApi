@@ -11,6 +11,7 @@ namespace ExpServiceHelper.DTO
     {
         public int CoachId { get; set; }
         public string CoachName { get; set; } = null!;
+        public string? AvatarUrl { get; set; }
         public List<string?> District { get; set; } = new List<string>();
         public string? City { get; set; }
         public double AvgRating { get; set; }
