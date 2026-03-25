@@ -2,8 +2,10 @@
 using ExpServiceHelper.IService;
 using ExpServiceHelper.Service;
 using FluentEcpay;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace SalterWebApi.Areas.Experience
 {
@@ -24,25 +26,34 @@ namespace SalterWebApi.Areas.Experience
         }
         #endregion
 
+        [Authorize]
         [HttpPost("PayResult")]
         public async Task<IActionResult> PayResult([FromForm] IFormCollection collection)
         {
-            // 將 IFormCollection 轉為 Dictionary
-            var data = collection.ToDictionary(k => k.Key, v => v.Value.ToString());
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            }
+
+            if (int.TryParse(userIdStr, out int currentUserId))
+            { 
+                // 將 IFormCollection 轉為 Dictionary
+                var data = collection.ToDictionary(k => k.Key, v => v.Value.ToString());
 
             // 呼叫驗證方法
             if (_sECpay.CheckMacValue(data))
             {
                 if (data["RtnCode"] == "1") // 1 代表成功
                 {
-                    // TODO: 使用 DTransacECPay 儲存結果並更新您的 ExpTransactions 表
-                    // 這裡可以呼叫您的資料庫處理邏輯
+                    //DB更新
+                    await _sECpay.UpdateTransacForm(data);
 
                     return Content("1|OK"); 
                 }
             }
-
-            return Content("0|Error");
         }
+            return Content("0|Error");}
     }
 }

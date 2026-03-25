@@ -101,9 +101,9 @@ builder.Services.AddScoped<PasswordHasher<UserUser>>();
 builder.Services.AddScoped<IRCoachIndex, RCoachIndex>();
 builder.Services.AddScoped<ISCoachIndex, SCoachIndex>();
 builder.Services.AddScoped<ISCoachMethods, SCoachMethods>();
+builder.Services.AddScoped<SPhoto>();
 //¥æ©ö ª`¤J
 builder.Services.AddScoped<SEcPay>();
-builder.Services.AddScoped<SPhoto>();
 
 
 

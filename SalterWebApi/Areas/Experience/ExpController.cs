@@ -27,12 +27,10 @@ namespace SalterWebApi.Areas.Experience
         #region DI
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
-        //private readonly SPhoto _sPhoto;
-        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods) //, SPhoto sPhoto
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods) 
         {
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
-            //_sPhoto = sPhoto;
         }
         #endregion
         #region ~~入口~~

@@ -28,6 +28,7 @@ namespace ExpServiceHelper.Service
             var hashKey = _config["ECPay:HashKey"];
             var hashIV = _config["ECPay:HashIV"];
             var serviceUrl = _config["ECPay:ServiceUrl"];
+            var returnUrl = "";
 
             var transac = await _context.ExpTransactions.FindAsync(dto.TransactionId);
             if (transac == null) return new DAPIResponse<string> {
@@ -96,6 +97,8 @@ namespace ExpServiceHelper.Service
         #region   存結果並更新 ExpTransactions 表
         public async Task<bool> UpdateTransacForm(Dictionary<string, string> data)
         {
+            //確保資料一致性(一起成功or失敗)
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try { 
                 
                 //TransacId
@@ -129,6 +132,7 @@ namespace ExpServiceHelper.Service
                     // --- 根據交易類型 (TransType) 更新對應各自的Orders表 ---//
                     if (transT.TypeId == null) return false;
                         int typeId = (int)transT.TypeId;
+
                     switch (typeId) {
                         case 3:
                             var coachOrder = await _context.ExpCourseOrders
@@ -165,10 +169,13 @@ namespace ExpServiceHelper.Service
 
                 // 4. 儲存變更
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync(); // 全部成功才存檔
                 if (data["RtnCode"] != "1") return false;
                     return true;
             }
-            catch (Exception ex) { return false;  }
+            catch (Exception ex) {
+                await transaction.RollbackAsync(); // 失敗了就當沒發生過
+                return false;  }
             
         }
         #endregion       
