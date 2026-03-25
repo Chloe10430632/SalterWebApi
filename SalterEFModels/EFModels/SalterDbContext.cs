@@ -167,6 +167,7 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CardActivityType>(entity =>
@@ -568,9 +569,7 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__ExpCours__3213E83F882674AC");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CourseTemplateId).HasColumnName("course_template_id");
             entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
             entity.Property(e => e.PublicId)

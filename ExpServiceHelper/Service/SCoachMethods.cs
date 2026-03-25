@@ -327,48 +327,63 @@ namespace ExpServiceHelper.Service
         #region 課程模板建立
         public async Task<DAPIResponse<DCourseCreate>> CreateTemplate(DCourseCreate dto, int userId)
         {
-            try {
+            try
+            {
                 var coachExists = await _context.ExpCoaches
                     .FirstOrDefaultAsync(c => c.UserId == userId);
 
                 if (coachExists == null)
-                    return new DAPIResponse<DCourseCreate> { IsSuccess = false,Message = "教練不存在"};
-                
+                    return new DAPIResponse<DCourseCreate> { IsSuccess = false, Message = "教練不存在" };
+
                 //主表圖表分開處理
                 var t = new ExpCourseTemplate
-            {
-                CoachId = coachExists.Id,
-                Title = dto.Title,
-                Description = dto.Description,
-                Difficulty = dto.Difficulty,
-                Price = dto.Price,
-                Location = dto.Location,
-                CreatedAt = DateTime.Now
-            };
-            //有傳圖片再做這步
-            if (dto.PhotoUrls != null && dto.PhotoUrls.Any())
-            {
-                //foreach (var pic in dto.PhotoUrls)
-                //{
-                //        if (string.IsNullOrWhiteSpace(pic)) continue;
-                //        t.ExpCoursePhotos.Add(new ExpCoursePhoto {
-                //                                PhotoUrl = pic,
-                //                                UploadedAt = DateTime.Now
-                //                            });
-                //}
-            }
-            //save--EF 會幫你動用 Transaction，確保模板跟照片「同時成功」或「同時失敗」)
-            _context.ExpCourseTemplates.Add(t);
-            //update
-            await _context.SaveChangesAsync();
+                {
+                    CoachId = coachExists.Id,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    Difficulty = dto.Difficulty,
+                    Price = dto.Price,
+                    Location = dto.Location,
+                    CreatedAt = DateTime.Now
+                };
+                //有傳圖片再做這步
+                if (dto.PhotoUrls != null && dto.PhotoUrls.Any())
+                {
+                    // 呼叫你的 SPhoto Service 進行異步上傳
+                    // 建議在 Service 注入 SPhoto _sPhoto;
+                    var uploadResults = await _sPhoto.AddPhotoAsync(dto.PhotoUrls);
 
-            return new DAPIResponse<DCourseCreate>
-            {
-                IsSuccess = true,
-                Message = "新課程模板做好啦 ！",
-                Data = dto
-            }; 
-            
+                    // 建立一個空的清單給導覽屬性
+                    t.ExpCoursePhotos = new List<ExpCoursePhoto>();
+
+                    foreach (var result in uploadResults)
+                    {
+                        if (result.Error != null) continue; // 或是處理錯誤
+
+                        var newPhoto = new ExpCoursePhoto
+                        {
+                            PhotoUrl = result.SecureUrl.ToString(),
+                            PublicId = result.PublicId,
+                            UploadedAt = DateTime.Now
+                            // 重點：不要寫 Id = 0 或任何東西
+                        };
+
+                        t.ExpCoursePhotos.Add(newPhoto);
+                    }
+                }
+                    //save--EF 會幫你動用 Transaction，確保模板跟照片「同時成功」或「同時失敗」)
+                    _context.ExpCourseTemplates.Add(t);
+                    //update
+                    await _context.SaveChangesAsync();
+
+                    return new DAPIResponse<DCourseCreate>
+                    {
+                        IsSuccess = true,
+                        Message = "新課程模板做好啦 ！",
+                        Data = dto
+                    };
+
+                
             }
             catch (Exception ex) { throw new Exception(ex.InnerException?.Message); }
 
@@ -390,39 +405,62 @@ namespace ExpServiceHelper.Service
             if (!string.IsNullOrEmpty(dto.Difficulty)) { t.Difficulty = dto.Difficulty; }
             if (dto.Price > 0) { t.Price = dto.Price; }
             if (!string.IsNullOrEmpty(dto.Location)) { t.Location = dto.Location; }
-            if (dto.PhotoUrls != null)
+            if (dto.ExistingPhotosJson != null)
             {
-                // 1. 取得資料庫目前的照片網址清單
+                // --- A. 處理新圖片上傳 ---
+                if (dto.NewImageFiles != null && dto.NewImageFiles.Any())
+                {
+                    // 呼叫你寫好的 SPhoto
+                    var uploadResults = await _sPhoto.AddPhotoAsync(dto.NewImageFiles);
 
-                var originPhoto = t.ExpCoursePhotos.ToList();
-                var existingUrls = originPhoto.Select(p => p.PhotoUrl).ToList();
+                    foreach (var res in uploadResults)
+                    {
+                        t.ExpCoursePhotos.Add(new ExpCoursePhoto
+                        {
+                            PhotoUrl = res.SecureUrl.ToString(), // Cloudinary 回傳的網址
+                            PublicId = res.PublicId,             // 務必存下這個 ID！
+                            UploadedAt = DateTime.Now
+                        });
+                    }
+                }
 
-                // 2. 找出「要刪除」的照片 (情境 2 & 4)
-                // 那些在資料庫裡，但不在前端名單中的
-                //var photosToRemove = originPhoto
-                //    .Where(p => !dto.PhotoUrls.Contains(p.PhotoUrl))
-                //    .ToList();
+                // --- B. 處理舊圖片刪除 ---
+                // 找出「原本在資料庫」但「不在前端傳回的 ExistingPhotos」中的照片
+                if (!string.IsNullOrEmpty(dto.ExistingPhotosJson))
+                {
+                    // 1. 先把 JSON 字串變成 C# 的小盒子清單 (List<DPhoto>)
+                    var existingPhotos = System.Text.Json.JsonSerializer.Deserialize<List<DPhoto>>(
+                        dto.ExistingPhotosJson,
+                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
 
-                //foreach (var p in photosToRemove)
-                //{
-                //    _context.ExpCoursePhotos.Remove(p);
-                //}
+                    if (existingPhotos != null)
+                    {
+                        // 2. 拿到「想要保留」的 ID 清單 (例如：["id1", "id2"])
+                        var keepPublicIds = existingPhotos.Select(p => p.PublicId).ToList();
 
-                //// 3. 找出「要新增」的照片 (情境 1 & 3 & 4)
-                //// 那些在前端名單中，但不在資料庫裡的
-                //var urlsToAdd = dto.PhotoUrls
-                //    .Where(url => !existingUrls.Contains(url))
-                //    .ToList();
+                        // 3. 【宣告 photosToRemove】：
+                        // 找出「原本在資料庫」但「不在保留名單內」的照片
+                        //只針對「已經有 Id」且「已經在資料庫」的照片進行比對
+                        var photosToRemove = t.ExpCoursePhotos
+                            .Where(p => p.Id != 0) // 👈 關鍵！只抓已經存在資料庫的老照片，避開剛 Add 進去的新照片
+                            .Where(p => !keepPublicIds.Contains(p.PublicId) && !string.IsNullOrEmpty(p.PublicId))
+                            .ToList();
 
-                //foreach (var url in urlsToAdd)
-                //{
-                //    t.ExpCoursePhotos.Add(new ExpCoursePhoto
-                //    {
-                //        PhotoUrl = url,
-                //        UploadedAt = DateTime.Now
-                //        // course_template_id 會由 EF Core 自動幫你關聯，不用手填！
-                //    });
-                //}
+                        // 4. 如果真的有要刪除的，才動手
+                        if (photosToRemove.Any())
+                        {
+                            // (1) 從 Cloudinary 刪除實體檔案
+                            var idsToDelete = photosToRemove.Select(p => p.PublicId!).ToList();
+                            await _sPhoto.DeletePhotoAsync(idsToDelete);
+
+                            // (2) 從資料庫 EF 追蹤中移除（標記為 Deleted）
+                            _context.ExpCoursePhotos.RemoveRange(photosToRemove);
+                        }
+                    }
+                } 
+               
+              
             }
             t.UpdatedAt = DateTime.Now;
 
@@ -510,18 +548,32 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 課程展示介紹
-        public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId, int coachId)
+        public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId)
         {
+            var courseSession = await _context.ExpCourseSessions
+                                .FirstOrDefaultAsync(c => c.Id == courseId);
+            if (courseSession == null) return new DAPIResponse<DCourseInfo>{ IsSuccess = false, Message = "找不到該課程資訊"};
+
             var result = await _context.ExpCourseSessions
-                    .Where(c => c.CoachId == coachId && c.Id == courseId)
+                    .Where(c => c.Id == courseId)
                     .Select(c => new DCourseInfo
                     {
                         CoachId = c.CoachId,
-                        SelectedDates = new List<DateOnly> { c.SessionDate.Value },
+                        SelectedDates = c.SessionDate.HasValue
+                                ? new List<DateOnly> { c.SessionDate.Value }
+                                : new List<DateOnly>(),
                         TimeSlot = c.TimeSlot,
                         MaxStudents = c.MaxParticipants,
                         UpdatedAt = c.UpdatedAt
                     }).FirstOrDefaultAsync();
+
+            if (result == null){
+                return new DAPIResponse<DCourseInfo>{
+                    IsSuccess = false,
+                    Message = "找不到該課程資訊"
+                };
+            }
+
             return new DTO.DAPIResponse<DCourseInfo>
             {
                 IsSuccess = true,

@@ -63,7 +63,7 @@ namespace ExpServiceHelper.IService
         Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId);
         #endregion
         #region 課程展示
-        Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId, int coachId);
+        Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId);
         #endregion
         #endregion
 

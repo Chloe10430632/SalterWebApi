@@ -229,7 +229,7 @@ namespace SalterWebApi.Areas.Experience
         #region 課程模板建立
         [Authorize]
         [HttpPost("AddCourseT")]
-        public async Task<IActionResult> addCourseT([FromBody] DCourseCreate dto)
+        public async Task<IActionResult> addCourseT([FromForm] DCourseCreate dto)
         {
 
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -250,8 +250,8 @@ namespace SalterWebApi.Areas.Experience
 
         #region 編輯模板
         [Authorize]
-        [HttpPut("editCourseTemplate{tempId}")]
-        public async Task<IActionResult> EditCourseTemplate([FromBody] DCourseTempEdit dto, int tempId)
+        [HttpPut("EditCourseTemplate{tempId}")]
+        public async Task<IActionResult> EditCourseTemplate([FromForm] DCourseTempEdit dto, int tempId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr))
@@ -324,14 +324,14 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 課程展示介紹
-        [HttpGet("CourseInfo{courseId}")]
-        public async Task<IActionResult> CourseInfo(int courseId, int coachId)
+        [HttpGet("CourseInfo{sessionId}")]
+        public async Task<IActionResult> CourseInfo(int sessionId)
         {
-            if (courseId == 0 || coachId == 0) return NotFound("新課程還在趕工中");
+            if (sessionId == 0 ) return NotFound("新課程還在趕工中");
             try
             {
-                var result = await _sCoachMethods.ThisCourse(courseId, coachId);
-                if (result == null) return NotFound("找不到相關課程資訊");
+                var result = await _sCoachMethods.ThisCourse(sessionId);
+                if (!result.IsSuccess) return NotFound(result.Message);
                 return Ok(result);
             }
             catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
