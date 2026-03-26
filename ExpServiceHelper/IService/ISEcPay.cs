@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ExpServiceHelper.IService
 {
-    public interface ISEcPay
+    public interface ISECPay
     {
        /**按結帳*/
         Task<DAPIResponse<string>> GetPaymentForm(DTransacRequest dto);

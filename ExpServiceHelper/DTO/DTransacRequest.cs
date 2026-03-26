@@ -21,6 +21,5 @@ namespace ExpServiceHelper.DTO
         // 例如：https://localhost:7000/Experience/Coach
         public string? BaseUrl { get; set; }
         
-        public string? TransType { get; set; }
     }
 }

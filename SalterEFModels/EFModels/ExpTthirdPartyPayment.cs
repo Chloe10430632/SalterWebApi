@@ -11,7 +11,7 @@ public partial class ExpTthirdPartyPayment
 
     public string? TradeNo { get; set; }
 
-    public string? MerchantTradeNo { get; set; }
+    public string MerchantTradeNo { get; set; } = null!;
 
     public DateTime? MerchantTradeDate { get; set; }
 

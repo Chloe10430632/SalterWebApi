@@ -890,14 +890,10 @@ public partial class SalterDbContext : DbContext
 
         modelBuilder.Entity<ExpTthirdPartyPayment>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("ExpTthird_party_payments");
+            entity.ToTable("ExpTthird_party_payments");
 
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CustomField1).HasMaxLength(100);
-            entity.Property(e => e.Id)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id");
             entity.Property(e => e.ItemName).HasMaxLength(400);
             entity.Property(e => e.MerchantTradeNo).HasMaxLength(50);
             entity.Property(e => e.PaymentType).HasMaxLength(50);
@@ -907,7 +903,7 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.TradeNo).HasMaxLength(50);
             entity.Property(e => e.TransactionId).HasColumnName("transaction_id");
 
-            entity.HasOne(d => d.Transaction).WithMany()
+            entity.HasOne(d => d.Transaction).WithMany(p => p.ExpTthirdPartyPayments)
                 .HasForeignKey(d => d.TransactionId)
                 .HasConstraintName("FK_expTthird_party_payments_expTransactions");
         });
