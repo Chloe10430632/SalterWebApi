@@ -10,6 +10,8 @@ namespace HomeServiceHelper.IService
 {
     public interface IHomService
     {
+
+
         // --- 讀取功能 ---
         Task<IEnumerable<HouseDetailViewDTO>> GetAllHousesAsync();
 
@@ -18,6 +20,7 @@ namespace HomeServiceHelper.IService
 
         // 搜尋功能（支援關鍵字與地區）
         Task<List<HousePreviewDTO>> SearchHousesAsync(string? city, string? keyword , int? guests);
+        public Task<IEnumerable<HousePreviewDTO>> GetSearchHousesAsync(HouseSearchDTO searchDto);
 
         // 進階搜尋（可能包含人數、日期、價格區間等 DTO）
         Task<IEnumerable<HouseDetailViewDTO>> SearchHousesAsync(HouseSearchDTO search);
@@ -34,5 +37,6 @@ namespace HomeServiceHelper.IService
         Task<bool> AddReviewAsync(ReviewCreateDTO dto);
         Task<bool> CreateFullHouseAsync(HouseCreateDTO dto);
         Task<bool> UpdateFullHouseAsync(HouseUpdateDTO dto);
+        public Task<int?> GetAvailableBookingIdAsync(int userId, int roomTypeId);
     }
 }

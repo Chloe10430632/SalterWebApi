@@ -108,6 +108,7 @@ builder.Services.AddScoped<ISCoachMethods, SCoachMethods>();
 
 //Home功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericHomeRepository<>), typeof(GenericHomeRepository<>));
+builder.Services.AddScoped<IHouseRepository, HouseRepository>();
 builder.Services.AddScoped<IGenericHomeRepository<HomHouse>, GenericHomeRepository<HomHouse>>();
 builder.Services.AddScoped<IGenericHomeRepository<HomRoomType>, GenericHomeRepository<HomRoomType>>();
 builder.Services.AddScoped<IGenericHomeRepository<HomRoomImage>, GenericHomeRepository<HomRoomImage>>();
