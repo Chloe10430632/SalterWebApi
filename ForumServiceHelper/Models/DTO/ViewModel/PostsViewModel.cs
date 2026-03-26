@@ -15,6 +15,7 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
         public string AvatarUrl { get; set; } = string.Empty;
         public int BoardId { get; set; }
         public string BoardTitle { get; set; } = "預設";
+        public int? LocationId { get; set; }
         public string LocationTitle { get; set; } = "預設";
         public string ContentPreview { get; set; } = string.Empty; // 內容摘要
         public List<string> ImageUrls { get; set; } = new();

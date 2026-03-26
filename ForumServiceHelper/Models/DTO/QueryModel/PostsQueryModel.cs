@@ -12,7 +12,7 @@ namespace ForumServiceHelper.Models.DTO.QueryModel
         public string SortBy { get; set; } = SortTypes.Popular; // NEW, POPULAR, FOLLOW
         public string? Keyword { get; set; }
         public int? BoardId { get; set; }
-        //public int? UserId { get; set; } // 用於 Follow 排序
+
 
         // 游標分頁參數
         public int? LastId { get; set; }

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SalterEFModels.EFModels;
 using System.ComponentModel;
+using System.Linq;
 
 
 namespace ForumServiceHelper.Service
@@ -56,6 +57,20 @@ namespace ForumServiceHelper.Service
                     .Select(bi => bi.BoardId);
                 posts = posts.Where(p => followedBoardIds.Contains(p.BoardId));
             }
+
+            // 處理 Collect 邏輯 撈出目前使用者蒐藏的貼文清單
+            if (query.SortBy == SortTypes.Collect && userId > 0)
+            {
+                // 篩選出該使用者有進行「收藏(Collect)」互動的貼文
+                posts = posts.Where(p => p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Collect));
+            }
+
+            //處理 Post 邏輯 撈出目前使用者發佈過的貼文
+            if (query.SortBy == SortTypes.Posted && userId > 0)
+            {
+                posts = posts.Where(p=>p.UserId == userId);
+            }
+            
 
             var postListQuery = posts.Select(p => new PostListViewModel
             {
@@ -109,6 +124,7 @@ namespace ForumServiceHelper.Service
             AvatarUrl = p.User.ProfilePicture,
             BoardId = p.BoardId,
             BoardTitle = p.Board.Title,
+            LocationId = p.LocationId,
             LocationTitle = p.Location.Name,
             ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
             CreatedAt = p.CreatedAt,
@@ -203,7 +219,6 @@ namespace ForumServiceHelper.Service
             {
                 // 更新模式：包含舊的關聯以便後續處理
                 post = await _dbPosts.GetDbContext().ForumPosts
-                    .Include(p => p.ForumPostsImages)
                     .Include(p => p.ForumPostTagDetails)
                     .FirstOrDefaultAsync(p => p.PostId == postId.Value);
 
@@ -221,7 +236,6 @@ namespace ForumServiceHelper.Service
                 post.UpdatedAt = DateTime.Now;
 
                 // 清理舊有的圖片與標籤關聯 (採取「先刪後加」策略是最穩健的)
-                _dbPosts.GetDbContext().ForumPostsImages.RemoveRange(post.ForumPostsImages);
                 _dbPosts.GetDbContext().ForumPostTagDetails.RemoveRange(post.ForumPostTagDetails);
             }
             else
