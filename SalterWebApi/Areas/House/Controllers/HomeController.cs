@@ -83,7 +83,7 @@ namespace SalterWebApi.Areas.House.Controllers
 
             if (validBookingId == null)
             {
-                return BadRequest("您沒有可評價的訂單，或是已經評價過了喔！");
+                throw new ArgumentException("您沒有可評價的訂單，或是已經評價過了喔！");
             }
 
             // 3. 把抓到的真實 ID 塞進 DTO
