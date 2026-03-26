@@ -63,6 +63,7 @@ public class TripService : ITripService
             FavoriteCount = trip.TripFavorites?.Count ?? 0,
             AnnouncementCount = trip.TripAnnouncements?.Count ?? 0,
             GearItemCount = trip.TripGearItems?.Count ?? 0,
+            OrganizerProfilePicture = trip.OrganizerUser?.ProfilePicture,
             Members = trip.TripMembers?.Select(m => new TripMemberDto
             {
                 UserId = m.UserId,

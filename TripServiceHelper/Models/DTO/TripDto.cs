@@ -32,6 +32,7 @@ public class TripDetailDto : TripSummaryDto
     public List<TripLocationDto> Locations { get; set; } = new();
     public int AnnouncementCount { get; set; }
     public int GearItemCount { get; set; }
+    public string? OrganizerProfilePicture { get; set; }
 }
 #endregion
 
