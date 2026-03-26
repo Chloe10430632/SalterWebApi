@@ -69,6 +69,7 @@ public class TripMemberDto
     public string? Email { get; set; }
     public string Role { get; set; } = null!;
     public DateTime JoinedAt { get; set; }
+    public string? ProfilePicture { get; set; }
 }
 #endregion
 

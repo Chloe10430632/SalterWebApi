@@ -15,7 +15,7 @@ public class CloudinaryTripService : ICloudinaryTripService
             config["CloudinaryTrip:ApiKey"],
             config["CloudinaryTrip:ApiSecret"]
         );
-      //  _cloudinary = new CloudinaryDotNet.Cloudinary(account);
+        _cloudinary = new CloudinaryDotNet.Cloudinary(account);
     }
 
     public async Task<bool> DeleteImageAsync(string publicId)

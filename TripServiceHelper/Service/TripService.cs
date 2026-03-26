@@ -69,7 +69,8 @@ public class TripService : ITripService
                 UserName = m.User?.UserName ?? "未知",
                 Email = m.User?.Email,
                 Role = m.Role,
-                JoinedAt = m.JoinedAt
+                JoinedAt = m.JoinedAt,
+                ProfilePicture = m.User?.ProfilePicture
             }).ToList() ?? new(),
             Locations = trip.TripTripLocations?
                 .OrderBy(ttl => ttl.SortOrder)
@@ -419,70 +420,75 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto, int userId)
     {
-        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
-        var isMember = await _repo.IsMemberAsync(tripId, userId);
-        if (!isOrganizer && !isMember)
-            return ServiceResult.Fail("只有行程成員可以新增地點", 403);
-
-        var normalizedCity = dto.CityName?.Replace("臺", "台") ?? "";
-        var normalizedDistrict = dto.DistrictName?.Replace("臺", "台") ?? "";
-
-        // 找不到城市就新增
-        var city = await _repo.GetCityByNameAsync(normalizedCity);
-        if (city == null)
+        try
         {
-            city = await _repo.CreateCityAsync(new TripCity
-            {
-                Name = normalizedCity,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            });
-        }
+            var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+            var isMember = await _repo.IsMemberAsync(tripId, userId);
+            if (!isOrganizer && !isMember)
+                return ServiceResult.Fail("只有行程成員可以新增地點", 403);
 
-        // 找不到區域就新增
-        var district = await _repo.GetDistrictByNameAsync(normalizedDistrict, city.Id);
-        if (district == null)
-        {
-            district = await _repo.CreateDistrictAsync(new TripDistrict
-            {
-                Name = normalizedDistrict,
-                CityId = city.Id,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            });
-        }
+            var normalizedCity = dto.CityName?.Replace("臺", "台") ?? "";
+            var normalizedDistrict = dto.DistrictName?.Replace("臺", "台") ?? "";
 
-        // 檢查 GooglePlaceId 是否已存在
-        var location = await _repo.GetLocationByGooglePlaceIdAsync(dto.GooglePlaceId);
-        if (location == null)
-        {
-            location = new TripLocation
+            var city = await _repo.GetCityByNameAsync(normalizedCity);
+            if (city == null)
             {
-                GooglePlaceId = dto.GooglePlaceId,
-                Name = dto.LocationName,
-                AddressText = dto.AddressText ?? "",
-                Lat = dto.Lat ?? 0,
-                Lng = dto.Lng ?? 0,
-                CityId = city.Id,
-                DistrictId = district.Id,
+                city = await _repo.CreateCityAsync(new TripCity
+                {
+                    Name = normalizedCity,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                });
+            }
+
+            var district = await _repo.GetDistrictByNameAsync(normalizedDistrict, city.Id);
+            if (district == null)
+            {
+                district = await _repo.CreateDistrictAsync(new TripDistrict
+                {
+                    Name = normalizedDistrict,
+                    CityId = city.Id,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                });
+            }
+
+            var location = await _repo.GetLocationByGooglePlaceIdAsync(dto.GooglePlaceId);
+            if (location == null)
+            {
+                location = new TripLocation
+                {
+                    GooglePlaceId = dto.GooglePlaceId,
+                    Name = dto.LocationName,
+                    AddressText = dto.AddressText ?? "",
+                    Lat = dto.Lat ?? 0,
+                    Lng = dto.Lng ?? 0,
+                    CityId = city.Id,
+                    DistrictId = district.Id,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                await _repo.CreateTripLocationAsync(location);
+            }
+
+            var entity = new TripTripLocation
+            {
+                TripId = tripId,
+                LocationId = location.Id,
+                LocationRole = dto.LocationRole,
+                Note = dto.Note,
+                SortOrder = dto.SortOrder,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
-            await _repo.CreateTripLocationAsync(location);
-        }
 
-        var entity = new TripTripLocation
+            await _repo.CreateLocationAsync(entity);
+            return ServiceResult.Success("地點新增成功");
+        }
+        catch (Exception ex)
         {
-            TripId = tripId,
-            LocationId = location.Id,
-            LocationRole = dto.LocationRole,
-            Note = dto.Note,
-            SortOrder = dto.SortOrder,
-            CreatedAt = DateTime.Now,
-            UpdatedAt = DateTime.Now
-        };
-        await _repo.CreateLocationAsync(entity);
-        return ServiceResult.Success("地點新增成功");
+            return ServiceResult.Fail(ex.InnerException?.Message ?? ex.Message, 500);
+        }
     }
 
     public async Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationUpdateDto dto, int userId)
