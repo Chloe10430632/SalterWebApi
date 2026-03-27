@@ -93,7 +93,7 @@ public class TripService : ITripService
         // 日期驗證
         if (dto.StartAt < DateTime.Now)
             return ServiceResult<int>.Fail("開始日期不能早於今天");
-        if (dto.EndAt.HasValue && dto.EndAt.Value <= dto.StartAt)
+        if (dto.EndAt.HasValue && dto.EndAt.Value < dto.StartAt)
             return ServiceResult<int>.Fail("結束日期必須晚於開始日期");
 
 
