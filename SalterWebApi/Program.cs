@@ -148,9 +148,6 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
-// 從設定檔抓取前端網址
-var allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins");
-
 
 
 
