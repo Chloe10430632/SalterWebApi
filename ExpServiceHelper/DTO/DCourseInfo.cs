@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +15,9 @@ namespace ExpServiceHelper.DTO
         public int? MaxStudents { get; set; }
         public int? CurrentStudents { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        //
+        public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();
+        public string? PublicId { get; set; }
+
     }
 }

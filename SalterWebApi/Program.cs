@@ -104,8 +104,9 @@ builder.Services.AddScoped<PasswordHasher<UserUser>>();
 builder.Services.AddScoped<IRCoachIndex, RCoachIndex>();
 builder.Services.AddScoped<ISCoachIndex, SCoachIndex>();
 builder.Services.AddScoped<ISCoachMethods, SCoachMethods>();
+builder.Services.AddScoped<SPhoto>();
 //交易 注入
-//builder.Services.AddScoped<ISEcPay, SEcPay>();
+builder.Services.AddScoped<ISECPay, SECPay>(); 
 
 
 
@@ -172,6 +173,21 @@ builder.Services.AddCors(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+//金流測試
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevPolicy", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:4200",   // Angular
+                "null"                     // file:// 測試用
+              )
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 app.UseCors("CorsPolicy");
 
@@ -179,7 +195,7 @@ app.UseExceptionHandler(); //全域錯誤處理
 
 app.UseStaticFiles(); //存取靜態圖片
 
-app.UseRouting();
+app.UseRouting();   
 
 //使用開放其他來源的自定義政策
 //app.UseCors("Allow5500");
@@ -201,6 +217,8 @@ if (app.Environment.IsDevelopment())
                .WithPreferredScheme("Bearer");
     });
 }
+//金流測試
+app.UseCors("DevPolicy");
 
 
 

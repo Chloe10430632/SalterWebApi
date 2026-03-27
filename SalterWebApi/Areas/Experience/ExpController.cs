@@ -27,12 +27,10 @@ namespace SalterWebApi.Areas.Experience
         #region DI
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
-        //private readonly SalterDbContext _context;
-        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods) //, SalterDbContext db
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods) 
         {
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
-            //_context = db;
         }
         #endregion
         #region ~~入口~~
@@ -106,7 +104,7 @@ namespace SalterWebApi.Areas.Experience
         #region 申請加入教練(新增) 
         [Authorize]
         [HttpPost("BecomeCoach")]
-        public async Task<IActionResult> BecomeCoach(DCoachEdit dto)
+        public async Task<IActionResult> BecomeCoach([FromForm] DCoachEdit dto) //因為有圖片 前端傳送資料時不能用 JSON，必須使用 multipart/form-data
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -129,7 +127,7 @@ namespace SalterWebApi.Areas.Experience
         #region 編輯自介 
         [Authorize]
         [HttpPut("EditCoach{id}")]
-        public async Task<IActionResult> EditThisCoach([FromBody] DCoachEdit dto)
+        public async Task<IActionResult> EditThisCoach([FromForm] DCoachEdit dto)
         {
             // 1. 抓取 JWS 裡面的 UserId
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -229,7 +227,7 @@ namespace SalterWebApi.Areas.Experience
         #region 課程模板建立
         [Authorize]
         [HttpPost("AddCourseT")]
-        public async Task<IActionResult> addCourseT([FromBody] DCourseCreate dto)
+        public async Task<IActionResult> addCourseT([FromForm] DCourseCreate dto)
         {
 
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -250,8 +248,8 @@ namespace SalterWebApi.Areas.Experience
 
         #region 編輯模板
         [Authorize]
-        [HttpPut("editCourseTemplate{tempId}")]
-        public async Task<IActionResult> EditCourseTemplate([FromBody] DCourseTempEdit dto, int tempId)
+        [HttpPut("EditCourseTemplate{tempId}")]
+        public async Task<IActionResult> EditCourseTemplate([FromForm] DCourseTempEdit dto, int tempId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr))
@@ -264,7 +262,6 @@ namespace SalterWebApi.Areas.Experience
                 try {
                     var result = await _sCoachMethods.EditTemplate(dto, tempId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
-                    return BadRequest(new { message = result.Message });
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             }
@@ -289,7 +286,6 @@ namespace SalterWebApi.Areas.Experience
                 {
                     var result = await _sCoachMethods.OpenSession(dto, templateId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
-                    return BadRequest(new { message = result.Message });
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             }
@@ -315,7 +311,6 @@ namespace SalterWebApi.Areas.Experience
                 {
                     var result = await _sCoachMethods.DeleteCourseSession(courseSessionId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
-                    return BadRequest(new { message = result.Message });
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             }
@@ -324,14 +319,14 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 課程展示介紹
-        [HttpGet("CourseInfo{courseId}")]
-        public async Task<IActionResult> CourseInfo(int courseId, int coachId)
+        [HttpGet("CourseInfo{sessionId}")]
+        public async Task<IActionResult> CourseInfo(int sessionId)
         {
-            if (courseId == 0 || coachId == 0) return NotFound("新課程還在趕工中");
+            if (sessionId == 0 ) return NotFound("新課程還在趕工中");
             try
             {
-                var result = await _sCoachMethods.ThisCourse(courseId, coachId);
-                if (result == null) return NotFound("找不到相關課程資訊");
+                var result = await _sCoachMethods.ThisCourse(sessionId);
+                if (!result.IsSuccess) return NotFound(result.Message);
                 return Ok(result);
             }
             catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
@@ -405,14 +400,33 @@ namespace SalterWebApi.Areas.Experience
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             
         }
-        
+
 
         #endregion
 
         #endregion
 
         #region 交易
+        //TODO 測試
         #region 預約課程
+        [Authorize]
+        [HttpPost("Reserve")]
+        public async Task<IActionResult> MyReserveSession(DCourseOrder dto) {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr))
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                try {
+                    var result = await _sCoachMethods.SessionReserve(dto, currentUserId);
+                    if (result.IsSuccess) return Ok( result);
+                }
+                catch (Exception ex) { return BadRequest(ex.Message); }
+            }
+            return BadRequest(new { message = "失敗失敗" });
+            }
         #endregion
         #region 歷史交易紀錄 
         #endregion

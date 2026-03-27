@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,8 @@ namespace ExpServiceHelper.DTO
         public string? Difficulty { get; set; }
         public decimal? Price { get; set; }
         public string? Location { get; set; }
-        public List<string>? PhotoUrls { get; set; } = new List<string>();
+        public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();
+        public string? PublicId { get; set; }
 
     }
 }

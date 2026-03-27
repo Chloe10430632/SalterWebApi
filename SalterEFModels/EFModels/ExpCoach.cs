@@ -11,6 +11,8 @@ public partial class ExpCoach
 
     public string? AvatarUrl { get; set; }
 
+    public string? PublicId { get; set; }
+
     public string? Introduction { get; set; }
 
     public DateTime? CreatedAt { get; set; }

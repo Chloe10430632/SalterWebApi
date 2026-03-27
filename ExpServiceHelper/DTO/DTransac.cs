@@ -8,7 +8,7 @@ namespace ExpServiceHelper.DTO
 {
     public class DTransac
     {
-        public int? TransactionId { get; set; }
+        public int TransactionId { get; set; }
         public string? CourseName { get; set; } // 從 ExpCourseTemplates 撈
         public int? CoaId { get; set; }// 從 ExpCourseTemplates 撈
         public decimal? Amount { get; set; }    // 從 ExpTransactions 撈

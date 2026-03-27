@@ -1,6 +1,8 @@
 ﻿using Azure;
+using CloudinaryDotNet.Actions;
 using ExpServiceHelper.DTO;
 using ExpServiceHelper.Service;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,7 +63,7 @@ namespace ExpServiceHelper.IService
         Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId);
         #endregion
         #region 課程展示
-        Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId, int coachId);
+        Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId);
         #endregion
         #endregion
 
@@ -80,7 +82,7 @@ namespace ExpServiceHelper.IService
 
         #region 交易
         #region 預約課程
-        Task<DAPIResponse<string>> CourseReserve(DCourseOrder dto, int userId, int courseSessionId);
+        Task<DAPIResponse<string>> SessionReserve(DCourseOrder dto, int userId);
         #endregion
         #region 支付 
         #endregion

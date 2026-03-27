@@ -27,6 +27,8 @@ public partial class ExpTransaction
 
     public virtual ICollection<ExpEquipmentOrder> ExpEquipmentOrders { get; set; } = new List<ExpEquipmentOrder>();
 
+    public virtual ICollection<ExpTthirdPartyPayment> ExpTthirdPartyPayments { get; set; } = new List<ExpTthirdPartyPayment>();
+
     public virtual ICollection<ForumAd> ForumAds { get; set; } = new List<ForumAd>();
 
     public virtual ICollection<HomBooking> HomBookings { get; set; } = new List<HomBooking>();

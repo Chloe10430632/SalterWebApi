@@ -19,7 +19,5 @@ public partial class TripDistrict
 
     public virtual ICollection<ExpCoach> ExpCoaches { get; set; } = new List<ExpCoach>();
 
-    public virtual ICollection<TripLocation> TripLocations { get; set; } = new List<TripLocation>();
-
     public virtual ICollection<ExpCoach> CoachDists { get; set; } = new List<ExpCoach>();
 }

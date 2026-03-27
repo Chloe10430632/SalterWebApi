@@ -13,5 +13,7 @@ public partial class ExpCoursePhoto
 
     public DateTime? UploadedAt { get; set; }
 
+    public string? PublicId { get; set; }
+
     public virtual ExpCourseTemplate? CourseTemplate { get; set; }
 }

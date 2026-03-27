@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +14,11 @@ namespace ExpServiceHelper.DTO
         public string? Difficulty { get; set; }
         public decimal? Price { get; set; }
         public string? Location { get; set; }
-        public List<string> PhotoUrls { get; set; } = new List<string>();
+        // 這裡存的是已經在資料庫/Cloudinary 裡的圖片資訊
+        public string? ExistingPhotosJson { get; set; }
+
+        // 這裡才是接收從前端選取、準備上傳的實體檔案
+        public List<IFormFile>? NewImageFiles { get; set; }
+
     }
 }
