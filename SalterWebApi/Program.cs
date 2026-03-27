@@ -41,7 +41,8 @@ JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 var builder = WebApplication.CreateBuilder(args);
 
 // 從設定檔抓取前端網址
-var allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins");
+//var allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins");
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 
 
 //雲端資料庫連接字串DI
