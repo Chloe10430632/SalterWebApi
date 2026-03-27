@@ -147,10 +147,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
-
-
-
 //解決瀏覽器預設同源政策：定義存取的來源白名單 liveserver預設5500，angular4200
 builder.Services.AddCors(options =>
 {
@@ -163,40 +159,39 @@ builder.Services.AddCors(options =>
     });
 });
 
-
-
-
 // 使用Middleware做全域的Exception處理
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 //金流測試
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("DevPolicy", policy =>
-    {
-        policy.WithOrigins(
-                "http://localhost:4200",   // Angular
-                "null"                     // file:// 測試用
-              )
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
-});
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("DevPolicy", policy =>
+//    {
+//        policy.WithOrigins(
+//                "http://localhost:4200",   // Angular
+//                "null"                     // file:// 測試用
+//              )
+//              .AllowAnyHeader()
+//              .AllowAnyMethod()
+//              .AllowCredentials();
+//    });
+//});
 
 var app = builder.Build();
-app.UseCors("CorsPolicy");
 
 app.UseExceptionHandler(); //全域錯誤處理
-
 app.UseStaticFiles(); //存取靜態圖片
+app.UseRouting();
 
-app.UseRouting();   
-
-//使用開放其他來源的自定義政策
-//app.UseCors("Allow5500");
+//金流測試
+//app.UseCors("DevPolicy");
 app.UseCors("CorsPolicy");
+
+app.UseAuthentication(); // 認證
+app.UseAuthorization();  // 授權
+
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -214,17 +209,7 @@ if (app.Environment.IsDevelopment())
                .WithPreferredScheme("Bearer");
     });
 }
-//金流測試
-app.UseCors("DevPolicy");
-
-
-
 
 app.UseHttpsRedirection();
-
-app.UseAuthentication(); // 認證
-app.UseAuthorization();  // 授權
-
 app.MapControllers();
-
 app.Run();
