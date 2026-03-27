@@ -21,10 +21,12 @@ namespace HomeServiceHelper.Service
         private readonly IGenericHomeRepository<HomReview> _reviewRepo;
         private readonly IGenericHomeRepository<HomRoomTypeAmenity> _roomAmenityRepo;
         private readonly IGenericHomeRepository<HomAmenity> _amenityRepo;
+        private readonly IGenericHomeRepository<UserUser> _userRepo;
         private readonly SalterDbContext _context;
         public HomService
             (
             IHouseRepository houseRepository,
+            IGenericHomeRepository<UserUser> userRepo,
             IGenericHomeRepository<HomHouse> houseRepo,
             IGenericHomeRepository<HomRoomType> roomTypeRepo,
             IGenericHomeRepository<HomRoomImage> houseImageRepo,
@@ -42,6 +44,7 @@ namespace HomeServiceHelper.Service
             _context = context;
             _amenityRepo = amenityRepo;
             _roomAmenityRepo = roomAmenityRepo;
+                _userRepo = userRepo;
         }
 
         //取得所有房子及其房型的基本資訊
@@ -140,44 +143,50 @@ namespace HomeServiceHelper.Service
             var rooms = await _roomTypeRepo.GetAll();
             var roomAmenities = await _roomAmenityRepo.GetAll();
             var amenities = await _amenityRepo.GetAll();
-
             var r = rooms.FirstOrDefault(x => x.RoomTypeId == roomTypeId);
             if (r == null) return null;
 
             var houses = await _houseRepo.GetAll();
             var h = houses.FirstOrDefault(x => x.HouseId == r.HouseId);
 
-            // 2. 取得圖片、評論 (維持原樣)
+            // 2. 取得圖片
             var allImages = await _houseImageRepo.GetAll();
             var images = allImages.Where(x => x.RoomTypeId == roomTypeId).Select(x => x.ImagePath).ToList();
 
+            // 3. 取得評論與使用者資訊 (把兩段合併成這一段)
             var reviews = await _reviewRepo.GetAll();
+            var allUsers = await _userRepo.GetAll(); 
+
             var roomReviews = reviews.Where(rv => rv.RoomTypeId == roomTypeId)
-                .Select(rv => new ReviewItemDTO
+                .Select(rv =>
                 {
-                    Rating = rv.Rating,
-                    Comment = rv.Comment,
-                    CreatedTime = rv.CreatedTime
-                }).ToList();
+                    var user = allUsers.FirstOrDefault(u => u.Id == rv.UserId);
+                    return new ReviewItemDTO
+                    {
+                        Rating = rv.Rating,
+                        Comment = rv.Comment,
+                        CreatedTime = rv.CreatedTime,
+                        Name = user?.UserName ?? "匿名使用者",
+                        Picture = user?.ProfilePicture ?? "default-profile.png"
+                    };
+                }).ToList(); 
 
-            // 3.重點改進：同時取得「名稱」和「ID」
-            // 這個是給詳情頁顯示文字用的 (原本的)
+            // 取得設備清單
             var amenitiesList = (from ra in roomAmenities
-                                     join a in amenities on ra.AmenityId equals a.AmenityId
-                                     where ra.RoomTypeId == roomTypeId
-                                     select new AmenityItemDTO
-                                     {
-                                         Name = a.Name,
-                                         IconCode = a.IconCode
-                                     }).ToList();
+                                 join a in amenities on ra.AmenityId equals a.AmenityId
+                                 where ra.RoomTypeId == roomTypeId
+                                 select new AmenityItemDTO
+                                 {
+                                     Name = a.Name,
+                                     IconCode = a.IconCode
+                                 }).ToList();
 
-            // 這是新增的：給編輯頁「勾選」用的 ID 陣列
             var amenityIds = roomAmenities
-                             .Where(ra => ra.RoomTypeId == roomTypeId)
-                             .Select(ra => ra.AmenityId)
-                             .ToList();
+                              .Where(ra => ra.RoomTypeId == roomTypeId)
+                              .Select(ra => ra.AmenityId)
+                              .ToList();
 
-            // 4. 組合成 DTO
+            // 組合成 DTO 
             return new HouseDetailViewDTO
             {
                 RoomTypeId = r.RoomTypeId,
@@ -186,16 +195,14 @@ namespace HomeServiceHelper.Service
                 PricePerNight = r.PricePerNight,
                 ViewCount = r.ViewCount,
                 RoomDescription = r.Description,
-                HouseDescription = h?.Description, // 建議加個 ? 防止 null
+                HouseDescription = h?.Description,
                 Location = h?.Location,
                 District = h?.District,
                 Citie = h?.Citie,
-
-                Amenities = amenitiesList, // 文字陣列
-                AmenityIds = amenityIds,       // 補上這個數字陣列
-
+                Amenities = amenitiesList,
+                AmenityIds = amenityIds,
                 AllImages = images,
-                Reviews = roomReviews
+                Reviews = roomReviews 
             };
         }
 
@@ -526,6 +533,8 @@ namespace HomeServiceHelper.Service
             _context.HomReviews.Add(newReview);
             return await _context.SaveChangesAsync() > 0;
         }
+
+        
     }
 
 

@@ -11,5 +11,7 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
         public int? Rating { get; set; } //
         public string? Comment { get; set; } //
         public DateTime? CreatedTime { get; set; } //
+        public string? Name { get; set; }
+        public string? Picture { get; set; }
     }
 }

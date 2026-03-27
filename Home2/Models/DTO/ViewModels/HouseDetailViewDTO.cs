@@ -19,7 +19,6 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
         public string? Location { get; set; }// 位置
         public string? District { get; set; }// 區域
         public string? Citie { get; set; }// 城市
-       
 
         public List<string> AllImages { get; set; } = new(); // 所有房型圖片
         public List<AmenityItemDTO> Amenities { get; set; } = new(); // 設施清單
