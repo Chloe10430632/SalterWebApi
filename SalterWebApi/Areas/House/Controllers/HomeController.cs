@@ -48,11 +48,20 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(result);
         }
 
-        [HttpGet("cities")]//透過城市搜尋
+        [HttpGet("cities")]//取得所有城市名
         public async Task<IActionResult> GetCities()
         {
             return Ok(await _homService.GetAllCityAsync());
         }
+
+        [HttpGet("city-groups")]
+        public async Task<ActionResult<List<CityGroupDTO>>> GetCityGroups(string? city)
+        {
+            // 這裡要把 city 傳給 Service
+            var result = await _homService.GetCityGroupPreviewsAsync(city);
+            return Ok(result);
+        }
+
 
         [HttpGet("top/{count}")] //顯示前幾筆的房屋
         public async Task<IActionResult> GetTop(int count = 6)
@@ -60,19 +69,32 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(await _homService.GetTopRoomsAsync(count));
         }
 
-        [HttpPost("reviews")] //新增留言與評分
+        [HttpPost("reviews")]
         public async Task<IActionResult> AddReview([FromBody] ReviewCreateDTO dto)
         {
+            // 1. 檢查評分範圍
             if (dto.Rating < 1 || dto.Rating > 5)
             {
                 return BadRequest("評分必須在 1 到 5 之間");
             }
 
+            //  安全檢查：自動抓取該用戶「真實且可用」的 BookingId
+            var validBookingId = await _homService.GetAvailableBookingIdAsync(dto.MemberId, dto.RoomTypeId);
+
+            if (validBookingId == null)
+            {
+                throw new ArgumentException("您沒有可評價的訂單，或是已經評價過了喔！");
+            }
+
+            // 3. 把抓到的真實 ID 塞進 DTO
+            dto.BookingId = validBookingId.Value;
+
+            // 4. 執行新增
             var result = await _homService.AddReviewAsync(dto);
 
             if (result)
             {
-                return Ok(new { message = "評論新增成功！" });
+                return Ok(new { message = "評論新增成功！", bookingId = dto.BookingId });
             }
 
             return StatusCode(500, "新增評論時發生錯誤");
@@ -118,6 +140,28 @@ namespace SalterWebApi.Areas.House.Controllers
             {
                 return NotFound(new { message = "更新失敗，找不到該房源或系統異常" });
             }
+        }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<HousePreviewDTO>>> Search(string? city, string? keyword, int? guests)
+        {
+            // 呼叫你剛才寫好的 Service 方法
+            var result = await _homService.SearchHousesAsync(city, keyword,guests);
+
+            if (result == null || !result.Any())
+            {
+                return Ok(new List<HousePreviewDTO>()); // 回傳空陣列，不要回傳 404，這樣前端比較好處理
+            }
+
+            return Ok(result);
+        }
+
+        [HttpGet("select")]
+        public async Task<IActionResult> GetAvailableHouses([FromQuery] HouseSearchDTO searchCriteria)
+        {
+            // 呼叫業務邏輯層
+            var results = await _homService.GetSearchHousesAsync(searchCriteria);
+            return Ok(results);
         }
     }
 }

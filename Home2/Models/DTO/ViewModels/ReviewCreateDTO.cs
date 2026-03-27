@@ -9,8 +9,9 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
     public class ReviewCreateDTO
     {
         public int RoomTypeId { get; set; }
-        public int Rating { get; set; } // 1-5 星
+        public int Rating { get; set; }
         public string Comment { get; set; } = string.Empty;
-        public int MemberId { get; set; } // 先假定一個會員 ID
+        public int MemberId { get; set; } // 對應 UserId
+        public int BookingId { get; set; } // 連結訂單與評論
     }
 }

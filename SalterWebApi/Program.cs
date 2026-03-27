@@ -111,12 +111,14 @@ builder.Services.AddScoped<ISCoachMethods, SCoachMethods>();
 
 //Home功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericHomeRepository<>), typeof(GenericHomeRepository<>));
+builder.Services.AddScoped<IHouseRepository, HouseRepository>();
 builder.Services.AddScoped<IGenericHomeRepository<HomHouse>, GenericHomeRepository<HomHouse>>();
 builder.Services.AddScoped<IGenericHomeRepository<HomRoomType>, GenericHomeRepository<HomRoomType>>();
 builder.Services.AddScoped<IGenericHomeRepository<HomRoomImage>, GenericHomeRepository<HomRoomImage>>();
 builder.Services.AddScoped<IGenericHomeRepository<HomReview>, GenericHomeRepository<HomReview>>();
 //Home功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IHomService, HomService>();
+builder.Services.AddScoped<CloudinaryService>();
 
 //Trip功能 : DAL BLL DI
 builder.Services.AddScoped<ITripRepository, TripRepository>();
@@ -145,6 +147,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
+// 從設定檔抓取前端網址
+var allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins");
 
 
 
@@ -169,6 +173,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+app.UseCors("CorsPolicy");
 
 app.UseExceptionHandler(); //全域錯誤處理
 
@@ -196,6 +201,7 @@ if (app.Environment.IsDevelopment())
                .WithPreferredScheme("Bearer");
     });
 }
+
 
 
 
