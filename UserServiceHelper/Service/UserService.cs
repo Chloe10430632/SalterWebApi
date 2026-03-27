@@ -57,11 +57,11 @@ namespace UserServiceHelper.Service
 
         }
 
-        public async Task<bool> UpdateProfileAsync(UserEditViewModel model)
+        public async Task<string?> UpdateProfileAsync(UserEditViewModel model)
         {
             var userInDb = await _dbUser.GetByIdAsync(model.Id);
             if (userInDb == null)
-                return false;
+                return null;
 
             userInDb.UserName = !string.IsNullOrWhiteSpace(model.UserName) ? model.UserName : userInDb.UserName;
             userInDb.Phone = model.Phone;
@@ -71,8 +71,9 @@ namespace UserServiceHelper.Service
             userInDb.UpdatedAt = DateTime.Now;
 
             _dbUser.Update(userInDb);
+            var success = await _dbUser.SaveChangesAsync();
 
-            return await _dbUser.SaveChangesAsync();
+            return success ? GenerateJwtToken(userInDb) : null;
 
         }
 
@@ -396,25 +397,86 @@ namespace UserServiceHelper.Service
             message.From.Add(new MailboxAddress("Salter 團隊", _configuration["EmailSettings:SmtpUser"]));
             message.To.Add(new MailboxAddress(userName, toEmail));
             message.Subject = "Salter 專案 - 您的帳號驗證碼";
+            string htmlBody = $@"
+    <div style='background-color: #f8fafc; padding: 50px 20px; font-family: ""Microsoft JhengHei"", Helvetica, Arial, sans-serif;'>
+        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;'>
 
-            message.Body = new TextPart("html")
-            {
-                Text = $@"<div style='border:1px solid #ddd; padding:20px; max-width:500px;'>
-                    <h2 style='color:#2c3e50;'>Salter 驗證碼服務</h2>
-                    <p>{userName} 您好，您的驗證碼如下：</p>
-                    <h1 style='color:#3498db; text-align:center;'>{otp}</h1>
-                    <p style='color:#e74c3c;'>請在 5 分鐘內輸入。如果不是您本人操作，請忽略此信。</p>
-                 </div>"
-            };
+            <div style='background-color: #8B5A2B; height: 8px;'></div>
 
-            using var client = new SmtpClient();
+            <div style='padding: 40px;'>
+                <div style='text-align: center; margin-bottom: 30px;'>
+                    <img src='https://res.cloudinary.com/dc65nejyp/image/upload/v1774510422/nkj7q-lehyh_vkffmq.png' 
+                         alt='Salter Logo' 
+                         style='width: 200px; height: auto; display: block; margin: 0 auto; border: 0;'>
+                    <p style='color: #94a3b8; font-size: 12px; margin-top: 10px; text-transform: uppercase; letter-spacing: 2px;'>
+                        Ocean Adventure & Lifestyle
+                    </p>
+                </div>
+
+                <h2 style='color: #1e293b; font-size: 20px; margin-bottom: 20px; text-align: center;'>驗證您的電子信箱</h2>
+
+                <p style='color: #475569; line-height: 1.6; font-size: 16px;'>
+                    {userName} 您好，<br>
+                    感謝您加入 Salter！請使用下方的驗證碼完成您的帳號操作：
+                </p>
+
+                <div style='background-color: #f1f5f9; border-radius: 16px; padding: 30px; margin: 30px 0; text-align: center;'>
+    <span style='display: block; color: #64748b; font-size: 13px; margin-bottom: 10px; font-weight: bold; letter-spacing: 1px;'>您的驗證碼如下</span>
+    
+    <span style='color: #8B5A2B; 
+                 font-size: 36px; 
+                 font-weight: 900; 
+                 letter-spacing: 6px; 
+                 font-family: monospace; 
+                 white-space: nowrap; 
+                 display: inline-block;'>
+        {otp}
+    </span>
+</div>
+
+                <p style='color: #ef4444; font-size: 14px; text-align: center; font-weight: bold;'>
+                    ⚠️ 請在 5 分鐘內輸入。過期後需重新申請。
+                </p>
+
+                <div style='border-top: 1px solid #e2e8f0; margin-top: 40px; padding-top: 20px; text-align: center;'>
+                    <p style='color: #94a3b8; font-size: 13px; line-height: 1.5;'>
+                        如果您沒有嘗試登入或註冊 Salter，請忽略此郵件。<br>
+                        這是一封系統自動發送的信件，請勿直接回覆。
+                    </p>
+                </div>
+            </div>
+
+            <div style='background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;'>
+                <p style='color: #cbd5e1; font-size: 12px; margin: 0;'>© 2026 Salter Project. All Rights Reserved.</p>
+            </div>
+        </div>
+    </div>";
+
+            //message.Body = new TextPart("html")
+            //{
+            //    Text = $@"<div style='border:1px solid #ddd; padding:20px; max-width:500px;'>
+            //        <h2 style='color:#2c3e50;'>Salter 驗證碼服務</h2>
+            //        <p>{userName} 您好，您的驗證碼如下：</p>
+            //        <h1 style='color:#3498db; text-align:center;'>{otp}</h1>
+            //        <p style='color:#e74c3c;'>請在 5 分鐘內輸入。如果不是您本人操作，請忽略此信。</p>
+            //     </div>"
+            //};
+
+            message.Body = new TextPart("html") { Text = htmlBody };
+
+
             // 連接 Gmail SMTP
-            await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-            // 使用你的帳號與 16 位應用程式密碼
-            // Configuration 設定過了，可以用 _configuration["Email:Password"] 
-            await client.AuthenticateAsync(_configuration["EmailSettings:SmtpUser"], _configuration["EmailSettings:AppPassword"]);
-            await client.SendAsync(message);
-            await client.DisconnectAsync(true);
+            using var client = new SmtpClient();
+            try
+            {
+                await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync(_configuration["EmailSettings:SmtpUser"], _configuration["EmailSettings:AppPassword"]);
+                await client.SendAsync(message);
+            }
+            finally
+            {
+                await client.DisconnectAsync(true);
+            }
         }
 
 

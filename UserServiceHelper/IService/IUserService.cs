@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SalterEFModels.EFModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,7 @@ namespace UserServiceHelper.IService
     {
         Task<UserProfileViewModel?> GetUserProfileAsync(int userId);
 
-        Task<bool> UpdateProfileAsync(UserEditViewModel model);
+        Task<string?> UpdateProfileAsync(UserEditViewModel model);
 
         Task<bool> RegisterAsync(UserRegisterViewModel model);
 
