@@ -1,6 +1,7 @@
 ﻿using ForumServiceHelper.IService;
 using ForumServiceHelper.Models.DTO.CreateModel;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -22,26 +23,20 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
         // POST api/<CommentsController>
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateComments([FromBody] CommentsCreateModel dto)
         {
-            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
-            {
-                return Unauthorized("無效的使用者身分");
-            }
+            int userId = GetUserId();
             int result =  await _commentsService.CreateCommentAsync(userId,dto);
             return Ok(result);
         }
 
         // PUT api/<CommentsController>/5
         [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> UpdateComments(int id, [FromBody] CommentsCreateModel dto)
         {
-            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
-            {
-                return Unauthorized("無效的使用者身分");
-            }
+            int userId = GetUserId();
             bool result = await _commentsService.UpdateCommentAsync(userId,id,dto);
             return Ok(new { Success = true, Message = "留言修改成功" });
         }
@@ -50,13 +45,20 @@ namespace SalterWebApi.Areas.Forum.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteComments(int id)
         {
+            int userId = GetUserId();
+            await _commentsService.DeleteCommentAsync(userId, id);
+            return NoContent();
+        }
+
+        private int GetUserId()
+        {
             var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
             {
-                return Unauthorized("無效的使用者身分");
+                throw new UnauthorizedAccessException("無效的使用者身分");
             }
-            await _commentsService.DeleteCommentAsync(userId, id);
-            return NoContent();
+
+            return userId;
         }
     }
 }

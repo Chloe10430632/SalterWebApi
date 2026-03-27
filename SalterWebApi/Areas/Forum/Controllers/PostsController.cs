@@ -58,7 +58,12 @@ namespace SalterWebApi.Areas.Forum.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<PostDetailViewModel>> GetForumPost(int id)
         {
-            var post = await _postsService.GetPostDetailAsync(id);
+            var claimId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(claimId) || !int.TryParse(claimId, out int userId))
+            {
+                userId = 0;
+            }
+            var post = await _postsService.GetPostDetailAsync(userId,id);
             if (post == null)
             {
                 throw new KeyNotFoundException($"找不到 ID 為 {id} 的貼文");

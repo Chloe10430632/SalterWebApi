@@ -15,7 +15,7 @@ namespace ForumServiceHelper.IService
     {
        public Task<IEnumerable<PostListViewModel>> GetAllPostsAsync(int userId,PostsQueryModel query);
 
-        public Task<PostDetailViewModel?> GetPostDetailAsync(int postId);
+        public Task<PostDetailViewModel?> GetPostDetailAsync(int userId, int postId);
 
         public Task<List<string>> UploadToCloudinaryAsync(List<IFormFile> images);
 

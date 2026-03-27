@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SalterEFModels.EFModels;
 using System.ComponentModel;
+using System.Linq;
 
 
 namespace ForumServiceHelper.Service
@@ -57,6 +58,20 @@ namespace ForumServiceHelper.Service
                 posts = posts.Where(p => followedBoardIds.Contains(p.BoardId));
             }
 
+            // 處理 Collect 邏輯 撈出目前使用者蒐藏的貼文清單
+            if (query.SortBy == SortTypes.Collect && userId > 0)
+            {
+                // 篩選出該使用者有進行「收藏(Collect)」互動的貼文
+                posts = posts.Where(p => p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Collect));
+            }
+
+            //處理 Post 邏輯 撈出目前使用者發佈過的貼文
+            if (query.SortBy == SortTypes.Posted && userId > 0)
+            {
+                posts = posts.Where(p=>p.UserId == userId);
+            }
+            
+
             var postListQuery = posts.Select(p => new PostListViewModel
             {
                 PostId = p.PostId,
@@ -65,7 +80,7 @@ namespace ForumServiceHelper.Service
                 BoardId = p.BoardId,
                 BoardTitle = p.Board.Title,
                 LocationTitle = p.Location.Name,
-                ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
+                ContentPreview = p.Content.Length > 50 ? p.Content.Substring(0, 50) : p.Content,
                 CreatedAt = p.CreatedAt,
                 ImageUrls = p.ForumPostsImages.OrderBy(img => img.SortIndex).Select(img => img.ImageUrl).ToList(),
                 IsLiked = userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Like),
@@ -97,28 +112,33 @@ namespace ForumServiceHelper.Service
             return await postListQuery.Take(query.TakeSize).ToListAsync();
         }
 
-        public async Task<PostDetailViewModel?> GetPostDetailAsync(int postId)
+        public async Task<PostDetailViewModel?> GetPostDetailAsync(int userId, int postId)
         {
             return await _dbPosts.GetAll()
         .Where(p => p.PostId == postId)
         .Select(p => new PostDetailViewModel
         {
             PostId = p.PostId,
+            UserId = p.UserId,
             UserName = p.User.UserName,
             AvatarUrl = p.User.ProfilePicture,
+            BoardId = p.BoardId,
             BoardTitle = p.Board.Title,
+            LocationId = p.LocationId,
+            LocationTitle = p.Location.Name,
             ContentPreview = p.Content.Length > 150 ? p.Content.Substring(0, 150) : p.Content,
             CreatedAt = p.CreatedAt,
-            ImageUrls = p.ForumPostsImages.Select(img => img.ImageUrl).ToList(),
+            ImageUrls = p.ForumPostsImages.OrderBy(img => img.SortIndex).Select(img => img.ImageUrl).ToList(),
+            IsLiked = userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Like),
             LikeCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Like),
+            IsCollected = userId > 0 && p.ForumPostInteractions.Any(i => i.UserId == userId && i.Type == PostInteractionType.Collect),
+            CollectCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
+            ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
             CommentCount = p.ForumComments.Count(),
             ViewCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.View),
             PostTags = p.ForumPostTagDetails.Select(pt => pt.Tag.TagName).ToList(),
-
-            BookmarkCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Collect),
-            ShareCount = p.ForumPostInteractions.Count(i => i.Type == PostInteractionType.Share),
             FullContent = p.Content,
-
+       
             // 處理父子留言結構
             Comments = p.ForumComments
                 .Where(c => c.ParentCommentId == null)
@@ -126,6 +146,7 @@ namespace ForumServiceHelper.Service
                 .Select(c => new CommentPreviewDto
                 {
                     CommentId = c.CommentId,
+                    CommentUserId = c.UserId,
                     UserName = c.User.UserName,
                     Content = c.Content,
                     AvatarUrl = c.User.ProfilePicture,
@@ -136,6 +157,7 @@ namespace ForumServiceHelper.Service
                         .Select(r => new CommentPreviewDto
                         {
                             CommentId = r.CommentId,
+                            CommentUserId = r.UserId,
                             UserName = r.User.UserName,
                             AvatarUrl = r.User.ProfilePicture,
                             Content = r.Content,
@@ -197,7 +219,6 @@ namespace ForumServiceHelper.Service
             {
                 // 更新模式：包含舊的關聯以便後續處理
                 post = await _dbPosts.GetDbContext().ForumPosts
-                    .Include(p => p.ForumPostsImages)
                     .Include(p => p.ForumPostTagDetails)
                     .FirstOrDefaultAsync(p => p.PostId == postId.Value);
 
@@ -215,7 +236,6 @@ namespace ForumServiceHelper.Service
                 post.UpdatedAt = DateTime.Now;
 
                 // 清理舊有的圖片與標籤關聯 (採取「先刪後加」策略是最穩健的)
-                _dbPosts.GetDbContext().ForumPostsImages.RemoveRange(post.ForumPostsImages);
                 _dbPosts.GetDbContext().ForumPostTagDetails.RemoveRange(post.ForumPostTagDetails);
             }
             else
@@ -289,6 +309,8 @@ namespace ForumServiceHelper.Service
             // 1. 抓出貼文主體，同時 Include 所有關聯表
             // 把關聯資料一併載入，EF 才知道要刪除哪些東西
             var post = await _dbPosts.GetDbContext().ForumPosts
+                .Include(p=>p.ForumPostInteractions)
+                .Include(p=>p.ForumComments)
                 .Include(p => p.ForumPostsImages)
                 .Include(p => p.ForumPostTagDetails)
                 .FirstOrDefaultAsync(p => p.PostId == postId);
@@ -297,6 +319,16 @@ namespace ForumServiceHelper.Service
 
             if (post.UserId != userId)
                 throw new ArgumentException($"您沒有權限刪除他人貼文!");
+
+            if (post.ForumPostInteractions.Any())
+            {
+                _dbPosts.GetDbContext().ForumPostInteractions.RemoveRange(post.ForumPostInteractions);
+            }
+
+            if (post.ForumComments.Any())
+            {
+                _dbPosts.GetDbContext().ForumComments.RemoveRange(post.ForumComments);
+            }
 
             // 2. 先刪除圖片關聯
             if (post.ForumPostsImages.Any())
@@ -313,9 +345,72 @@ namespace ForumServiceHelper.Service
             // 4. 最後刪除貼文主體
             _dbPosts.GetDbContext().ForumPosts.Remove(post);
 
+                //5.刪除雲端圖片
+            try
+            {
+                // 建立 Cloudinary 連線
+                var account = new Account(_cloudinaryName, _cloudinaryApiKey, _cloudinaryApiSecret);
+                var cloudinary = new Cloudinary(account);
+
+                foreach (var img in post.ForumPostsImages)
+                {
+                    string publicId = ExtractPublicIdFromUrl(img.ImageUrl);
+
+                if (!string.IsNullOrEmpty(publicId))
+                {
+                    var deletionParams = new DeletionParams(publicId);
+                    // 執行非同步刪除
+                    cloudinary.Destroy(deletionParams);
+                }
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
             // 5. 統一存檔 (這會包在同一個 Transaction 中)
             return await _dbPosts.SaveChangesAsync();
-           
+
+
+        }
+
+
+
+
+        // 輔助方法：從完整 URL 提取 PublicId
+        private string ExtractPublicIdFromUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return null;
+
+            try
+            {
+                // 範例：https://res.cloudinary.com/dbyzfq61h/image/upload/v1773155156/Salter/Forum/20260310230550哈哈囉_4648.jpg
+
+                // 1. 先定位到 "upload/"
+                string pattern = "upload/";
+                int uploadIndex = url.IndexOf(pattern);
+                if (uploadIndex == -1) return null;
+
+                // 2. 找到 upload/ 之後的內容：v1773155156/Salter/Forum/20260310230550哈哈囉_4648.jpg
+                string afterUpload = url.Substring(uploadIndex + pattern.Length);
+
+                // 3. 找到第一個斜線，跳過版本號 (v1773155156/)
+                int firstSlashIndex = afterUpload.IndexOf("/");
+                if (firstSlashIndex == -1) return null;
+
+                // 4. 剩下的部分：Salter/Forum/20260310230550哈哈囉_4648.jpg
+                string pathWithExtension = afterUpload.Substring(firstSlashIndex + 1);
+
+                // 5. 去除副檔名：Salter/Forum/20260310230550哈哈囉_4648
+                // 使用 Path.ChangeExtension(path, null) 或是自訂移除
+                string publicId = System.IO.Path.ChangeExtension(pathWithExtension, null);
+
+                return publicId;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

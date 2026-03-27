@@ -99,6 +99,7 @@ namespace ForumServiceHelper.Service
         {
             var existingComment = await _dbComments.GetTableByIDAsync(commentId);
 
+
             if (existingComment == null)
             {
                 throw new KeyNotFoundException("找不到該則留言，可能先前已被刪除。");
@@ -109,12 +110,16 @@ namespace ForumServiceHelper.Service
                 throw new ArgumentException("權限不足：您無法刪除不屬於您的留言。");
             }
 
-            _dbComments.Delete(commentId);
-            bool isSaved = await _dbComments.SaveChangesAsync();
+           // 2. 使用 ExecuteDelete 一次清空父留言與子留言
+            // 注意：ExecuteDelete 是立即執行的，回傳的是受影響的列數 (int)
+            var rowsAffected = await _dbComments.GetDbContext().ForumComments
+                .Where(c => c.CommentId == commentId || c.ParentCommentId == commentId)
+                .ExecuteDeleteAsync();
 
-            if (!isSaved)
+            // 3. 判斷是否成功
+            if (rowsAffected == 0)
             {
-                throw new Exception("刪除失敗：伺服器在執行刪除程序時發生異常。");
+                throw new Exception("刪除失敗：資料庫未發生任何變動。");
             }
 
             return true;

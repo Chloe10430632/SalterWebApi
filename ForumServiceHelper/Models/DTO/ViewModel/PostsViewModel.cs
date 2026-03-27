@@ -10,10 +10,12 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
     public class PostListViewModel
     {
         public int PostId { get; set; }
+        public int UserId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
         public int BoardId { get; set; }
         public string BoardTitle { get; set; } = "預設";
+        public int? LocationId { get; set; }
         public string LocationTitle { get; set; } = "預設";
         public string ContentPreview { get; set; } = string.Empty; // 內容摘要
         public List<string> ImageUrls { get; set; } = new();
@@ -31,14 +33,13 @@ namespace ForumServiceHelper.Models.DTO.ViewModel
     // 詳情專用：繼承列表並擴充留言與詳細數據
     public class PostDetailViewModel : PostListViewModel
     {
-        public int BookmarkCount { get; set; }
-        public int ShareCount { get; set; }
         public string FullContent { get; set; } = string.Empty;
         public List<CommentPreviewDto> Comments { get; set; } = new();
     }
     public class CommentPreviewDto
     {
         public int CommentId { get; set; }
+        public int CommentUserId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;

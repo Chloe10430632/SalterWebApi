@@ -12,5 +12,7 @@ namespace ForumServiceHelper.Models.DTO.Const
         public const string Popular = "POPULAR";
         public const string Follow = "FOLLOW";
         public const string New = "NEW";
+        public const string Collect = "COLLECT";
+        public const string Posted = "POSTED";
     }
 }
