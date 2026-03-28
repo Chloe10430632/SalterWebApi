@@ -164,12 +164,29 @@ builder.Services.AddCors(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+//金流測試
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("DevPolicy", policy =>
+//    {
+//        policy.WithOrigins(
+//                "http://localhost:4200",   // Angular
+//                "null"                     // file:// 測試用
+//              )
+//              .AllowAnyHeader()
+//              .AllowAnyMethod()
+//              .AllowCredentials();
+//    });
+//});
+
 var app = builder.Build();
 
 app.UseExceptionHandler(); //全域錯誤處理
 app.UseStaticFiles(); //存取靜態圖片
 app.UseRouting();
 
+//金流測試
+//app.UseCors("DevPolicy");
 app.UseCors("CorsPolicy");
 
 app.UseAuthentication(); // 認證
