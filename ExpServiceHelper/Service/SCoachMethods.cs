@@ -297,6 +297,14 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #region 查看收藏(保持愛心) 
+        public async Task<List<int>> HeartIds(int userId) {
+            return await _context.ExpFavorites
+                    .Where(f => f.UserId == userId)
+                    .Select(f => f.CoachId).ToListAsync();
+        }
+        #endregion
+
         #region 收藏清單
         public async Task<List<DCoachFavList>> GetMyFavCoach(int userId)
         {

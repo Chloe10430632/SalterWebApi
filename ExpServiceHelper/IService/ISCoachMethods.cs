@@ -25,7 +25,7 @@ namespace ExpServiceHelper.IService
         /**排序-最新*/
         Task<List<DCoachInfo>> GetCoachNewest();
         /**排序-熱門*/
-        Task<List<DCoachInfo>> CoachPopular(int page,int pageSize);
+        Task<List<DCoachInfo>> CoachPopular(int page, int pageSize);
         #endregion
 
         #region ~~教練~~
@@ -46,6 +46,9 @@ namespace ExpServiceHelper.IService
         #endregion
         # region 列出所有收藏
         Task<List<DCoachFavList>> GetMyFavCoach(int userId);
+        #endregion
+        #region 查看收藏(保持愛心) 
+        Task<List<int>> HeartIds(int userId);
         #endregion
         #endregion
 

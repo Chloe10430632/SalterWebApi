@@ -149,7 +149,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 教練自介
-        [HttpGet("Info{id}")]
+        [HttpGet("Info/{coachId}")]
         public async Task<IActionResult> CoachInfo(int coachId)
         {
             if (coachId == 0) return NotFound("這位教練還沒出生");
@@ -195,10 +195,30 @@ namespace SalterWebApi.Areas.Experience
             {
                 //多傳入一個 currentUserId
                 var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
-                return Ok(result);
+                return Ok(new { Issuccess = true, data = result });
             }
             return BadRequest("登入後才能使用功能");
         }
+        #endregion
+
+        #region 查看收藏(保持愛心) 
+        [Authorize]
+        [HttpGet("FavHeart")]
+        public async Task<IActionResult> GetHeart() {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            }
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                var favIds = await _sCoachMethods.HeartIds(currentUserId);
+                return Ok(new { Issuccess = true, data = favIds });
+            }
+            return BadRequest("沒有收藏");
+        }
+
         #endregion
 
         #region 收藏清單
