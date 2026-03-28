@@ -126,8 +126,8 @@ namespace SalterWebApi.Areas.Experience
 
         #region 編輯自介 
         [Authorize]
-        [HttpPut("EditCoach{id}")]
-        public async Task<IActionResult> EditThisCoach([FromForm] DCoachEdit dto)
+        [HttpPut("EditCoach/{coachId}")]
+        public async Task<IActionResult> EditThisCoach([FromForm] DCoachEdit dto, int coachId)
         {
             // 1. 抓取 JWS 裡面的 UserId
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -159,7 +159,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 系統推薦
-        [HttpGet("Recommand{id}")]
+        [HttpGet("Recommand/{id}")]
         public async Task<IActionResult> RecommandCoaches(int id)
         {
             var result = await _sCoachMethods.CoachRecommand(id);
@@ -170,7 +170,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 查看評論
-        [HttpGet("ContentDetails{id}")]
+        [HttpGet("ContentDetails/{id}")]
         public async Task<IActionResult> ContentDetails(int coachId)
         {
             if (coachId == 0) return NotFound("這位教練還沒出生");
@@ -222,7 +222,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 收藏清單
-        [HttpGet("myFavList{id}")]
+        [HttpGet("myFavList/{userId}")]
         public async Task<IActionResult> MyFavCoachList(int userId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -268,7 +268,7 @@ namespace SalterWebApi.Areas.Experience
 
         #region 編輯模板
         [Authorize]
-        [HttpPut("EditCourseTemplate{tempId}")]
+        [HttpPut("EditCourseTemplate/{tempId}")]
         public async Task<IActionResult> EditCourseTemplate([FromForm] DCourseTempEdit dto, int tempId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -291,7 +291,7 @@ namespace SalterWebApi.Areas.Experience
 
         #region 課程選時間上架 
         [Authorize]
-        [HttpPost("CourseTime{templateId}")]
+        [HttpPost("CourseTime/{templateId}")]
         public async Task<IActionResult> OpenTimeCourse([FromBody] DCourseOpenSession dto, int templateId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -317,7 +317,7 @@ namespace SalterWebApi.Areas.Experience
         #region 課程時段刪除
 
         [Authorize]
-        [HttpDelete("DeleteSession{sessionId}")]
+        [HttpDelete("DeleteSession/{sessionId}")]
         public async Task<IActionResult> deleteThisSession(int courseSessionId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -339,7 +339,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 課程展示介紹
-        [HttpGet("CourseInfo{sessionId}")]
+        [HttpGet("CourseInfo/{sessionId}")]
         public async Task<IActionResult> CourseInfo(int sessionId)
         {
             if (sessionId == 0 ) return NotFound("新課程還在趕工中");
@@ -383,7 +383,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #region 編輯評論
         [Authorize]
-        [HttpPut("EditReview{reviewId}")]
+        [HttpPut("EditReview/{reviewId}")]
         public async Task<IActionResult> EditThisRevwew(DReview dto, int courseId, int reviewId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -405,7 +405,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #region 刪除評論
         [Authorize]
-        [HttpDelete("DeleteReview{reviewId}")]
+        [HttpDelete("DeleteReview/{reviewId}")]
         public async Task<IActionResult> DeleteReview(int reviewId) {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId)){
