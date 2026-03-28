@@ -40,7 +40,7 @@ public class TripRepository : ITripRepository
             q = q.Where(t => t.Status == status);
         //if (cityId.HasValue)
         //    q = q.Where(t => t.TripTripLocations.Any(
-                //ttl => ttl.Location.District.CityId == cityId.Value));
+        //        ttl => ttl.Location.District.CityId == cityId.Value));
         if (startFrom.HasValue)
             q = q.Where(t => t.StartAt >= startFrom.Value);
         if (startTo.HasValue)
@@ -60,7 +60,6 @@ public class TripRepository : ITripRepository
 
         int totalCount = await q.CountAsync();
         var trips = await q.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-
         return (trips, totalCount);
     }
 
@@ -108,7 +107,6 @@ public class TripRepository : ITripRepository
 
         if (entity == null) return false;
 
-        // 先刪除關聯資料
         _db.TripMembers.RemoveRange(entity.TripMembers);
         _db.TripFavorites.RemoveRange(entity.TripFavorites);
         _db.TripAnnouncements.RemoveRange(entity.TripAnnouncements);
@@ -118,10 +116,30 @@ public class TripRepository : ITripRepository
         _db.TripReminders.RemoveRange(entity.TripReminders);
         _db.TripTimelines.RemoveRange(entity.TripTimelines);
 
-        // 再刪除行程
         _db.TripTrips.Remove(entity);
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<List<TripTrip>> GetMyTripsAsync(int userId, string? role = null)
+    {
+        var q = _db.TripMembers
+            .Where(m => m.UserId == userId)
+            .Include(m => m.Trip)
+                .ThenInclude(t => t.OrganizerUser)
+            .Include(m => m.Trip)
+                .ThenInclude(t => t.TripMembers)
+            .Include(m => m.Trip)
+                .ThenInclude(t => t.TripFavorites)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(role))
+            q = q.Where(m => m.Role == role);
+
+        return await q
+            .OrderByDescending(m => m.Trip.StartAt)
+            .Select(m => m.Trip)
+            .ToListAsync();
     }
 
     #endregion

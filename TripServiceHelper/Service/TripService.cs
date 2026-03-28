@@ -173,6 +173,12 @@ public class TripService : ITripService
         return result ? ServiceResult.Success("行程刪除成功") : ServiceResult.Fail("刪除失敗");
     }
 
+    public async Task<List<TripSummaryDto>> GetMyTripsAsync(int userId, string? role = null)
+    {
+        var trips = await _repo.GetMyTripsAsync(userId, role);
+        return trips.Select(ToSummaryDto).ToList();
+    }
+
     #endregion
 
     #region 成員

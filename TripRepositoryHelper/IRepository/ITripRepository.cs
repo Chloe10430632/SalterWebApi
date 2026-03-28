@@ -14,6 +14,7 @@ public interface ITripRepository
     Task<TripTrip> CreateTripAsync(TripTrip trip);
     Task<TripTrip?> UpdateTripAsync(TripTrip trip);
     Task<bool> DeleteTripAsync(int tripId);
+    Task<List<TripTrip>> GetMyTripsAsync(int userId, string? role = null);
     #endregion
 
     #region 成員

@@ -76,6 +76,16 @@ public class TripController : ControllerBase
         return Ok(ApiResponse<string>.Ok(result.Message));
     }
 
+    [HttpGet("my-trips")]
+    public async Task<IActionResult> GetMyTrips([FromQuery] string? role)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var data = await _service.GetMyTripsAsync(userId.Value, role);
+        return Ok(ApiResponse<List<TripSummaryDto>>.Ok(data));
+    }
+
     #endregion
 
     #region 成員
