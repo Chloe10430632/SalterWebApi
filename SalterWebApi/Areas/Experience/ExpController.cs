@@ -154,7 +154,7 @@ namespace SalterWebApi.Areas.Experience
         {
             if (coachId == 0) return NotFound("這位教練還沒出生");
             var result = await _sCoachMethods.ThisCoachInfo(coachId);
-            return Ok(result);
+            return Ok(new { isSuccess = true, data = result });
         }
         #endregion
 
