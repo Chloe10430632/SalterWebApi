@@ -33,10 +33,12 @@ namespace HomeServiceHelper.IService
         Task<IEnumerable<string?>> GetAllCityAsync();
         Task<IEnumerable<HomAmenity>> GetAllAmenitiesAsync();
 
-        // --- 異動功能 (CUD) ---
+        // --- 新增修改 ---
         Task<bool> AddReviewAsync(ReviewCreateDTO dto);
         Task<bool> CreateFullHouseAsync(HouseCreateDTO dto);
         Task<bool> UpdateFullHouseAsync(HouseUpdateDTO dto);
         public Task<int?> GetAvailableBookingIdAsync(int userId, int roomTypeId);
+        public Task<int> CreateBookingAsync(CreateBookingDTO dto);
+
     }
 }

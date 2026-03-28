@@ -534,7 +534,27 @@ namespace HomeServiceHelper.Service
             return await _context.SaveChangesAsync() > 0;
         }
 
-        
+        //建立訂單編號
+        public async Task<int> CreateBookingAsync(CreateBookingDTO dto)
+        {
+            var booking = new HomBooking
+            {
+                UserId = dto.UserId,
+                RoomTypeId = dto.RoomTypeId,
+                CheckInDate = dto.CheckInDate,
+                CheckOutDate = dto.CheckOutDate,
+                TotalPrice = dto.TotalPrice,
+                Notes = dto.Notes,
+                Status = "0", // 0 : 待付款
+                CreatedTime = DateTime.Now,
+                UpdateTime = DateTime.Now,
+            };
+
+            _context.HomBookings.Add(booking);
+            await _context.SaveChangesAsync();
+
+            return booking.BookingId; // 回傳訂單編號給前端
+        }
     }
 
 

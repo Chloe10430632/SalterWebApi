@@ -1,7 +1,10 @@
-﻿using HomeServiceHelper.IService;
+﻿using CloudinaryDotNet.Actions;
+using HomeServiceHelper.IService;
 using HomeServiceHelper.Models.DTO.ViewModels;
 using HomeServiceHelper.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -116,7 +119,7 @@ namespace SalterWebApi.Areas.House.Controllers
         {
             var data = await _homService.GetAllAmenitiesAsync();
 
-            if(data == null) return NotFound("找不到任何設施資料");
+            if (data == null) return NotFound("找不到任何設施資料");
             return Ok(data);
         }
 
@@ -146,7 +149,7 @@ namespace SalterWebApi.Areas.House.Controllers
         public async Task<ActionResult<IEnumerable<HousePreviewDTO>>> Search(string? city, string? keyword, int? guests)
         {
             // 呼叫你剛才寫好的 Service 方法
-            var result = await _homService.SearchHousesAsync(city, keyword,guests);
+            var result = await _homService.SearchHousesAsync(city, keyword, guests);
 
             if (result == null || !result.Any())
             {
@@ -162,6 +165,27 @@ namespace SalterWebApi.Areas.House.Controllers
             // 呼叫業務邏輯層
             var results = await _homService.GetSearchHousesAsync(searchCriteria);
             return Ok(results);
+        }
+
+        [Authorize]
+        [HttpPost("createBookingId")]
+        public async Task<IActionResult> CreateBookingId([FromBody] CreateBookingDTO dto)
+        {
+            
+            try
+            {
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(currentUserId))
+                    return Unauthorized(new { message = "請先登入" });
+
+                dto.UserId = int.Parse(currentUserId);
+                var bookingId = await _homService.CreateBookingAsync(dto);
+                return Ok(new { BookingID = bookingId, Message = "訂單已建立，請進行付款" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new {Message = "預約失敗" , Error = ex.Message});
+            }
         }
     }
 }

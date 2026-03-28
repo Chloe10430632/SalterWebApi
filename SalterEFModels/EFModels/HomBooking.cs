@@ -11,7 +11,7 @@ public partial class HomBooking
 
     public int RoomTypeId { get; set; }
 
-    public int TransactionsId { get; set; }
+    public int? TransactionsId { get; set; }
 
     public DateTime? CheckInDate { get; set; }
 
