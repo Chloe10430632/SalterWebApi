@@ -22,23 +22,24 @@ namespace SalterWebApi.Areas.House.Controllers
             _homService = homeService;
         }
 
-
-        [HttpGet] //取得所有房型
+        //取得所有房型
+        [HttpGet] 
         public async Task<IActionResult> GetAll()
         {
             var results = await _homService.GetAllHousesAsync();
             return Ok(results);
         }
 
-
-        [HttpPost("search")]//透過篩選條件搜尋
+        //透過篩選條件搜尋
+        [HttpPost("search")]
         public async Task<IActionResult> Search([FromBody] HouseSearchDTO search)
         {
             var results = await _homService.SearchHousesAsync(search);
             return Ok(results);
         }
 
-        [HttpGet("{id}")]//透過ID搜尋顯示房屋細節
+        //透過ID搜尋顯示房屋細節
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetDetail(int id)
         {
             var result = await _homService.SerchHouseDetailAsync(id);
@@ -51,12 +52,14 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(result);
         }
 
-        [HttpGet("cities")]//取得所有城市名
+        //取得所有城市名
+        [HttpGet("cities")]
         public async Task<IActionResult> GetCities()
         {
             return Ok(await _homService.GetAllCityAsync());
         }
 
+        
         [HttpGet("city-groups")]
         public async Task<ActionResult<List<CityGroupDTO>>> GetCityGroups(string? city)
         {
@@ -65,8 +68,8 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(result);
         }
 
-
-        [HttpGet("top/{count}")] //顯示前幾筆的房屋
+        //顯示前幾筆的房屋
+        [HttpGet("top/{count}")]
         public async Task<IActionResult> GetTop(int count = 6)
         {
             return Ok(await _homService.GetTopRoomsAsync(count));
@@ -103,7 +106,8 @@ namespace SalterWebApi.Areas.House.Controllers
             return StatusCode(500, "新增評論時發生錯誤");
         }
 
-        [HttpPost("create-full-house")] //新增房屋
+        //新增房屋
+        [HttpPost("create-full-house")]
         public async Task<IActionResult> CreateFullHouse([FromBody] HouseCreateDTO dto)
         {
             var result = await _homService.CreateFullHouseAsync(dto);
@@ -114,7 +118,8 @@ namespace SalterWebApi.Areas.House.Controllers
             return StatusCode(500, "新增房子時發生錯誤");
         }
 
-        [HttpGet("amenities")] //取得房屋設備API
+        //取得房屋設備API
+        [HttpGet("amenities")] 
         public async Task<IActionResult> GetAmenities()
         {
             var data = await _homService.GetAllAmenitiesAsync();
@@ -123,7 +128,8 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(data);
         }
 
-        [HttpPut("update-full-house")]//更新房屋資料
+        //更新房屋資料
+        [HttpPut("update-full-house")]
         public async Task<IActionResult> UpdateFullHouse([FromBody] HouseUpdateDTO dto)
         {
             // 基本驗證
@@ -145,6 +151,7 @@ namespace SalterWebApi.Areas.House.Controllers
             }
         }
 
+        
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<HousePreviewDTO>>> Search(string? city, string? keyword, int? guests)
         {
@@ -159,6 +166,7 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(result);
         }
 
+        
         [HttpGet("select")]
         public async Task<IActionResult> GetAvailableHouses([FromQuery] HouseSearchDTO searchCriteria)
         {
@@ -167,11 +175,12 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(results);
         }
 
+        
         [Authorize]
         [HttpPost("createBookingId")]
         public async Task<IActionResult> CreateBookingId([FromBody] CreateBookingDTO dto)
         {
-            
+
             try
             {
                 var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -184,9 +193,45 @@ namespace SalterWebApi.Areas.House.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new {Message = "預約失敗" , Error = ex.Message});
+                return BadRequest(new { Message = "預約失敗", Error = ex.Message });
             }
         }
+
+       
+        [Authorize]
+        [HttpGet("getMemberBookings")]
+        public async Task<IActionResult> GetMemberBookings()
+        {
+            // 1. 抓 ID 
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentUserId == null) return Unauthorized();
+
+          
+            var result = await _homService.GetMemberBookingsAsync(int.Parse(currentUserId));
+
+            return Ok(result);
+        }
+
+
+        [Authorize]
+        [HttpPost("cancelBooking/{id}")]
+        public async Task<IActionResult> CancelBooking(int id)
+        {
+            // 從 Token 拿到當前登入者 ID
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+
+            var success = await _homService.CancelBookingAsync(id, int.Parse(userIdStr));
+
+            if (!success)
+            {
+                return BadRequest(new { message = "無法取消該訂單（可能狀態不符或訂單不存在）" });
+            }
+
+            return Ok(new { message = "訂單已成功取消" });
+        }
     }
+
+    
 }
 

@@ -32,13 +32,15 @@ namespace HomeServiceHelper.IService
         // 基礎資料撈取
         Task<IEnumerable<string?>> GetAllCityAsync();
         Task<IEnumerable<HomAmenity>> GetAllAmenitiesAsync();
+        Task<IEnumerable<BookingListViewModel>> GetMemberBookingsAsync(int userId);
 
-        // --- 新增修改 ---
+        // --- 新增修改刪除 ---
         Task<bool> AddReviewAsync(ReviewCreateDTO dto);
         Task<bool> CreateFullHouseAsync(HouseCreateDTO dto);
         Task<bool> UpdateFullHouseAsync(HouseUpdateDTO dto);
         public Task<int?> GetAvailableBookingIdAsync(int userId, int roomTypeId);
         public Task<int> CreateBookingAsync(CreateBookingDTO dto);
+        public Task<bool> CancelBookingAsync(int bookingId, int userId);
 
     }
 }
