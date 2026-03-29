@@ -1,0 +1,34 @@
+name: Salter WebAPI Auto Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. 抓取原始碼
+        uses: actions/checkout@v4
+
+      - name: 2. 設定 QEMU (模擬 M1 編譯)
+        uses: docker/setup-qemu-action@v3
+
+      - name: 3. 設定 Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 4. 登入 Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 5. 開始編譯並推送到雲端
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          # 這裡改成 api 專用的名稱
+          tags: ${{ secrets.DOCKER_USERNAME }}/salter_api:latest
