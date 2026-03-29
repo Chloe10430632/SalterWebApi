@@ -45,7 +45,7 @@ namespace ExpServiceHelper.IService
         Task<List<DCoachReview>> CoachReviews(int coachId);
         #endregion
         # region 列出所有收藏
-        Task<List<DCoachFavList>> GetMyFavCoach(int userId, page, pageSize);
+        Task<List<DCoachFavList>> GetMyFavCoach(int userId,int page,int pageSize);
         #endregion
         #region 查看收藏(保持愛心) 
         Task<List<int>> HeartIds(int userId);
