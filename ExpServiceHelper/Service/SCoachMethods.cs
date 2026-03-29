@@ -588,7 +588,8 @@ namespace ExpServiceHelper.Service
                                 : new List<DateOnly>(),
                         TimeSlot = c.TimeSlot,
                         MaxStudents = c.MaxParticipants,
-                        UpdatedAt = c.UpdatedAt
+                        UpdatedAt = c.UpdatedAt,
+                        Title = c.CourseTemplate.Title,
                     }).FirstOrDefaultAsync();
 
             if (result == null)
@@ -608,6 +609,39 @@ namespace ExpServiceHelper.Service
             };
         }
         #endregion
+
+        public async Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId)
+        {
+            var result = await _context.ExpCourseSessions
+                .Where(c => c.CoachId == coachId)          // 篩這個教練的所有課
+                .OrderByDescending(c => c.UpdatedAt)        // 最新更新的排最前面
+                .Select(c => new DCourseInfo
+                {
+                    CoachId = c.CoachId,
+                    SelectedDates = c.SessionDate.HasValue
+                        ? new List<DateOnly> { c.SessionDate.Value }
+                        : new List<DateOnly>(),
+                    TimeSlot = c.TimeSlot,
+                    MaxStudents = c.MaxParticipants,
+                    UpdatedAt = c.UpdatedAt,
+                    Title = c.CourseTemplate.Title,
+                })
+                .FirstOrDefaultAsync();                     // 只取第一筆（最新）
+
+            if (result == null)
+                return new DAPIResponse<DCourseInfo>
+                {
+                    IsSuccess = false,
+                    Message = "此教練目前沒有開課資訊"
+                };
+
+            return new DAPIResponse<DCourseInfo>
+            {
+                IsSuccess = true,
+                Message = "課程展示中",
+                Data = result
+            };
+        }
         #endregion
 
         #region ~~評論~~

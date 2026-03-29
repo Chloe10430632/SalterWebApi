@@ -281,6 +281,18 @@ namespace SalterWebApi.Areas.Experience
             catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
 
         }
+        [HttpGet("LatestCourse/{coachId}")]
+        public async Task<IActionResult> LatestCourse(int coachId)
+        {
+            if (coachId == 0) return NotFound("找不到教練");
+            try
+            {
+                var result = await _sCoachMethods.LatestCourseByCoach(coachId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
         #endregion
         #endregion
 

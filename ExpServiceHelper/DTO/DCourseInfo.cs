@@ -18,6 +18,8 @@ namespace ExpServiceHelper.DTO
         //
         public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();
         public string? PublicId { get; set; }
+        //
+        public string? Title { get; set; }
 
     }
 }
