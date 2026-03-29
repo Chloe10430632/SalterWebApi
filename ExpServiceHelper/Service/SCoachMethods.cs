@@ -333,8 +333,10 @@ namespace ExpServiceHelper.Service
                     AvgRating = f.Coach.ExpReviews.Any()
                         ? Math.Round(f.Coach.ExpReviews.Average(r => (double)r.Rating), 1)
                         : 0,
-                    ReviewCount = f.Coach.ExpReviews.Count()
+                    ReviewCount = f.Coach.ExpReviews.Count(),
+                    FavoritedAt = f.FavoritedAt
                 })
+                .OrderByDescending(f => f.FavoritedAt) // 依照收藏時間排序，最新的在前面
                .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

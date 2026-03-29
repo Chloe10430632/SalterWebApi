@@ -20,6 +20,6 @@ namespace ExpServiceHelper.DTO
         public int ReviewCount { get; set; }
         public List<string> Specialities { get; set; } = new List<string>();
         public string? AvatarUrl { get; set; }
-
+        public DateTime? FavoritedAt { get; set; }
     }
 }

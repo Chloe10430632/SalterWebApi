@@ -10,5 +10,6 @@ namespace ExpServiceHelper.DTO
     {
             public int UserId { get; set; }
             public int CoachId { get; set; }
+            
     }
 }
