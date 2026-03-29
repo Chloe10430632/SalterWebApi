@@ -306,7 +306,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 收藏清單
-        public async Task<List<DCoachFavList>> GetMyFavCoach(int userId)
+        public async Task<List<DCoachFavList>> GetMyFavCoach(int userId, int page, int pageSize)
         {
             // 1. 先拿到 Entity 列表
             var fav = _context.ExpFavorites
@@ -323,7 +323,10 @@ namespace ExpServiceHelper.Service
                         ? Math.Round( f.Coach.ExpReviews.Average(r => (double)r.Rating), 1)
                         : 0,
                     ReviewCount = f.Coach.ExpReviews.Count()
-                }).ToListAsync();
+                })
+               .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             return await fav;
         }

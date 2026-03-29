@@ -336,13 +336,13 @@ namespace SalterWebApi.Areas.Experience
 
             if (string.IsNullOrEmpty(userIdStr))
             {
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+                return Unauthorized(new { message = "無效的憑證，請重新登入啦" });
             }
             if (int.TryParse(userIdStr, out int currentUserId))
             {
-                var result = await _sCoachMethods.GetMyFavCoach(userId);
-                if (result == null || userId == 0)
-                    return NotFound("...收藏列表很冷清...");
+                var result = await _sCoachMethods.GetMyFavCoach(userId, page, pageSize);
+                if (result == null || !result.Any())
+                    return Ok(new { Issuccess = true, data = new List<object>() }); // 回傳空陣列
                 return Ok(new { Issuccess = true, data = result });
             }
             return BadRequest("登入後才能使用功能");
