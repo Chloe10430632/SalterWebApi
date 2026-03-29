@@ -12,7 +12,6 @@ using HomeRepositoryHelper.Repository;
 using HomeServiceHelper.IService;
 using HomeServiceHelper.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -41,13 +40,9 @@ JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
 var builder = WebApplication.CreateBuilder(args);
 
 // 從設定檔抓取前端網址
-//var allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins");
+//var allowedOrigins = builder.Configuration.GetValue<string[]>("AllowedOrigins");
+// 1. 取得設定檔中的 Origins
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
-
-
-//雲端資料庫連接字串DI
-//builder.Services.AddDbContext<SalterDbContext>(options =>
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("SalterDbContext")));
 
 //地端資料庫連接字串DI
 builder.Services.AddDbContext<SalterDbContext>(options =>
@@ -156,6 +151,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins) // 這裡變動態了！
               .AllowAnyHeader()
               .AllowAnyMethod()
+              .AllowCredentials()
               .WithExposedHeaders("Location");
     });
 });
