@@ -45,9 +45,9 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #region 最新排序 
         [HttpGet("NewRank")]
-        public async Task<IActionResult> NewRank()
+        public async Task<IActionResult> NewRank(int page = 1, int pageSize = 6)
         {
-            var result = await _sCoachMethods.GetCoachNewest();
+            var result = await _sCoachMethods.GetCoachNewest(page, pageSize);
             return Ok(new { Issuccess = true, data = result });
         }
         #endregion
@@ -329,8 +329,8 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 收藏清單
-        [HttpGet("myFavList/{userId}")]
-        public async Task<IActionResult> MyFavCoachList(int userId)
+        [HttpGet("myFavList")]
+        public async Task<IActionResult> MyFavCoachList(int userId, int page = 1, int pageSize = 6)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

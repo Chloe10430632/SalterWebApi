@@ -23,7 +23,7 @@ namespace ExpServiceHelper.IService
         /**搜尋-專業*/
         Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial);
         /**排序-最新*/
-        Task<List<DCoachInfo>> GetCoachNewest();
+        Task<List<DCoachInfo>> GetCoachNewest(int page, int pageSize);
         /**排序-熱門*/
         Task<List<DCoachInfo>> CoachPopular(int page, int pageSize);
         #endregion
