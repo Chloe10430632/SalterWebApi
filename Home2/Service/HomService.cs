@@ -93,14 +93,14 @@ namespace HomeServiceHelper.Service
                         select new { h, r };
 
             // 篩選城市
-            if (!string.IsNullOrEmpty(search.Citie))
+            if (!string.IsNullOrEmpty(search.City))
             {
-                query = query.Where(x => x.h.Citie.Contains(search.Citie));
+                query = query.Where(x => x.h.Citie.Contains(search.City));
             }
             // 篩選人數
-            if (search.PeopleCount.HasValue)
+            if (search.Guests.HasValue)
             {
-                query = query.Where(x => x.r.Capacity >= search.PeopleCount.Value);
+                query = query.Where(x => x.r.Capacity >= search.Guests.Value);
                 //房型容量 >= 需求人數
             }
 
@@ -481,8 +481,8 @@ namespace HomeServiceHelper.Service
 
             // 呼叫 Repository 執行資料庫篩選
             var roomEntities = await _houseRepository.SearchAvailableRoomsAsync(
-                searchDto.Citie,
-                searchDto.PeopleCount,
+                searchDto.City,
+                searchDto.Guests,
                 start,
                 end
             );
@@ -491,6 +491,7 @@ namespace HomeServiceHelper.Service
             return roomEntities.Select(rt => new HousePreviewDTO
             {
                 HouseId = rt.HouseId,
+                RoomTypeId = rt.RoomTypeId,
                 Title = rt.Name ?? string.Empty,
                 Price = rt.PricePerNight ?? 0,
                 District = rt.House?.District ?? string.Empty,
