@@ -77,6 +77,7 @@ builder.Services.AddScoped<IGenericSalterRepository<ForumPost>, GenericSalterRep
 builder.Services.AddScoped<IGenericSalterRepository<ForumPostInteraction>, GenericSalterRepository<ForumPostInteraction>>();
 builder.Services.AddScoped<IGenericSalterRepository<ForumAd>, GenericSalterRepository<ForumAd>>();
 builder.Services.AddScoped<IGenericSalterRepository<ForumComment>, GenericSalterRepository<ForumComment>>();
+builder.Services.AddScoped<IGenericSalterRepository<ForumSensitiveWord>, GenericSalterRepository<ForumSensitiveWord>>();
 
 //Forum功能：商業邏輯層 BLL DI
 builder.Services.AddScoped<IBoardsService, BoardsService>();
@@ -85,6 +86,7 @@ builder.Services.AddScoped<IAdsService, AdsService>();
 builder.Services.AddScoped<IPostInteractionsService, PostInteractionsService>();
 builder.Services.AddScoped<IBoardInteractionsService, BoardInteractionsService>();
 builder.Services.AddScoped<ICommentsService, CommentsService>();
+builder.Services.AddScoped<ISensitiveWordsService, SensitiveWordsService>();
 
 //User功能：泛型資料存取層 DAL DI
 builder.Services.AddScoped(typeof(IGenericUserRepository<>), typeof(GenericUserRepository<>));
@@ -122,10 +124,11 @@ builder.Services.AddScoped<ITripRepository, TripRepository>();
 builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddScoped<ICloudinaryTripService, CloudinaryTripService>();
 
-// Add services to the container.
+
+// 註冊記憶體快取服務
+builder.Services.AddMemoryCache();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
 
@@ -159,6 +162,9 @@ builder.Services.AddCors(options =>
 // 使用Middleware做全域的Exception處理
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+
+
+
 
 var app = builder.Build();
 
