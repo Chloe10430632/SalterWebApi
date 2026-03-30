@@ -35,7 +35,7 @@ namespace ExpServiceHelper.Service
                 AvatarUrl = c.AvatarUrl,
                 // 提醒：在資料庫層級 string.Join 可能會報錯，建議到記憶體再處理，或者直接選成 List
                 District = c.TripDistricts.Select(m => m.Name).ToList(),
-                Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+                Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
                 ReviewCount = c.ExpReviews.Count(),
                 AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                 CreatedAt = c.CreatedAt
@@ -86,7 +86,7 @@ namespace ExpServiceHelper.Service
         public async Task<List<DCoachInfo>> GetCoachSpecial(string key)
         {
             var result = await _context.ExpCoaches
-                 .Where(c => c.Specialities.Any(s => s.SportsName.Contains(key)))
+                 .Where(c => c.ExpCoachSpeciallityMappings.Any(s => s.Specialities.SportsName.Contains(key)))
                  .SelectCoachInfo()
                  .ToListAsync();
             return result;
@@ -146,6 +146,7 @@ namespace ExpServiceHelper.Service
             {
                 //呼叫SPhoto
                 var p = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
+
                 if (p != null && p.Any())
                 {
                     var result = p.First();
@@ -173,7 +174,24 @@ namespace ExpServiceHelper.Service
                 IsSuspended = false // 預設不停權
             };
 
+            // 把教練加到 Context 中 (這時候 EF 已經開始追蹤這個 newCoach 了)
             _context.ExpCoaches.Add(newCoach);
+
+            //  處理專業 (不需要手動寫 CoachId！)
+            if (dto.SpecialityIds != null && dto.SpecialityIds.Any())
+            {
+                foreach (var specId in dto.SpecialityIds)
+                {
+                    // 直接 new 出 Mapping 資料，CoachId 先空著
+                    // 關鍵在於：只要你把這些 Mapping 加進 Context，EF 存檔時會自動補上 Id
+                    _context.ExpCoachSpeciallityMappings.Add(new ExpCoachSpeciallityMapping
+                    {
+                        // 💡 這裡直接指向剛才 new 出來的物件
+                        Coach = newCoach,
+                        SpecialitiesId = specId
+                    });
+                }
+            }
             await _context.SaveChangesAsync();
 
             return new DAPIResponse<int>
@@ -198,7 +216,7 @@ namespace ExpServiceHelper.Service
                          District = c.TripDistricts.Select(m => m.Name).ToList(),
                          AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                          ReviewCount = c.ExpReviews.Count(),
-                         Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+                         Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
                          Introduction = c.Introduction,
                          CreatedAt = c.CreatedAt
 
@@ -210,7 +228,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片?? 
+        #region 教練編輯 ??mapAPI抓詳細地址??
         public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId)
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
@@ -222,34 +240,35 @@ namespace ExpServiceHelper.Service
                 return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
             }
 
-            //if (dto.Specialities != null)
-            //{
-            //    // 1. 先把該教練舊的專業全部刪除 (砍掉舊的連結)
-            //    // 假設你的 Mapping 表叫 ExpCoachSpecialties
-            //    var oldMappings = _context.ExpC.Where(s => s.CoachId == thisCoach.Id);
-            //    _context.ExpCoachSpecialties.RemoveRange(oldMappings);
+            if (dto.Specialities != null)
+            {
+                // 1. 先把該教練舊的專業全部刪除 (砍掉舊的連結)
+                // 假設你的 Mapping 表叫 ExpCoachSpecialties
+                var oldMappings = _context.ExpCoachSpeciallityMappings.Where(s => s.CoachId == thisCoach.Id);
+                _context.ExpCoachSpeciallityMappings.RemoveRange(oldMappings);
 
-            //    // 2. 根據前端傳來的 ID 列表，重新建立新的連結
-            //    foreach (var specId in dto.Specialities)
-            //    {
-            //        _context.ExpCoachSpecialties.Add(new ExpCoachSpecialty
-            //        {
-            //            CoachId = thisCoach.Id,
-            //            SpecialtyId = specId
-            //        });
-            //    }
-            //}
+                // 2. 根據前端傳來的 ID 列表，重新建立新的連結
+                if (dto.SpecialityIds != null)
+                {
+                    foreach (var specId in dto.SpecialityIds)
+                    {
+                        _context.ExpCoachSpeciallityMappings.Add(new ExpCoachSpeciallityMapping
+                        {
+                            CoachId = thisCoach.Id,
+                            SpecialitiesId = specId 
+                        });
+                    }
+                }
+            }
 
             //處理圖片
             if (dto.AvatarFile != null && dto.AvatarFile.Length > 0)
             {
                 // A. 刪除舊圖片 (建議在資料表增加一個 PublicId 欄位，否則需從 URL 解析)
-                if (!string.IsNullOrEmpty(thisCoach.AvatarUrl))
+                if (dto.AvatarFile != null && !string.IsNullOrEmpty(dto.PublicId))
                 {
-                    //string oldPublicId = ExtractPublicIdFromUrl(thisCoach.AvatarUrl);
                     await _sPhoto.DeletePhotoAsync(new List<string> { dto.PublicId });
                 }
-
                 // B. 上傳新圖片
                 var uploadResults = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
                 var uploadResult = uploadResults.FirstOrDefault();
@@ -293,7 +312,7 @@ namespace ExpServiceHelper.Service
                 {
                     District = c.DistrictId,
                     // 抓出他所有的專長 ID
-                    SpecialityIds = c.Specialities.Select(s => s.SportsName).ToList()
+                    SpecialityIds = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -302,7 +321,7 @@ namespace ExpServiceHelper.Service
             var query = _context.ExpCoaches
                 .Where(c => c.Id != thisCoachId) // 排除自己
                 .Where(c => c.DistrictId == currentCoachInfo.District &&
-                            c.Specialities.Any(s => currentCoachInfo.SpecialityIds.Contains(s.SportsName)));
+                            c.ExpCoachSpeciallityMappings.Any(s => currentCoachInfo.SpecialityIds.Contains(s.Specialities.SportsName)));
             // 3. 執行隨機排序並取前 3 名
             // 提示：在 LINQ to Entities 中，Guid.NewGuid() 常用來模擬隨機排序//
             var recommendedList = await query
@@ -314,8 +333,7 @@ namespace ExpServiceHelper.Service
                     CoachName = c.Name,
                     AvatarUrl = c.AvatarUrl,
                     District = c.TripDistricts.Select(d => d.Name).ToList(),
-                    Specialities = c.Specialities
-                                    .Select(s => s.SportsName)
+                    Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
                                     .ToList()
                 })
                 .ToListAsync();
@@ -349,7 +367,7 @@ namespace ExpServiceHelper.Service
                     CoachName = f.Coach.Name, // 透過導覽屬性抓教練名
                     AvatarUrl = f.Coach.AvatarUrl,
                     District = f.Coach.TripDistricts.Select(d => d.Name).ToList(),
-                    Specialities = f.Coach.Specialities.Select(sm => sm.SportsName).ToList(),
+                    Specialities = f.Coach.ExpCoachSpeciallityMappings.Select(sm => sm.Specialities.SportsName).ToList(),
                     AvgRating = f.Coach.ExpReviews.Any()
                         ? Math.Round(f.Coach.ExpReviews.Average(r => (double)r.Rating), 1)
                         : 0,

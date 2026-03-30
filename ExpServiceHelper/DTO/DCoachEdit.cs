@@ -20,6 +20,7 @@ namespace ExpServiceHelper.DTO
         public IFormFile? AvatarFile { get; set; }
         public string? PublicId { get; set; }
         //
-        public List<int>? SpecialityIds { get; set; }
+        public List<int>? SpecialityIds { get; set; } = new List<int>();
+        public List<string>? Specialities { get; set; } = new List<string>();
     }
 }
