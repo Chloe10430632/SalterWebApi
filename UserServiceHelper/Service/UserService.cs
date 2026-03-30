@@ -26,15 +26,17 @@ namespace UserServiceHelper.Service
         private readonly IGenericUserRepository<UserUser> _dbUser;
         private readonly PasswordHasher<UserUser> _passwordHasher;
         private readonly IConfiguration _configuration;
+        private readonly SalterDbContext _dbContext;
         private readonly ISCoachMethods _coachMethods;
 
 
-        public UserService(IGenericUserRepository<UserUser> dbUser, PasswordHasher<UserUser> passwordHasher, IConfiguration configuration, ISCoachMethods sCoachMethods)
+        public UserService(IGenericUserRepository<UserUser> dbUser, PasswordHasher<UserUser> passwordHasher, IConfiguration configuration, ISCoachMethods sCoachMethods, SalterDbContext salterDb)
         {
             _dbUser = dbUser;
             _passwordHasher = passwordHasher;
             _configuration = configuration;
             _coachMethods = sCoachMethods;
+            _dbContext = salterDb;
         }
         
         public async Task<UserProfileViewModel?> GetUserProfileAsync(int userId)
@@ -365,6 +367,8 @@ namespace UserServiceHelper.Service
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             // 2. 準備「通行證」上面的資訊 (Claims)
+            var coach = _dbContext.ExpCoaches.FirstOrDefault(c => c.UserId == user.Id);
+            string coachIdStr = coach?.Id.ToString() ?? "0";    
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -376,7 +380,7 @@ namespace UserServiceHelper.Service
                 new Claim("Avatar", user.ProfilePicture ?? "/admin/imgs/default-avatar.png"),
                 // 塞入角色名稱
                 new Claim(ClaimTypes.Role, user.UserRole?.Name ?? "一般會員"),
-               new Claim("CoachId", user.ExpCoaches.FirstOrDefault()?.Id.ToString() ?? "0")
+               new Claim("CoachId", coachIdStr)
             };
 
 

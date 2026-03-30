@@ -75,6 +75,7 @@ namespace ExpServiceHelper.IService
 
         #endregion
 
+        Task<List<DSpeciallity>> Sports();
 
         #region 評論
         #region 新增評論

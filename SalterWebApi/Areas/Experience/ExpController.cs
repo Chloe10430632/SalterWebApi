@@ -300,6 +300,20 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #endregion
 
+        #region~~專業~~
+        [HttpGet("Spe")]
+        public async Task<IActionResult> AllSpeciality()
+        {
+            try
+            {
+                var result = await _sCoachMethods.Sports();
+                    return Ok(result);
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+
+        }
+        #endregion
+
         #region 收藏
         #region 收藏  
         [Authorize]

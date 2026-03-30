@@ -307,6 +307,8 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #endregion
+
         #region 查看收藏(保持愛心) 
         public async Task<List<int>> HeartIds(int userId)
         {
@@ -343,8 +345,6 @@ namespace ExpServiceHelper.Service
 
             return await fav;
         }
-        #endregion
-
         #endregion
 
         #region~~課程~~
@@ -733,6 +733,16 @@ namespace ExpServiceHelper.Service
         }
         #endregion
         #endregion
+
+        public async Task<List<DSpeciallity>> Sports() { 
+            var result = await _context.ExpSpecialities
+                .Select(s => new DSpeciallity
+                {
+                    Id = s.Id,
+                    SportsName = s.SportsName
+                }).ToListAsync();
+            return result;
+        }
 
         #region 交易流程
         #region 新增預約課程
