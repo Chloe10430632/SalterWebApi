@@ -9,6 +9,8 @@ public partial class ExpCoachSpeciallityMapping
 
     public int SpecialitiesId { get; set; }
 
+    public int Id { get; set; }
+
     public virtual ExpCoach Coach { get; set; } = null!;
 
     public virtual ExpSpeciality Specialities { get; set; } = null!;

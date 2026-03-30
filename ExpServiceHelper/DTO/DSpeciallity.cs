@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace ExpServiceHelper.DTO
 {
-    public class DCoachFav
+    public class DSpeciallity
     {
-            public int UserId { get; set; }
-            public int CoachId { get; set; }
-            
+        public int Id { get; set; }
+        public string SportsName { get; set; } = null!;
+
     }
 }

@@ -41,6 +41,8 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<ExpCoach> ExpCoaches { get; set; }
 
+    public virtual DbSet<ExpCoachSpeciallityMapping> ExpCoachSpeciallityMappings { get; set; }
+
     public virtual DbSet<ExpCourseOrder> ExpCourseOrders { get; set; }
 
     public virtual DbSet<ExpCoursePhoto> ExpCoursePhotos { get; set; }
@@ -501,25 +503,6 @@ public partial class SalterDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ExpCoaches_UserUsers");
 
-            entity.HasMany(d => d.Specialities).WithMany(p => p.Coaches)
-                .UsingEntity<Dictionary<string, object>>(
-                    "ExpCoachSpeciallityMapping",
-                    r => r.HasOne<ExpSpeciality>().WithMany()
-                        .HasForeignKey("SpecialitiesId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_expCoachSpeciallityMapping_ExpSpecialities"),
-                    l => l.HasOne<ExpCoach>().WithMany()
-                        .HasForeignKey("CoachId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_expCoachSpeciallityMapping_ExpCoaches"),
-                    j =>
-                    {
-                        j.HasKey("CoachId", "SpecialitiesId");
-                        j.ToTable("ExpCoachSpeciallityMapping");
-                        j.IndexerProperty<int>("CoachId").HasColumnName("coach_id");
-                        j.IndexerProperty<int>("SpecialitiesId").HasColumnName("specialities_id");
-                    });
-
             entity.HasMany(d => d.TripDistricts).WithMany(p => p.CoachDists)
                 .UsingEntity<Dictionary<string, object>>(
                     "ExpDistrictMapping",
@@ -536,6 +519,29 @@ public partial class SalterDbContext : DbContext
                         j.IndexerProperty<int>("CoachDistId").HasColumnName("coach_dist_id");
                         j.IndexerProperty<int>("TripDistrictId").HasColumnName("trip_district_id");
                     });
+        });
+
+        modelBuilder.Entity<ExpCoachSpeciallityMapping>(entity =>
+        {
+            entity.HasKey(e => new { e.CoachId, e.SpecialitiesId });
+
+            entity.ToTable("ExpCoachSpeciallityMapping");
+
+            entity.Property(e => e.CoachId).HasColumnName("coach_id");
+            entity.Property(e => e.SpecialitiesId).HasColumnName("specialities_id");
+            entity.Property(e => e.Id)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("id");
+
+            entity.HasOne(d => d.Coach).WithMany(p => p.ExpCoachSpeciallityMappings)
+                .HasForeignKey(d => d.CoachId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_expCoachSpeciallityMapping_ExpCoaches");
+
+            entity.HasOne(d => d.Specialities).WithMany(p => p.ExpCoachSpeciallityMappings)
+                .HasForeignKey(d => d.SpecialitiesId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_expCoachSpeciallityMapping_ExpSpecialities");
         });
 
         modelBuilder.Entity<ExpCourseOrder>(entity =>
@@ -1197,7 +1203,6 @@ public partial class SalterDbContext : DbContext
 
             entity.HasOne(d => d.Transactions).WithMany(p => p.HomBookings)
                 .HasForeignKey(d => d.TransactionsId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_HomBooking_expTransactions");
 
             entity.HasOne(d => d.User).WithMany(p => p.HomBookings)

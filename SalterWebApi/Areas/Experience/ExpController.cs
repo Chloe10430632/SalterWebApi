@@ -40,15 +40,15 @@ namespace SalterWebApi.Areas.Experience
         public async Task<IActionResult> PopRank(int page = 1, int pageSize = 6)
         {
             var result = await _sCoachMethods.CoachPopular(page, pageSize);
-            return Ok(result);
+            return Ok(new { Issuccess = true, data = result });
         }
         #endregion
         #region 最新排序 
         [HttpGet("NewRank")]
-        public async Task<IActionResult> NewRank()
+        public async Task<IActionResult> NewRank(int page = 1, int pageSize = 6)
         {
-            var result = await _sCoachMethods.GetCoachNewest();
-            return Ok(result);
+            var result = await _sCoachMethods.GetCoachNewest(page, pageSize);
+            return Ok(new { Issuccess = true, data = result });
         }
         #endregion
 
@@ -61,7 +61,7 @@ namespace SalterWebApi.Areas.Experience
         {
             try {
                 var result = await _sCoachMethods.GetCoachName(key);
-                return Ok(result);
+                return Ok(new { Issuccess = true, data = result });
             }
             catch (Exception ex) {
                 BadRequest(new { message = ex.Message });
@@ -76,7 +76,7 @@ namespace SalterWebApi.Areas.Experience
         {
             try {
                 var result = await _sCoachMethods.GetCoachSpecial(key);
-                return Ok(result);
+                return Ok(new { Issuccess = true, data = result });
             }
             catch (Exception ex) { BadRequest(new { message = ex.Message }); }
             return BadRequest(new { message = "請檢查資料是否正確" });
@@ -88,8 +88,8 @@ namespace SalterWebApi.Areas.Experience
         public async Task<IActionResult> DistSearch([FromQuery] string key)
         {
             try {
-                var result = await _sCoachMethods.GetCoachDist(key); 
-                return Ok(result);
+                var result = await _sCoachMethods.GetCoachDist(key);
+                return Ok(new { Issuccess = true, data = result });
             }
             catch (Exception ex) { BadRequest(new { message = ex.Message }); }
             return BadRequest(new { message = "請檢查資料是否正確" });
@@ -117,7 +117,7 @@ namespace SalterWebApi.Areas.Experience
             {
                 var result = await _sCoachMethods.CreateCoach(dto, currentUserId);
 
-                if (result.IsSuccess) return Ok(new { message = "申請成功！歡迎加入教練行列" });
+                if (result.IsSuccess) Ok(new { Issuccess = true, data = result, message = "申請成功！歡迎加入教練行列" });
                 return BadRequest(new { message = "你已經是教練了" });
             }
             return BadRequest(new { message = "ID 格式不正確" });
@@ -126,8 +126,8 @@ namespace SalterWebApi.Areas.Experience
 
         #region 編輯自介 
         [Authorize]
-        [HttpPut("EditCoach{id}")]
-        public async Task<IActionResult> EditThisCoach([FromForm] DCoachEdit dto)
+        [HttpPut("EditCoach/{coachId}")]
+        public async Task<IActionResult> EditThisCoach([FromForm] DCoachEdit dto, int coachId)
         {
             // 1. 抓取 JWS 裡面的 UserId
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -141,7 +141,8 @@ namespace SalterWebApi.Areas.Experience
             if (int.TryParse(userIdStr, out int currentUserId))
             {
                 var result = await _sCoachMethods.EditCoachInfo(dto, currentUserId);
-                if (result.IsSuccess) return Ok(result);
+                if (result.IsSuccess) return Ok(new { Issuccess = true, data = result });
+                return BadRequest(new { message = "儲存失敗" });
             }
             return BadRequest("系統忙碌中");
 
@@ -149,78 +150,27 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 教練自介
-        [HttpGet("Info{id}")]
+        [HttpGet("Info/{coachId}")]
         public async Task<IActionResult> CoachInfo(int coachId)
         {
             if (coachId == 0) return NotFound("這位教練還沒出生");
             var result = await _sCoachMethods.ThisCoachInfo(coachId);
-            return Ok(result);
+            return Ok(new { isSuccess = true, data = result });
         }
         #endregion
 
         #region 系統推薦
-        [HttpGet("Recommand{id}")]
+        [HttpGet("Recommand/{id}")]
         public async Task<IActionResult> RecommandCoaches(int id)
         {
             var result = await _sCoachMethods.CoachRecommand(id);
             if (result == null || result.Count == 0)
                 return NotFound("教練們休息中");
-            return Ok(result);
+            return Ok(new { Issuccess = true, data = result });
         }
         #endregion
 
-        #region 查看評論
-        [HttpGet("ContentDetails{id}")]
-        public async Task<IActionResult> ContentDetails(int coachId)
-        {
-            if (coachId == 0) return NotFound("這位教練還沒出生");
-            var result = await _sCoachMethods.CoachReviews(coachId);
-            return Ok(result);
-        }
-        #endregion
 
-        #region 收藏  
-        [Authorize]
-        [HttpPost("Favorites")]
-        public async Task<IActionResult> MyFavCoach(DCoachFav dto)
-        {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userIdStr))
-            {
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
-            }
-            //轉int
-            if (int.TryParse(userIdStr, out int currentUserId))
-            {
-                //多傳入一個 currentUserId
-                var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
-                return Ok(result);
-            }
-            return BadRequest("登入後才能使用功能");
-        }
-        #endregion
-
-        #region 收藏清單
-        [HttpGet("myFavList{id}")]
-        public async Task<IActionResult> MyFavCoachList(int userId)
-        {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userIdStr))
-            {
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
-            }
-            if (int.TryParse(userIdStr, out int currentUserId))
-            {
-                var result = await _sCoachMethods.GetMyFavCoach(userId);
-                if (result == null || userId == 0)
-                    return NotFound("...收藏列表很冷清...");
-                return Ok(result);
-            }
-            return BadRequest("登入後才能使用功能");
-        }
-        #endregion
         #endregion
 
         #region 課程
@@ -248,7 +198,7 @@ namespace SalterWebApi.Areas.Experience
 
         #region 編輯模板
         [Authorize]
-        [HttpPut("EditCourseTemplate{tempId}")]
+        [HttpPut("EditCourseTemplate/{tempId}")]
         public async Task<IActionResult> EditCourseTemplate([FromForm] DCourseTempEdit dto, int tempId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -271,7 +221,7 @@ namespace SalterWebApi.Areas.Experience
 
         #region 課程選時間上架 
         [Authorize]
-        [HttpPost("CourseTime{templateId}")]
+        [HttpPost("CourseTime/{templateId}")]
         public async Task<IActionResult> OpenTimeCourse([FromBody] DCourseOpenSession dto, int templateId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -297,7 +247,7 @@ namespace SalterWebApi.Areas.Experience
         #region 課程時段刪除
 
         [Authorize]
-        [HttpDelete("DeleteSession{sessionId}")]
+        [HttpDelete("DeleteSession/{sessionId}")]
         public async Task<IActionResult> deleteThisSession(int courseSessionId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -319,7 +269,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 課程展示介紹
-        [HttpGet("CourseInfo{sessionId}")]
+        [HttpGet("CourseInfo/{sessionId}")]
         public async Task<IActionResult> CourseInfo(int sessionId)
         {
             if (sessionId == 0 ) return NotFound("新課程還在趕工中");
@@ -332,8 +282,107 @@ namespace SalterWebApi.Areas.Experience
             catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
 
         }
+
+        #endregion
+
+        #region 教練最新課程展示
+        [HttpGet("LatestCourse/{coachId}")]
+        public async Task<IActionResult> LatestCourse(int coachId)
+        {
+            if (coachId == 0) return NotFound("找不到教練");
+            try
+            {
+                var result = await _sCoachMethods.LatestCourseByCoach(coachId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
         #endregion
         #endregion
+
+        #region~~專業~~
+        [HttpGet("Spe")]
+        public async Task<IActionResult> AllSpeciality()
+        {
+            try
+            {
+                var result = await _sCoachMethods.Sports();
+                    return Ok(result);
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+
+        }
+        #endregion
+
+        #region 收藏
+        #region 收藏  
+        [Authorize]
+        [HttpPost("Favorites")]
+        public async Task<IActionResult> MyFavCoach(DCoachFav dto)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            }
+            //轉int
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                //多傳入一個 currentUserId
+                var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
+                return Ok(new { Issuccess = true, data = result });
+            }
+            return BadRequest("登入後才能使用功能");
+        }
+        #endregion
+
+        #region 查看收藏(保持愛心) 
+        [Authorize]
+        [HttpGet("FavHeart")]
+        public async Task<IActionResult> GetHeart()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            }
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                var favIds = await _sCoachMethods.HeartIds(currentUserId);
+                return Ok(new { Issuccess = true, data = favIds });
+            }
+            return BadRequest("沒有收藏");
+        }
+
+        #endregion
+
+        #region 收藏清單
+        [Authorize]
+        [HttpGet("myFavList")]
+        public async Task<IActionResult> MyFavCoachList(int page = 1, int pageSize = 8)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized(new { message = "無效的憑證，請重新登入啦" });
+            }
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                var result = await _sCoachMethods.GetMyFavCoach(currentUserId, page, pageSize);
+                if (result == null || !result.Any())
+                    return Ok(new { Issuccess = true, data = new List<object>() }); // 回傳空陣列
+                return Ok(new { Issuccess = true, data = result });
+            }
+            return BadRequest("登入後才能使用功能");
+        }
+        #endregion
+
+        #endregion
+
 
         #region 評論
         //TODO尚未測試
@@ -352,7 +401,7 @@ namespace SalterWebApi.Areas.Experience
 
             var result = await _sCoachMethods.CreateReview(dto, currentUserId, courseId);
             if (result.IsSuccess)
-                return Ok(result);
+                return Ok(new { Issuccess = true, data = result });
             return BadRequest(new DAPIResponse<string>
             {
                 IsSuccess = false,
@@ -363,7 +412,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #region 編輯評論
         [Authorize]
-        [HttpPut("EditReview{reviewId}")]
+        [HttpPut("EditReview/{reviewId}")]
         public async Task<IActionResult> EditThisRevwew(DReview dto, int courseId, int reviewId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -374,7 +423,7 @@ namespace SalterWebApi.Areas.Experience
 
             var result = await _sCoachMethods.EditReview(dto, currentUserId, courseId, reviewId);
             if (result.IsSuccess)
-                return Ok(result);
+                return Ok(new { Issuccess = true, data = result });
             return BadRequest(new DAPIResponse<string>
             {
                 IsSuccess = false,
@@ -385,7 +434,7 @@ namespace SalterWebApi.Areas.Experience
         #endregion
         #region 刪除評論
         [Authorize]
-        [HttpDelete("DeleteReview{reviewId}")]
+        [HttpDelete("DeleteReview/{reviewId}")]
         public async Task<IActionResult> DeleteReview(int reviewId) {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId)){
@@ -394,14 +443,23 @@ namespace SalterWebApi.Areas.Experience
             }
                 try {
                     var result = await _sCoachMethods.DeleteReview(currentUserId,reviewId);
-                    if (result.IsSuccess) return Ok(result);
-                    return BadRequest(new { message = result.Message });
+                    if (result.IsSuccess) return Ok(new { Issuccess = true, data = result });
+                return BadRequest(new { message = result.Message });
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
             
         }
 
 
+        #endregion
+        #region 查看評論
+        [HttpGet("ContentDetails/{coachId}")]
+        public async Task<IActionResult> ContentDetails(int coachId)
+        {
+            if (coachId == 0) return NotFound("這位教練還沒出生");
+            var result = await _sCoachMethods.CoachReviews(coachId);
+            return Ok(new { Issuccess = true, data = result });
+        }
         #endregion
 
         #endregion
@@ -421,7 +479,7 @@ namespace SalterWebApi.Areas.Experience
             {
                 try {
                     var result = await _sCoachMethods.SessionReserve(dto, currentUserId);
-                    if (result.IsSuccess) return Ok( result);
+                    if (result.IsSuccess) return Ok(new { Issuccess = true, data = result });
                 }
                 catch (Exception ex) { return BadRequest(ex.Message); }
             }

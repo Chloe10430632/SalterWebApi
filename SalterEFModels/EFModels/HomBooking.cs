@@ -33,7 +33,7 @@ public partial class HomBooking
 
     public virtual HomRoomType RoomType { get; set; } = null!;
 
-    public virtual ExpTransaction Transactions { get; set; } = null!;
+    public virtual ExpTransaction? Transactions { get; set; }
 
     public virtual UserUser User { get; set; } = null!;
 }

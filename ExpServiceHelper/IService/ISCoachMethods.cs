@@ -23,9 +23,9 @@ namespace ExpServiceHelper.IService
         /**搜尋-專業*/
         Task<List<DCoachInfo>> GetCoachSpecial(string keySpecial);
         /**排序-最新*/
-        Task<List<DCoachInfo>> GetCoachNewest();
+        Task<List<DCoachInfo>> GetCoachNewest(int page, int pageSize);
         /**排序-熱門*/
-        Task<List<DCoachInfo>> CoachPopular(int page,int pageSize);
+        Task<List<DCoachInfo>> CoachPopular(int page, int pageSize);
         #endregion
 
         #region ~~教練~~
@@ -43,9 +43,6 @@ namespace ExpServiceHelper.IService
         #endregion
         #region 查看評論
         Task<List<DCoachReview>> CoachReviews(int coachId);
-        #endregion
-        # region 列出所有收藏
-        Task<List<DCoachFavList>> GetMyFavCoach(int userId);
         #endregion
         #endregion
 
@@ -65,7 +62,20 @@ namespace ExpServiceHelper.IService
         #region 課程展示
         Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId);
         #endregion
+        Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId);
         #endregion
+
+        #region ~~收藏~~
+        #region 列出所有收藏
+        Task<List<DCoachFavList>> GetMyFavCoach(int userId, int page, int pageSize);
+        #endregion
+        #region 查看收藏(保持愛心) 
+        Task<List<int>> HeartIds(int userId);
+        #endregion
+
+        #endregion
+
+        Task<List<DSpeciallity>> Sports();
 
         #region 評論
         #region 新增評論

@@ -32,10 +32,10 @@ namespace ExpServiceHelper.Service
             {
                 CoachId = c.Id,
                 CoachName = c.Name,
-                 AvatarUrl = c.AvatarUrl,
+                AvatarUrl = c.AvatarUrl,
                 // 提醒：在資料庫層級 string.Join 可能會報錯，建議到記憶體再處理，或者直接選成 List
                 District = c.TripDistricts.Select(m => m.Name).ToList(),
-                Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+                Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
                 ReviewCount = c.ExpReviews.Count(),
                 AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                 CreatedAt = c.CreatedAt
@@ -59,9 +59,10 @@ namespace ExpServiceHelper.Service
 
         #region 入口
         #region~~搜尋-名字~~
-        public async Task<List<DCoachInfo>> GetCoachName(string key) { 
+        public async Task<List<DCoachInfo>> GetCoachName(string key)
+        {
             var result = await _context.ExpCoaches
-                .Where(c =>c.Name.Contains(key))
+                .Where(c => c.Name.Contains(key))
                 .SelectCoachInfo()
                 .ToListAsync();
             return result;
@@ -85,19 +86,7 @@ namespace ExpServiceHelper.Service
         public async Task<List<DCoachInfo>> GetCoachSpecial(string key)
         {
             var result = await _context.ExpCoaches
-                 .Where(c => c.Specialities.Any(s => s.SportsName.Contains(key)))
-                 .SelectCoachInfo()
-                 .ToListAsync();
-            return result;
-        }
-        #endregion
-
-        #region~~排序-最新~~
-        public async Task<List<DCoachInfo>> GetCoachNewest()
-        {
-            var result = await _context.ExpCoaches
-                 .OrderByDescending(c => c.CreatedAt)
-                 .Take(12)
+                 .Where(c => c.ExpCoachSpeciallityMappings.Any(s => s.Specialities.SportsName.Contains(key)))
                  .SelectCoachInfo()
                  .ToListAsync();
             return result;
@@ -105,7 +94,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region~~排序-熱門~~
-        public async Task<List<DCoachInfo>> CoachPopular(int page,int pageSize)
+        public async Task<List<DCoachInfo>> CoachPopular(int page, int pageSize)
         {
             // 1. 只拿「排序需要」的資料
             var rankedCoachesQuery = _context.ExpCoaches
@@ -117,7 +106,7 @@ namespace ExpServiceHelper.Service
                 })
                 .OrderByDescending(x => x.Avg)
                 .ThenByDescending(x => x.Count)
-                .Skip((page-1)*pageSize)
+                .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(x => x.Entity); // 【關鍵】排序完後，我們只要回傳教練實體
 
@@ -125,16 +114,29 @@ namespace ExpServiceHelper.Service
             return await rankedCoachesQuery.SelectCoachInfo().ToListAsync();
         }
         #endregion
+
+        #region~~排序-最新~~
+        public async Task<List<DCoachInfo>> GetCoachNewest(int page, int pageSize)
+        {
+            var result = await _context.ExpCoaches
+                 .OrderByDescending(c => c.CreatedAt)
+                 .Skip((page - 1) * pageSize)
+                 .Take(pageSize)
+                 .SelectCoachInfo()
+                 .ToListAsync();
+            return result;
+        }
+        #endregion
         #endregion
 
         #region~~教練~~
 
         #region 申請加入教練(新增)  
-            public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
-            {
-                // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
-                bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
-                if (exists) return new DAPIResponse<int> { IsSuccess = false, Message = "您已經是教練囉！" };
+        public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
+        {
+            // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
+            bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
+            if (exists) return new DAPIResponse<int> { IsSuccess = false, Message = "您已經是教練囉！" };
 
             //處理照片
             string upLoadUrl = "default_avatar_url";
@@ -144,12 +146,15 @@ namespace ExpServiceHelper.Service
             {
                 //呼叫SPhoto
                 var p = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
-                if (  p != null && p.Any()) {
+
+                if (p != null && p.Any())
+                {
                     var result = p.First();
                     upLoadUrl = result.SecureUrl.ToString();
                     upLoadPublicId = result.PublicId;
                 }
-                else{
+                else
+                {
                     return new DAPIResponse<int> { IsSuccess = false, Message = "圖片上傳失敗" };
                 }
             }
@@ -169,7 +174,24 @@ namespace ExpServiceHelper.Service
                 IsSuspended = false // 預設不停權
             };
 
+            // 把教練加到 Context 中 (這時候 EF 已經開始追蹤這個 newCoach 了)
             _context.ExpCoaches.Add(newCoach);
+
+            //  處理專業 (不需要手動寫 CoachId！)
+            if (dto.SpecialityIds != null && dto.SpecialityIds.Any())
+            {
+                foreach (var specId in dto.SpecialityIds)
+                {
+                    // 直接 new 出 Mapping 資料，CoachId 先空著
+                    // 關鍵在於：只要你把這些 Mapping 加進 Context，EF 存檔時會自動補上 Id
+                    _context.ExpCoachSpeciallityMappings.Add(new ExpCoachSpeciallityMapping
+                    {
+                        // 💡 這裡直接指向剛才 new 出來的物件
+                        Coach = newCoach,
+                        SpecialitiesId = specId
+                    });
+                }
+            }
             await _context.SaveChangesAsync();
 
             return new DAPIResponse<int>
@@ -190,11 +212,11 @@ namespace ExpServiceHelper.Service
                      {
                          CoachId = c.Id,
                          CoachName = c.Name,
-                          AvatarUrl = c.AvatarUrl,
+                         AvatarUrl = c.AvatarUrl,
                          District = c.TripDistricts.Select(m => m.Name).ToList(),
-                         AvgRating = c.ExpReviews.Any() ? Math.Round( c.ExpReviews.Average(r => (double)r.Rating) ,1): 0,
+                         AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                          ReviewCount = c.ExpReviews.Count(),
-                         Specialities = c.Specialities.Select(s => s.SportsName).ToList(),
+                         Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
                          Introduction = c.Introduction,
                          CreatedAt = c.CreatedAt
 
@@ -206,7 +228,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 教練編輯 ??mapAPI抓詳細地址??上傳圖片?? 
+        #region 教練編輯 ??mapAPI抓詳細地址??
         public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId)
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
@@ -218,24 +240,46 @@ namespace ExpServiceHelper.Service
                 return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
             }
 
+            if (dto.Specialities != null)
+            {
+                // 1. 先把該教練舊的專業全部刪除 (砍掉舊的連結)
+                // 假設你的 Mapping 表叫 ExpCoachSpecialties
+                var oldMappings = _context.ExpCoachSpeciallityMappings.Where(s => s.CoachId == thisCoach.Id);
+                _context.ExpCoachSpeciallityMappings.RemoveRange(oldMappings);
+
+                // 2. 根據前端傳來的 ID 列表，重新建立新的連結
+                if (dto.SpecialityIds != null)
+                {
+                    foreach (var specId in dto.SpecialityIds)
+                    {
+                        _context.ExpCoachSpeciallityMappings.Add(new ExpCoachSpeciallityMapping
+                        {
+                            CoachId = thisCoach.Id,
+                            SpecialitiesId = specId 
+                        });
+                    }
+                }
+            }
+
             //處理圖片
             if (dto.AvatarFile != null && dto.AvatarFile.Length > 0)
             {
                 // A. 刪除舊圖片 (建議在資料表增加一個 PublicId 欄位，否則需從 URL 解析)
-                if (!string.IsNullOrEmpty(thisCoach.AvatarUrl))
+                if (dto.AvatarFile != null && !string.IsNullOrEmpty(dto.PublicId))
                 {
-                    //string oldPublicId = ExtractPublicIdFromUrl(thisCoach.AvatarUrl);
-                    await _sPhoto.DeletePhotoAsync(new List<string> { dto.PublicId});
+                    await _sPhoto.DeletePhotoAsync(new List<string> { dto.PublicId });
                 }
-
                 // B. 上傳新圖片
                 var uploadResults = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
                 var uploadResult = uploadResults.FirstOrDefault();
 
-                if (uploadResult != null && uploadResult.Error == null) {
+                if (uploadResult != null && uploadResult.Error == null)
+                {
                     thisCoach.AvatarUrl = uploadResult.SecureUrl.AbsoluteUri;
                 }
-                else {return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "圖片上傳失敗" };
+                else
+                {
+                    return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "圖片上傳失敗" };
                 }
             }
 
@@ -250,8 +294,11 @@ namespace ExpServiceHelper.Service
             // 3. 存檔：這時候 EF 就會知道 thisCoach 被動過了，發出 UPDATE 指令
             await _context.SaveChangesAsync();
 
-            return new DAPIResponse<DCoachEdit> {
-                IsSuccess = true, Message = "更新成功！教練大人進化了！" };
+            return new DAPIResponse<DCoachEdit>
+            {
+                IsSuccess = true,
+                Message = "更新成功！教練大人進化了！"
+            };
         }
         #endregion
 
@@ -265,7 +312,7 @@ namespace ExpServiceHelper.Service
                 {
                     District = c.DistrictId,
                     // 抓出他所有的專長 ID
-                    SpecialityIds = c.Specialities.Select(s => s.SportsName).ToList()
+                    SpecialityIds = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -274,7 +321,7 @@ namespace ExpServiceHelper.Service
             var query = _context.ExpCoaches
                 .Where(c => c.Id != thisCoachId) // 排除自己
                 .Where(c => c.DistrictId == currentCoachInfo.District &&
-                            c.Specialities.Any(s => currentCoachInfo.SpecialityIds.Contains(s.SportsName)));
+                            c.ExpCoachSpeciallityMappings.Any(s => currentCoachInfo.SpecialityIds.Contains(s.Specialities.SportsName)));
             // 3. 執行隨機排序並取前 3 名
             // 提示：在 LINQ to Entities 中，Guid.NewGuid() 常用來模擬隨機排序//
             var recommendedList = await query
@@ -286,8 +333,7 @@ namespace ExpServiceHelper.Service
                     CoachName = c.Name,
                     AvatarUrl = c.AvatarUrl,
                     District = c.TripDistricts.Select(d => d.Name).ToList(),
-                    Specialities = c.Specialities
-                                    .Select(s => s.SportsName)
+                    Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
                                     .ToList()
                 })
                 .ToListAsync();
@@ -297,12 +343,23 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #endregion
+
+        #region 查看收藏(保持愛心) 
+        public async Task<List<int>> HeartIds(int userId)
+        {
+            return await _context.ExpFavorites
+                    .Where(f => f.UserId == userId)
+                    .Select(f => f.CoachId).ToListAsync();
+        }
+        #endregion
+
         #region 收藏清單
-        public async Task<List<DCoachFavList>> GetMyFavCoach(int userId)
+        public async Task<List<DCoachFavList>> GetMyFavCoach(int currentUserId, int page, int pageSize)
         {
             // 1. 先拿到 Entity 列表
             var fav = _context.ExpFavorites
-                .Where(f => f.UserId == userId)
+                .Where(f => f.UserId == currentUserId)
                 .Select(f => new DCoachFavList
                 {
                     UserId = f.UserId,
@@ -310,17 +367,20 @@ namespace ExpServiceHelper.Service
                     CoachName = f.Coach.Name, // 透過導覽屬性抓教練名
                     AvatarUrl = f.Coach.AvatarUrl,
                     District = f.Coach.TripDistricts.Select(d => d.Name).ToList(),
-                    Specialities = f.Coach.Specialities.Select(sm => sm.SportsName).ToList(),
+                    Specialities = f.Coach.ExpCoachSpeciallityMappings.Select(sm => sm.Specialities.SportsName).ToList(),
                     AvgRating = f.Coach.ExpReviews.Any()
-                        ? Math.Round( f.Coach.ExpReviews.Average(r => (double)r.Rating), 1)
+                        ? Math.Round(f.Coach.ExpReviews.Average(r => (double)r.Rating), 1)
                         : 0,
-                    ReviewCount = f.Coach.ExpReviews.Count()
-                }).ToListAsync();
+                    ReviewCount = f.Coach.ExpReviews.Count(),
+                    FavoritedAt = f.FavoritedAt
+                })
+                .OrderByDescending(f => f.FavoritedAt) // 依照收藏時間排序，最新的在前面
+               .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             return await fav;
         }
-        #endregion
-
         #endregion
 
         #region~~課程~~
@@ -371,24 +431,24 @@ namespace ExpServiceHelper.Service
                         t.ExpCoursePhotos.Add(newPhoto);
                     }
                 }
-                    //save--EF 會幫你動用 Transaction，確保模板跟照片「同時成功」或「同時失敗」)
-                    _context.ExpCourseTemplates.Add(t);
-                    //update
-                    await _context.SaveChangesAsync();
+                //save--EF 會幫你動用 Transaction，確保模板跟照片「同時成功」或「同時失敗」)
+                _context.ExpCourseTemplates.Add(t);
+                //update
+                await _context.SaveChangesAsync();
 
-                    return new DAPIResponse<DCourseCreate>
-                    {
-                        IsSuccess = true,
-                        Message = "新課程模板做好啦 ！",
-                        Data = dto
-                    };
+                return new DAPIResponse<DCourseCreate>
+                {
+                    IsSuccess = true,
+                    Message = "新課程模板做好啦 ！",
+                    Data = dto
+                };
 
-                
+
             }
             catch (Exception ex) { throw new Exception(ex.InnerException?.Message); }
 
 
-            
+
         }
         #endregion
 
@@ -458,15 +518,15 @@ namespace ExpServiceHelper.Service
                             _context.ExpCoursePhotos.RemoveRange(photosToRemove);
                         }
                     }
-                } 
-               
-              
+                }
+
+
             }
             t.UpdatedAt = DateTime.Now;
 
 
             await _context.SaveChangesAsync();
-            return new DTO.DAPIResponse<DCourseTempEdit> { IsSuccess = true, Message = "修改成功", Data =dto };
+            return new DTO.DAPIResponse<DCourseTempEdit> { IsSuccess = true, Message = "修改成功", Data = dto };
         }
         #endregion
 
@@ -479,7 +539,7 @@ namespace ExpServiceHelper.Service
             //使用者和教練對得上
             var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.Id == t.CoachId);
             if (coach == null || coach.UserId != currentUserId)
-                return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "冒牌教練!"};
+                return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "冒牌教練!" };
 
 
             //選時間和人數
@@ -552,7 +612,7 @@ namespace ExpServiceHelper.Service
         {
             var courseSession = await _context.ExpCourseSessions
                                 .FirstOrDefaultAsync(c => c.Id == courseId);
-            if (courseSession == null) return new DAPIResponse<DCourseInfo>{ IsSuccess = false, Message = "找不到該課程資訊"};
+            if (courseSession == null) return new DAPIResponse<DCourseInfo> { IsSuccess = false, Message = "找不到該課程資訊" };
 
             var result = await _context.ExpCourseSessions
                     .Where(c => c.Id == courseId)
@@ -564,11 +624,14 @@ namespace ExpServiceHelper.Service
                                 : new List<DateOnly>(),
                         TimeSlot = c.TimeSlot,
                         MaxStudents = c.MaxParticipants,
-                        UpdatedAt = c.UpdatedAt
+                        UpdatedAt = c.UpdatedAt,
+                        Title = c.CourseTemplate.Title,
                     }).FirstOrDefaultAsync();
 
-            if (result == null){
-                return new DAPIResponse<DCourseInfo>{
+            if (result == null)
+            {
+                return new DAPIResponse<DCourseInfo>
+                {
                     IsSuccess = false,
                     Message = "找不到該課程資訊"
                 };
@@ -582,20 +645,56 @@ namespace ExpServiceHelper.Service
             };
         }
         #endregion
+
+        public async Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId)
+        {
+            var result = await _context.ExpCourseSessions
+                .Where(c => c.CoachId == coachId)          // 篩這個教練的所有課
+                .OrderByDescending(c => c.UpdatedAt)        // 最新更新的排最前面
+                .Select(c => new DCourseInfo
+                {
+                    CoachId = c.CoachId,
+                    SelectedDates = c.SessionDate.HasValue
+                        ? new List<DateOnly> { c.SessionDate.Value }
+                        : new List<DateOnly>(),
+                    TimeSlot = c.TimeSlot,
+                    MaxStudents = c.MaxParticipants,
+                    UpdatedAt = c.UpdatedAt,
+                    Title = c.CourseTemplate.Title,
+                })
+                .FirstOrDefaultAsync();                     // 只取第一筆（最新）
+
+            if (result == null)
+                return new DAPIResponse<DCourseInfo>
+                {
+                    IsSuccess = false,
+                    Message = "此教練目前沒有開課資訊"
+                };
+
+            return new DAPIResponse<DCourseInfo>
+            {
+                IsSuccess = true,
+                Message = "課程展示中",
+                Data = result
+            };
+        }
         #endregion
 
         #region ~~評論~~
         #region 新增評論
-        public async Task<DAPIResponse<string>> CreateReview(DReview dto,int userId, int courseOId)
+        public async Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId)
         {
             //先去「訂單表 (ExpCourseOrders)」確認有沒有這筆訂單，順便把 CoachId 拿回來
             var order = await _context.ExpCourseOrders
                 .Where(o => o.Id == courseOId && o.UserId == userId)
-                .Select(o => new {
+                .Select(o => new
+                {
                     CoachId = o.CourseSession.CoachId
                 }).FirstOrDefaultAsync();
-            if (order == null) { 
-                return new DAPIResponse<string> { IsSuccess = false, Message ="沒有課程可以評論" };}
+            if (order == null)
+            {
+                return new DAPIResponse<string> { IsSuccess = false, Message = "沒有課程可以評論" };
+            }
 
             var newReview = new ExpReview
             {
@@ -618,7 +717,8 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 編輯評論
-        public async Task<DAPIResponse<DReview>> EditReview(DReview dto, int userId, int courseId, int reviewId) {
+        public async Task<DAPIResponse<DReview>> EditReview(DReview dto, int userId, int courseId, int reviewId)
+        {
             var r = await _context.ExpReviews.FirstOrDefaultAsync(r => r.Id == reviewId && r.UserId == userId);
             if (r == null) return new DAPIResponse<DReview> { IsSuccess = false, Message = "找不倒評論" };
 
@@ -626,8 +726,8 @@ namespace ExpServiceHelper.Service
             r.ReviewContent = dto.ReviewContent;
             r.Rating = dto.Rating;
             r.UpdateAt = DateTime.Now;
-            
-          
+
+
             await _context.SaveChangesAsync();
             return new DAPIResponse<DReview>
             {
@@ -639,8 +739,9 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 刪除評論
-        public async Task<DAPIResponse<string>> DeleteReview(int userId, int reviewId) { 
-            var review = await _context.ExpReviews.FirstOrDefaultAsync( r => r.Id == reviewId && r.UserId == userId);
+        public async Task<DAPIResponse<string>> DeleteReview(int userId, int reviewId)
+        {
+            var review = await _context.ExpReviews.FirstOrDefaultAsync(r => r.Id == reviewId && r.UserId == userId);
             if (review == null)
                 throw new Exception("沒有對應的資料");
             _context.ExpReviews.Remove(review);
@@ -669,37 +770,51 @@ namespace ExpServiceHelper.Service
         #endregion
         #endregion
 
+        public async Task<List<DSpeciallity>> Sports() { 
+            var result = await _context.ExpSpecialities
+                .Select(s => new DSpeciallity
+                {
+                    Id = s.Id,
+                    SportsName = s.SportsName
+                }).ToListAsync();
+            return result;
+        }
+
         #region 交易流程
         #region 新增預約課程
         public async Task<DAPIResponse<string>> SessionReserve(DCourseOrder dto, int userId)
         {
-           //找這堂課，順便拿教練ID
+            //找這堂課，順便拿教練ID
             var session = await _context.ExpCourseSessions
-                          .Include(s => s.CourseTemplate) 
-                          .FirstOrDefaultAsync( r => r.Id == dto.CourseSessionId );
-            if (session == null) {
+                          .Include(s => s.CourseTemplate)
+                          .FirstOrDefaultAsync(r => r.Id == dto.CourseSessionId);
+            if (session == null)
+            {
                 return new DAPIResponse<string> { IsSuccess = false, Message = "沒有課程可以評論" };
             }
             //核對課堂名額
-            if (session.CurrentParticipants >= session.MaxParticipants) {
+            if (session.CurrentParticipants >= session.MaxParticipants)
+            {
                 return new DAPIResponse<string> { IsSuccess = false, Message = "額滿了 你晚了一步QQ" };
             }
 
             //建立一筆 ExpTransaction，取得 TransactionId
             decimal? coursePrice = session.CourseTemplate.Price;
-            var transac = new ExpTransaction {  
+            var transac = new ExpTransaction
+            {
                 SenderUserId = userId,
                 ReceiveUserId = session.CoachId, // 從場次拿教練 ID
                 Amount = session.CourseTemplate?.Price ?? 0,            // 假設金額，之後可從 Template 抓
                 Status = 0,                      // 0: 已建立/待付款
-                TypeId = 3,                     
+                TypeId = 3,
                 CreatedAt = DateTime.Now
             };
-            await _context.ExpTransactions.AddAsync( transac );
+            await _context.ExpTransactions.AddAsync(transac);
             await _context.SaveChangesAsync();
 
             //建立預約實體 (Entity)
-            var reserve = new ExpCourseOrder {
+            var reserve = new ExpCourseOrder
+            {
                 UserId = userId,
                 CourseSessionId = session.Id,
                 ReservedAt = DateTime.Now,
@@ -709,35 +824,39 @@ namespace ExpServiceHelper.Service
             };
             //課程報名人+1
             session.CurrentParticipants += 1;
-           
+
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();
-            return new DAPIResponse<string> {
-              IsSuccess = true,
-              Message = "預約成功，請繳費完成報名",
-              Data = reserve.ToString()
+            return new DAPIResponse<string>
+            {
+                IsSuccess = true,
+                Message = "預約成功，請繳費完成報名",
+                Data = reserve.ToString()
             };
         }
         #endregion
         #region 歷史交易紀錄 
-        public async Task<List<DTransac>> TransacList(int userId) {
-            using (var db = new SalterDbContext()) {
+        public async Task<List<DTransac>> TransacList(int userId)
+        {
+            using (var db = new SalterDbContext())
+            {
                 var history = await db.ExpTransactions
                             .Where(h => h.SenderUserId == userId)
-                            .Select(h => new DTransac { 
+                            .Select(h => new DTransac
+                            {
                                 TransactionId = h.Id,
                                 CourseName = h.ExpCourseOrders.FirstOrDefault().CourseSession.CourseTemplate.Title,
                                 CoaId = h.ExpCourseOrders.FirstOrDefault().CourseSession.CoachId,
                                 Amount = h.Amount,
-                                Status = h.Status ==0 ? "等待付款" :
+                                Status = h.Status == 0 ? "等待付款" :
                                         h.Status == 1 ? "交易成功" : "已取消",
                                 OrderDate = h.CreatedAt
                             })
                             .OrderByDescending(h => h.OrderDate)
                             .ToListAsync();
-                return  history;
+                return history;
             }
-        
+
         }
         #endregion
 

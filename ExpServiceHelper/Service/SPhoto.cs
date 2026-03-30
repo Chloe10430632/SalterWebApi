@@ -59,6 +59,7 @@ namespace ExpServiceHelper.Service
 
                 if (publicIds == null || !publicIds.Any()) return;
 
+
                 var delParams = new DelResParams()
                 {
                     PublicIds = publicIds,
