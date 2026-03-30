@@ -1,0 +1,26 @@
+
+# 忽略編譯產出的資料夾 (最重要！)
+**/bin/
+**/obj/
+
+# 忽略 IDE 的設定檔
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.dotSettings
+
+# 忽略版本控制紀錄
+.git/
+.github/
+.gitignore
+
+# 忽略 Docker 自己產出的暫存檔
+Dockerfile
+.dockerignore
+
+# 忽略作業系統產生的雜物
+node_modules/
+dist/
+OSX_Store
+Thumbs.db
