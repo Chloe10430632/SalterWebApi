@@ -222,6 +222,24 @@ namespace ExpServiceHelper.Service
                 return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
             }
 
+            //if (dto.Specialities != null)
+            //{
+            //    // 1. 先把該教練舊的專業全部刪除 (砍掉舊的連結)
+            //    // 假設你的 Mapping 表叫 ExpCoachSpecialties
+            //    var oldMappings = _context.ExpC.Where(s => s.CoachId == thisCoach.Id);
+            //    _context.ExpCoachSpecialties.RemoveRange(oldMappings);
+
+            //    // 2. 根據前端傳來的 ID 列表，重新建立新的連結
+            //    foreach (var specId in dto.Specialities)
+            //    {
+            //        _context.ExpCoachSpecialties.Add(new ExpCoachSpecialty
+            //        {
+            //            CoachId = thisCoach.Id,
+            //            SpecialtyId = specId
+            //        });
+            //    }
+            //}
+
             //處理圖片
             if (dto.AvatarFile != null && dto.AvatarFile.Length > 0)
             {

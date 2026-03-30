@@ -142,6 +142,7 @@ namespace SalterWebApi.Areas.Experience
             {
                 var result = await _sCoachMethods.EditCoachInfo(dto, currentUserId);
                 if (result.IsSuccess) return Ok(new { Issuccess = true, data = result });
+                return BadRequest(new { message = "儲存失敗" });
             }
             return BadRequest("系統忙碌中");
 

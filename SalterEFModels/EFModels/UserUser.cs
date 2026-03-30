@@ -98,9 +98,4 @@ public partial class UserUser
     public virtual ICollection<UserSupportMessage> UserSupportMessages { get; set; } = new List<UserSupportMessage>();
 
     public virtual ICollection<UserSupportTicket> UserSupportTickets { get; set; } = new List<UserSupportTicket>();
-
-    public object Include(Func<object, object> value)
-    {
-        throw new NotImplementedException();
-    }
 }
