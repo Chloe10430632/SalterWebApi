@@ -20,6 +20,7 @@
 	</ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ExpServiceHelper\ExpServiceHelper.csproj" />
     <ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
     <ProjectReference Include="..\UserRepositoryHelper\UserRepositoryHelper.csproj" />
   </ItemGroup>

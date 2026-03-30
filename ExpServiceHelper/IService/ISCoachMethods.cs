@@ -44,12 +44,6 @@ namespace ExpServiceHelper.IService
         #region 查看評論
         Task<List<DCoachReview>> CoachReviews(int coachId);
         #endregion
-        # region 列出所有收藏
-        Task<List<DCoachFavList>> GetMyFavCoach(int userId,int page,int pageSize);
-        #endregion
-        #region 查看收藏(保持愛心) 
-        Task<List<int>> HeartIds(int userId);
-        #endregion
         #endregion
 
         #region ~~課程~~
@@ -70,6 +64,17 @@ namespace ExpServiceHelper.IService
         #endregion
         Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId);
         #endregion
+
+        #region ~~收藏~~
+        #region 列出所有收藏
+        Task<List<DCoachFavList>> GetMyFavCoach(int userId, int page, int pageSize);
+        #endregion
+        #region 查看收藏(保持愛心) 
+        Task<List<int>> HeartIds(int userId);
+        #endregion
+
+        #endregion
+
 
         #region 評論
         #region 新增評論

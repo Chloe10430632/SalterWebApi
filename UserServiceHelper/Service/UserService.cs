@@ -17,6 +17,7 @@ using UserServiceHelper.Models.DTO.ViewModel;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using ExpServiceHelper.IService;
 
 namespace UserServiceHelper.Service
 {
@@ -25,13 +26,15 @@ namespace UserServiceHelper.Service
         private readonly IGenericUserRepository<UserUser> _dbUser;
         private readonly PasswordHasher<UserUser> _passwordHasher;
         private readonly IConfiguration _configuration;
+        private readonly ISCoachMethods _coachMethods;
 
 
-        public UserService(IGenericUserRepository<UserUser> dbUser, PasswordHasher<UserUser> passwordHasher, IConfiguration configuration)
+        public UserService(IGenericUserRepository<UserUser> dbUser, PasswordHasher<UserUser> passwordHasher, IConfiguration configuration, ISCoachMethods sCoachMethods)
         {
             _dbUser = dbUser;
             _passwordHasher = passwordHasher;
             _configuration = configuration;
+            _coachMethods = sCoachMethods;
         }
         
         public async Task<UserProfileViewModel?> GetUserProfileAsync(int userId)
@@ -372,7 +375,8 @@ namespace UserServiceHelper.Service
                 // 把你的圖片路徑塞進去
                 new Claim("Avatar", user.ProfilePicture ?? "/admin/imgs/default-avatar.png"),
                 // 塞入角色名稱
-                new Claim(ClaimTypes.Role, user.UserRole?.Name ?? "一般會員")
+                new Claim(ClaimTypes.Role, user.UserRole?.Name ?? "一般會員"),
+               new Claim("CoachId", user.ExpCoaches.FirstOrDefault()?.Id.ToString() ?? "0")
             };
 
 

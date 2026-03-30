@@ -281,6 +281,10 @@ namespace SalterWebApi.Areas.Experience
             catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
 
         }
+
+        #endregion
+
+        #region 教練最新課程展示
         [HttpGet("LatestCourse/{coachId}")]
         public async Task<IActionResult> LatestCourse(int coachId)
         {
@@ -341,8 +345,9 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 收藏清單
+        [Authorize]
         [HttpGet("myFavList")]
-        public async Task<IActionResult> MyFavCoachList(int userId, int page = 1, int pageSize = 6)
+        public async Task<IActionResult> MyFavCoachList(int page = 1, int pageSize = 8)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -352,7 +357,7 @@ namespace SalterWebApi.Areas.Experience
             }
             if (int.TryParse(userIdStr, out int currentUserId))
             {
-                var result = await _sCoachMethods.GetMyFavCoach(userId, page, pageSize);
+                var result = await _sCoachMethods.GetMyFavCoach(currentUserId, page, pageSize);
                 if (result == null || !result.Any())
                     return Ok(new { Issuccess = true, data = new List<object>() }); // 回傳空陣列
                 return Ok(new { Issuccess = true, data = result });

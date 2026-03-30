@@ -317,11 +317,11 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 收藏清單
-        public async Task<List<DCoachFavList>> GetMyFavCoach(int userId, int page, int pageSize)
+        public async Task<List<DCoachFavList>> GetMyFavCoach(int currentUserId, int page, int pageSize)
         {
             // 1. 先拿到 Entity 列表
             var fav = _context.ExpFavorites
-                .Where(f => f.UserId == userId)
+                .Where(f => f.UserId == currentUserId)
                 .Select(f => new DCoachFavList
                 {
                     UserId = f.UserId,
