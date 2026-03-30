@@ -137,7 +137,7 @@ public class TripService : ITripService
         var trip = await _repo.GetTripByIdAsync(tripId);
         if (trip == null) return ServiceResult.Fail("找不到行程", 404);
 
-        // 如果有新圖片 且 跟舊圖片不一樣  先刪除舊圖片
+ 
         if (!string.IsNullOrEmpty(trip.CoverImagePublicId) &&
             trip.CoverImagePublicId != dto.CoverImagePublicId)
         {
