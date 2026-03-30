@@ -44,7 +44,7 @@ namespace HomeServiceHelper.Service
             _context = context;
             _amenityRepo = amenityRepo;
             _roomAmenityRepo = roomAmenityRepo;
-                _userRepo = userRepo;
+            _userRepo = userRepo;
         }
 
         //取得所有房子及其房型的基本資訊
@@ -93,15 +93,15 @@ namespace HomeServiceHelper.Service
                         select new { h, r };
 
             // 篩選城市
-            if (!string.IsNullOrEmpty(search.Citie))
+            if (!string.IsNullOrEmpty(search.City))
             {
-                query = query.Where(x => x.h.Citie.Contains(search.Citie));
+                query = query.Where(x => x.h.Citie.Contains(search.City));
             }
             // 篩選人數
-            if (search.PeopleCount.HasValue)
+            if (search.Guests.HasValue)
             {
-                query = query.Where(x => x.r.Capacity >= search.PeopleCount.Value);
-                 //房型容量 >= 需求人數
+                query = query.Where(x => x.r.Capacity >= search.Guests.Value);
+                //房型容量 >= 需求人數
             }
 
             // 組裝完整的 DTO
@@ -128,8 +128,8 @@ namespace HomeServiceHelper.Service
                              where ra.RoomTypeId == x.r.RoomTypeId
                              select new AmenityItemDTO
                              {
-                                    Name = a.Name,
-                                    IconCode = a.IconCode
+                                 Name = a.Name,
+                                 IconCode = a.IconCode
                              }).ToList()
             });
 
@@ -155,7 +155,7 @@ namespace HomeServiceHelper.Service
 
             // 3. 取得評論與使用者資訊 (把兩段合併成這一段)
             var reviews = await _reviewRepo.GetAll();
-            var allUsers = await _userRepo.GetAll(); 
+            var allUsers = await _userRepo.GetAll();
 
             var roomReviews = reviews.Where(rv => rv.RoomTypeId == roomTypeId)
                 .Select(rv =>
@@ -169,7 +169,7 @@ namespace HomeServiceHelper.Service
                         Name = user?.UserName ?? "匿名使用者",
                         Picture = user?.ProfilePicture ?? "default-profile.png"
                     };
-                }).ToList(); 
+                }).ToList();
 
             // 取得設備清單
             var amenitiesList = (from ra in roomAmenities
@@ -202,7 +202,7 @@ namespace HomeServiceHelper.Service
                 Amenities = amenitiesList,
                 AmenityIds = amenityIds,
                 AllImages = images,
-                Reviews = roomReviews 
+                Reviews = roomReviews
             };
         }
 
@@ -224,7 +224,7 @@ namespace HomeServiceHelper.Service
             var query = _context.HomRoomTypes
                 .Include(rt => rt.House)
                 .Include(rt => rt.HomRoomImages)
-                .Where(rt => rt.IsActive == true); 
+                .Where(rt => rt.IsActive == true);
 
             // 如果前端有傳城市，且不是 "全部"，就在資料庫層級過濾
             if (!string.IsNullOrEmpty(city) && city != "全部")
@@ -481,8 +481,8 @@ namespace HomeServiceHelper.Service
 
             // 呼叫 Repository 執行資料庫篩選
             var roomEntities = await _houseRepository.SearchAvailableRoomsAsync(
-                searchDto.Citie,
-                searchDto.PeopleCount,
+                searchDto.City,
+                searchDto.Guests,
                 start,
                 end
             );
@@ -491,6 +491,7 @@ namespace HomeServiceHelper.Service
             return roomEntities.Select(rt => new HousePreviewDTO
             {
                 HouseId = rt.HouseId,
+                RoomTypeId = rt.RoomTypeId,
                 Title = rt.Name ?? string.Empty,
                 Price = rt.PricePerNight ?? 0,
                 District = rt.House?.District ?? string.Empty,
@@ -534,9 +535,70 @@ namespace HomeServiceHelper.Service
             return await _context.SaveChangesAsync() > 0;
         }
 
+        //建立訂單編號
+        public async Task<int> CreateBookingAsync(CreateBookingDTO dto)
+        {
+            var booking = new HomBooking
+            {
+                UserId = dto.UserId,
+                RoomTypeId = dto.RoomTypeId,
+                CheckInDate = dto.CheckInDate,
+                CheckOutDate = dto.CheckOutDate,
+                TotalPrice = dto.TotalPrice,
+                Notes = dto.Notes,
+                Status = "0", // 0 : 待付款
+                CreatedTime = DateTime.Now,
+                UpdateTime = DateTime.Now,
+            };
+
+            _context.HomBookings.Add(booking);
+            await _context.SaveChangesAsync();
+
+            return booking.BookingId; // 回傳訂單編號給前端
+        }
+
+        // 取消訂單編號
+        public async Task<bool> CancelBookingAsync(int bookingId, int userId)
+        {
+            //抓出該筆訂單，並確保它是屬於該使用者的
+            var booking = await _context.HomBookings
+                .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.UserId == userId);
+
+            // 找不到訂單或是狀態不是 "0" (待付款)，就回傳失敗
+            if (booking == null || booking.Status != "0")
+            {
+                return false;
+            }
+
+            // 執行取消動作
+            booking.Status = "4"; // 改為已取消
+            booking.UpdateTime = DateTime.Now;
+
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        // 取得會員的訂單列表
+        public async Task<IEnumerable<BookingListViewModel>> GetMemberBookingsAsync(int userId)
+        {
+            return await _context.HomBookings
+        .Where(b => b.UserId == userId)
+        .Include(b => b.RoomType) // 💡 記得 Include 才能抓到房間名稱
+        .OrderByDescending(b => b.CreatedTime)
+        .Select(b => new BookingListViewModel
+        {
+            BookingId = b.BookingId,
+            RoomTypeName = b.RoomType.Name,
+            // RoomImage = b.RoomType.ImageUrl, // 如果有圖片的話
+            CheckInDate = b.CheckInDate ?? DateTime.MinValue,
+            CheckOutDate = b.CheckOutDate ?? DateTime.MinValue,
+            TotalPrice = b.TotalPrice ?? 0,
+            Status = b.Status ?? "0",
+            CreatedTime = b.CreatedTime ?? DateTime.Now
+        })
+        .ToListAsync();
+        }
+
         
     }
-
-
 
 }

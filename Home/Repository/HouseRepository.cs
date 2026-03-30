@@ -21,6 +21,7 @@ namespace HomeRepositoryHelper.Repository
         public async Task<IEnumerable<HomRoomType>> SearchAvailableRoomsAsync(
             string city, int? guests, DateOnly? startDate, DateOnly? endDate)
         {
+            System.Diagnostics.Debug.WriteLine($"--- Repository 收到的人數參數: {guests} ---");
             // 1. 基礎查詢：先 Include 必要的關聯資料
             var query = _dbContext.HomRoomTypes
                 .Include(rt => rt.House)
@@ -48,7 +49,7 @@ namespace HomeRepositoryHelper.Repository
                 // 門檻 2：排除已訂房 (比對 DateTime 欄位)
                 query = query.Where(rt => !_dbContext.HomBookings.Any(b =>
                     b.RoomTypeId == rt.RoomTypeId &&
-                    b.Status != "Cancelled" &&
+                    b.Status != "4" &&
                     b.CheckInDate < endDT &&   // 使用轉好的 DateTime
                     b.CheckOutDate > startDT   // 使用轉好的 DateTime
                 ));
