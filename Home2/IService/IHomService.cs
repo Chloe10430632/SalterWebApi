@@ -1,4 +1,5 @@
 ﻿using HomeServiceHelper.Models.DTO.ViewModels;
+using HomeServiceHelper.Models.DTO.ViewModels.Review;
 using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
@@ -19,10 +20,10 @@ namespace HomeServiceHelper.IService
         Task<List<CityGroupDTO>> GetCityGroupPreviewsAsync(string? city = null);
 
         // 搜尋功能（支援關鍵字與地區）
-        Task<List<HousePreviewDTO>> SearchHousesAsync(string? city, string? keyword , int? guests);
+        Task<List<HousePreviewDTO>> SearchHousesAsync(string? city, string? keyword, int? guests);
         public Task<IEnumerable<HousePreviewDTO>> GetSearchHousesAsync(HouseSearchDTO searchDto);
 
-        // 進階搜尋（可能包含人數、日期、價格區間等 DTO）
+        // 進階搜尋（包含人數、日期、價格區間等 DTO）
         Task<IEnumerable<HouseDetailViewDTO>> SearchHousesAsync(HouseSearchDTO search);
 
         // 詳情與首頁推薦
@@ -34,13 +35,22 @@ namespace HomeServiceHelper.IService
         Task<IEnumerable<HomAmenity>> GetAllAmenitiesAsync();
         Task<IEnumerable<BookingListViewModel>> GetMemberBookingsAsync(int userId);
 
-        // --- 新增修改刪除 ---
+        // 留言CRUD
         Task<bool> AddReviewAsync(ReviewCreateDTO dto);
-        Task<bool> CreateFullHouseAsync(HouseCreateDTO dto);
-        Task<bool> UpdateFullHouseAsync(HouseUpdateDTO dto);
-        public Task<int?> GetAvailableBookingIdAsync(int userId, int roomTypeId);
+        Task<bool> UpdateReviewAsync(ReviewUpdateDTO dto);
+        Task<bool> DeleteReviewAsync(int reviewId, int memberId);
+
+        // 訂單編號CRUD
         public Task<int> CreateBookingAsync(CreateBookingDTO dto);
         public Task<bool> CancelBookingAsync(int bookingId, int userId);
+        public Task<int?> GetAvailableBookingIdAsync(int userId, int roomTypeId);
+
+        // 房屋新增修改刪除
+        Task<bool> CreateFullHouseAsync(HouseCreateDTO dto);
+        Task<bool> UpdateFullHouseAsync(HouseUpdateDTO dto);
+
+
+
 
     }
 }

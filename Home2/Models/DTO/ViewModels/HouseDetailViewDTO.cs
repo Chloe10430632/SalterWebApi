@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HomeServiceHelper.Models.DTO.ViewModels.Review;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,7 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
 {
     public class HouseDetailViewDTO
     {
+        
         public string? Name { get; set; }
         public int RoomTypeId { get; set; }//點擊預約可能會用到
         public int? Capacity { get; set; }// 人數

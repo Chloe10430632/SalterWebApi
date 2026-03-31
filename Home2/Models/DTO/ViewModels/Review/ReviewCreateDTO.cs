@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HomeServiceHelper.Models.DTO.ViewModels
+namespace HomeServiceHelper.Models.DTO.ViewModels.Review
 {
     public class ReviewCreateDTO
     {
