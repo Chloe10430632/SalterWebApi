@@ -10,7 +10,7 @@ namespace SalterWebApi.Areas.Trip.Controllers;
 [ApiController]
 [Area("Trip")]
 [Route("api/trip/[controller]")]
-[Tags("揪團行程")]
+[Tags("揪團行程")] 
 public class TripController : ControllerBase
 {
     private readonly ITripService _service;
@@ -183,14 +183,22 @@ public class TripController : ControllerBase
     [HttpPut("announcements/{aid}")]
     public async Task<IActionResult> UpdateAnnouncement(int aid, [FromBody] TripAnnouncementUpdateDto dto)
     {
-        var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
-        var result = await _service.UpdateAnnouncementAsync(aid, dto, userId.Value);
-        if (!result.IsSuccess)
-            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
-        return Ok(ApiResponse<string>.Ok(result.Message));
+        try
+        {
+            var userId = GetUserId();
+            if (userId == null)
+                return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+            var result = await _service.UpdateAnnouncementAsync(aid, dto, userId.Value);
+            if (!result.IsSuccess)
+                return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+            return Ok(ApiResponse<string>.Ok(result.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<string>.Fail(ex.Message, 500));
+        }
     }
+
     [HttpDelete("announcements/{aid}")]
     public async Task<IActionResult> DeleteAnnouncement(int aid)
     {
@@ -246,13 +254,20 @@ public class TripController : ControllerBase
     [HttpPut("gearitems/{gid}")]
     public async Task<IActionResult> UpdateGearItem(int gid, [FromBody] TripGearItemRequestDto dto)
     {
-        var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
-        var result = await _service.UpdateGearItemAsync(gid, dto, userId.Value);
-        if (!result.IsSuccess)
-            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
-        return Ok(ApiResponse<string>.Ok(result.Message));
+        try
+        {
+            var userId = GetUserId();
+            if (userId == null)
+                return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+            var result = await _service.UpdateGearItemAsync(gid, dto, userId.Value);
+            if (!result.IsSuccess)
+                return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+            return Ok(ApiResponse<string>.Ok(result.Message));
+        }   
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<string>.Fail(ex.Message, 500));
+        }
     }
 
     [HttpDelete("gearitems/{gid}")]
