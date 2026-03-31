@@ -35,6 +35,8 @@ namespace ExpServiceHelper.Service
                 AvatarUrl = c.AvatarUrl,
                 // 提醒：在資料庫層級 string.Join 可能會報錯，建議到記憶體再處理，或者直接選成 List
                 District = c.TripDistricts.Select(m => m.Name).ToList(),
+                DistrictId = c.DistrictId,
+                CityId = c.CityId,
                 Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
                 ReviewCount = c.ExpReviews.Count(),
                 AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
@@ -167,8 +169,8 @@ namespace ExpServiceHelper.Service
                 AvatarUrl = upLoadUrl,
                 PublicId = upLoadPublicId,
                 Introduction = dto.Introduction,
-                CityId = dto.CityId,
                 DistrictId = dto.DistrictId,
+                CityId = dto.CityId,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 IsSuspended = false // 預設不停權
@@ -214,6 +216,8 @@ namespace ExpServiceHelper.Service
                          CoachName = c.Name,
                          AvatarUrl = c.AvatarUrl,
                          District = c.TripDistricts.Select(m => m.Name).ToList(),
+                         DistrictId = c.DistrictId,
+                         CityId = c.CityId,
                          AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                          ReviewCount = c.ExpReviews.Count(),
                          Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
@@ -240,7 +244,7 @@ namespace ExpServiceHelper.Service
                 return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
             }
 
-            if (dto.Specialities != null)
+            if (dto.SpecialityIds != null)
             {
                 // 1. 先把該教練舊的專業全部刪除 (砍掉舊的連結)
                 // 假設你的 Mapping 表叫 ExpCoachSpecialties
@@ -248,8 +252,6 @@ namespace ExpServiceHelper.Service
                 _context.ExpCoachSpeciallityMappings.RemoveRange(oldMappings);
 
                 // 2. 根據前端傳來的 ID 列表，重新建立新的連結
-                if (dto.SpecialityIds != null)
-                {
                     foreach (var specId in dto.SpecialityIds)
                     {
                         _context.ExpCoachSpeciallityMappings.Add(new ExpCoachSpeciallityMapping
@@ -258,28 +260,33 @@ namespace ExpServiceHelper.Service
                             SpecialitiesId = specId 
                         });
                     }
-                }
+                
             }
 
             //處理圖片
             if (dto.AvatarFile != null && dto.AvatarFile.Length > 0)
             {
                 // A. 刪除舊圖片 (建議在資料表增加一個 PublicId 欄位，否則需從 URL 解析)
-                if (dto.AvatarFile != null && !string.IsNullOrEmpty(dto.PublicId))
+                if (dto.AvatarFile != null && dto.AvatarFile.Length > 0)
                 {
-                    await _sPhoto.DeletePhotoAsync(new List<string> { dto.PublicId });
-                }
-                // B. 上傳新圖片
-                var uploadResults = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
-                var uploadResult = uploadResults.FirstOrDefault();
+                    // 用資料庫裡的舊 PublicId 刪除
+                    if (!string.IsNullOrEmpty(thisCoach.PublicId))
+                    {
+                        await _sPhoto.DeletePhotoAsync(new List<string> { thisCoach.PublicId });
+                    }
 
-                if (uploadResult != null && uploadResult.Error == null)
-                {
-                    thisCoach.AvatarUrl = uploadResult.SecureUrl.AbsoluteUri;
-                }
-                else
-                {
-                    return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "圖片上傳失敗" };
+                    var uploadResults = await _sPhoto.AddPhotoAsync(new List<IFormFile> { dto.AvatarFile });
+                    var uploadResult = uploadResults.FirstOrDefault();
+
+                    if (uploadResult != null && uploadResult.Error == null)
+                    {
+                        thisCoach.AvatarUrl = uploadResult.SecureUrl.AbsoluteUri;
+                        thisCoach.PublicId = uploadResult.PublicId; // ← 記得更新新的 PublicId
+                    }
+                    else
+                    {
+                        return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "圖片上傳失敗" };
+                    }
                 }
             }
 

@@ -14,13 +14,13 @@ namespace ExpServiceHelper.DTO
         public string? Introduction { get; set; }
         public int? DistrictId { get; set; }
         public int? CityId { get; set; }
-        public string? CityName { get; set; } 
-        public string? DistrictName { get; set; }
+        //public string? CityName { get; set; } 
+        //public string? DistrictName { get; set; }
         //
         public IFormFile? AvatarFile { get; set; }
         public string? PublicId { get; set; }
         //
         public List<int>? SpecialityIds { get; set; } = new List<int>();
-        public List<string>? Specialities { get; set; } = new List<string>();
+      //  public List<string>? Specialities { get; set; } = new List<string>();
     }
 }

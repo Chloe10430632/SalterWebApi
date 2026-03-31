@@ -23,8 +23,10 @@ namespace ExpServiceHelper.DTO
         //===詳細===//
         public string? Introduction { get; set; }
         //
-        public IFormFile? AvatarFile { get; set; }
+        //public IFormFile? AvatarFile { get; set; }
         public string? PublicId { get; set; }
+        public int? DistrictId { get; set; }
+        public int? CityId { get; set; }
 
 
     }
