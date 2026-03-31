@@ -2,6 +2,7 @@
 using Azure.AI.Extensions.OpenAI;
 using Azure.AI.Projects;
 using Azure.Identity;
+using ForumServiceHelper.Models.DTO.CreateModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAI.Responses;
@@ -44,7 +45,7 @@ namespace SalterWebApi.Areas.Forum.Controllers
         }
 
 
-        //建立對話通道，使用者按下按鈕回傳一個conversationId的對話通道
+        //建立對話通道，使用者按下按鈕回傳一個ConversationId的對話通道
         //GET https://localhost:7125/api/chat/start
         [HttpGet("start")]
         public async Task<IActionResult> StartAsync()
@@ -52,26 +53,26 @@ namespace SalterWebApi.Areas.Forum.Controllers
             //開啟新對話，像是打電話給agent，回傳對話通道id
             var conversationClient = _projectClient.OpenAI.Conversations;
             var createConverationResponse = await conversationClient.CreateProjectConversationAsync();
-            string conversationId = createConverationResponse.Value.Id;
+            string ConversationId = createConverationResponse.Value.Id;
 
-            return Ok(new { conversationId = conversationId });
+            return Ok(new { ConversationId = ConversationId });
         }
 
         //電話打通了，真正傳送資料過去，開始對話
         [HttpPost]
         public async Task<IActionResult> SendAsync([FromBody] SendMsgRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.message))
+            if (string.IsNullOrWhiteSpace(request.UserMessage))
                 throw new ArgumentException("請先輸入文案，才能進行優化喔!");
 
             string agentId = await GetAgentIdAsync();
             var responseClient = _projectClient.OpenAI.GetProjectResponsesClientForAgent(
             new AgentReference(agentId),
-            defaultConversationId: request.conversationId
+            defaultConversationId: request.ConversationId
                  );
 
             //發送訊息給agent
-            var responseResult = await responseClient.CreateResponseAsync(request.message);
+            var responseResult = await responseClient.CreateResponseAsync(request.UserMessage);
             var responseStatus = responseResult.Value;
 
             //輪詢
@@ -104,15 +105,15 @@ namespace SalterWebApi.Areas.Forum.Controllers
 
                 return Ok(new
                 {
-                    conversationId = request.conversationId,
-                    userMessage = request.message,
+                    ConversationId = request.ConversationId,
+                    userMessage = request.UserMessage,
                     agentMessage = sb.ToString().Trim()
                 });
             }
             return Ok(new
             {
-                conversationId = request.conversationId,
-                userMessage = request.message,
+                ConversationId = request.ConversationId,
+                userMessage = request.UserMessage,
                 agentMessage = sb.ToString().Trim()
             });
 #pragma warning restore OPENAI001
@@ -120,8 +121,8 @@ namespace SalterWebApi.Areas.Forum.Controllers
         }
 
         //DTO => Data Transfer Object
-        public record SendMsgRequest(string conversationId, string message);
-        public record ErrorResponse(int code, string message, List<string> details);
+        //public record SendMsgRequest(string ConversationId, string UserMessage);
+        public record ErrorResponse(int code, string UserMessage, List<string> details);
 
 
     }
