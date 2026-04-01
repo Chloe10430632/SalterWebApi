@@ -317,24 +317,34 @@ namespace SalterWebApi.Areas.Experience
 
         #region 收藏
         #region 收藏  
-        [Authorize]
+       
         [HttpPost("Favorites")]
-        public async Task<IActionResult> MyFavCoach(DCoachFav dto)
+        public async Task<IActionResult> MyFavCoach(DCoachFav dto, int userId)
         {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == System.Security.Claims.ClaimTypes.NameIdentifier);
 
-            if (string.IsNullOrEmpty(userIdStr))
+            int currentUserId = 0;
+
+            if (userIdClaim != null)
             {
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+                // 抓到了！轉成數字
+                currentUserId = int.Parse(userIdClaim.Value);
             }
-            //轉int
-            if (int.TryParse(userIdStr, out int currentUserId))
+            foreach (var c in User.Claims)
             {
-                //多傳入一個 currentUserId
-                var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
-                return Ok(new { Issuccess = true, data = result });
+                Console.WriteLine($"類型: {c.Type}, 內容: {c.Value}");
             }
-            return BadRequest("登入後才能使用功能");
+
+            // 2. 丟給 Service (Service 裡面有 UserId == 0 的守衛條款)
+            var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
+
+            // 3. 根據結果回傳 (注意：這裡的 issuccess 要跟前端判斷的一致)
+            if (result == "請先登入後才能收藏喔！")
+            {
+                return Ok(new { isSuccess = false, data = result });
+            }
+
+            return Ok(new { isSuccess = true, data = result });
         }
         #endregion
 

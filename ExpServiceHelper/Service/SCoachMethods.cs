@@ -654,6 +654,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #region 最新開課
         public async Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId)
         {
             var result = await _context.ExpCourseSessions
@@ -686,6 +687,7 @@ namespace ExpServiceHelper.Service
                 Data = result
             };
         }
+        #endregion
         #endregion
 
         #region ~~評論~~

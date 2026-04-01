@@ -22,8 +22,12 @@ namespace ExpServiceHelper.Service
         
         public async Task<string?> MyFavCoach(DCoachFav a, int UserId)
         {
-            try {//用傳進來的 userId//
+            if (UserId == 0) return "請先登入後才能收藏喔！";
+
+            try
+            {//用傳進來的 userId//
             // 1.先檢查
+            
             var isExistde = await _rCoachIndex.ExistAsync(UserId, a.CoachId);
             // 2.取消收藏
             if (isExistde)
