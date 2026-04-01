@@ -6,6 +6,9 @@ using System.Security.Claims;
 using UserServiceHelper.IService;
 using UserServiceHelper.Models.DTO.ViewModel;
 using UserServiceHelper.Service;
+using Google.GenAI;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -19,11 +22,19 @@ namespace SalterWebApi.Areas.User.Controllers
     {
         private readonly IUserService _userService;
         private readonly IFileService _fileService;
+        private readonly string _apiKey;
+        private readonly string _systemInstruction;
 
-        public UserController(IUserService userService, IFileService fileService)
+        public UserController(IUserService userService, IFileService fileService, IConfiguration config)
         {
             _userService = userService;
             _fileService = fileService;
+
+            _apiKey = config["Gemini:ApiKey"] ?? throw new ArgumentNullException("Gemini API Key 沒設定好喔！");
+
+            // 讀取你的 instruction.txt (確保檔案放在專案根目錄)
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "instruction.txt");
+            _systemInstruction = System.IO.File.ReadAllText(filePath);
         }
 
         // GET: api/<UserController>
@@ -242,5 +253,70 @@ namespace SalterWebApi.Areas.User.Controllers
             if (!success) return BadRequest(new { message = "驗證碼錯誤或已過期" });
             return Ok(new { message = "密碼重設成功" });
         }
+
+
+        [HttpPost("AskXiaoSha")]
+        public async Task<IActionResult> AskXiaoSha([FromBody] ChatRequest request)
+        {
+            Console.WriteLine("==== 小沙接收到請求了！ ====");
+            if (string.IsNullOrEmpty(request.Message))
+                return BadRequest(new { message = "旅伴，你想問小沙什麼呢？🌊" });
+            Console.WriteLine($"收到訊息內容: {request.Message}");
+
+            try
+            {
+                using var httpClient = new HttpClient();
+
+                // 1. 組合 Prompt (完全照抄你的 Python 邏輯)
+                var fullPrompt = $"{_systemInstruction}\n\n現在有一位旅伴問了這個問題：{request.Message}";
+
+                // 2. 準備 Data (完全照抄你的 Python 結構)
+                var data = new
+                {
+                    contents = new[]
+                    {
+                new { parts = new[] { new { text = fullPrompt } } }
+            }
+                };
+
+                // 3. 設定 URL (完全照抄你的 Python URL: v1beta + gemini-flash-latest)
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={_apiKey}";
+
+                // 4. 發送 POST 請求
+                var response = await httpClient.PostAsJsonAsync(url, data);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+                    // 5. 提取回覆 (完全照抄你的 Python 提取路徑)
+                    string botReply = result.GetProperty("candidates")[0]
+                                            .GetProperty("content")
+                                            .GetProperty("parts")[0]
+                                            .GetProperty("text")
+                                            .GetString();
+
+                    return Ok(new { reply = botReply });
+                }
+                else
+                {
+                    var errorResult = await response.Content.ReadAsStringAsync();
+                    return BadRequest(new { error = $"Gemini API 錯誤: {errorResult}" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = $"連線發生意外：{ex.Message}" });
+            }
+        }
+
     }
+
+    public class ChatRequest 
+    { 
+        public string Message { get; set; } = string.Empty; 
+    }
+
+
+    
 }
