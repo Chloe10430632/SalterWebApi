@@ -58,7 +58,7 @@ namespace ExpServiceHelper.Service
                             .Send.ToMerchant(merchantId) // MerchantID
                             .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV
                             .Return.ToServer($"{ngrokUrl}/api/Transac/Transaction/PayResult")//【ToServer】: 綠界通知你的 Server (背景)
-                            .Return.ToClient($"{frontendUrl}/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)
+                            .Return.ToClient($"{frontendUrl}/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
                                 description: dto.Description ?? "SalterOrder",
@@ -70,7 +70,6 @@ namespace ExpServiceHelper.Service
 
             //轉成 HTML 表單
             var sb = new StringBuilder();
-
             sb.Append($"<form id='ecpay-form' method='POST' action='{payment.URL}'>");
 
             foreach (var prop in payment.GetType().GetProperties())
@@ -102,10 +101,14 @@ namespace ExpServiceHelper.Service
                     sb.Append($"<input type='hidden' name='{fieldName}' value='{value}' />");
                 }
             }
+
             sb.Append("</form>");
             sb.Append("<script>document.getElementById('ecpay-form').submit();</script>");
 
-           
+
+
+
+
             return new DAPIResponse<string>
             {
                 IsSuccess = true,
