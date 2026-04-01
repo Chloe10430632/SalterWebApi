@@ -10,6 +10,7 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
     {
         public int BookingId { get; set; }        // 訂單編號
         public string? RoomTypeName { get; set; } = string.Empty; // 房間名稱
+        public int RoomTypeId { get; set; }
         public string? RoomImage { get; set; }    
         public DateTime CheckInDate { get; set; }
         public DateTime CheckOutDate { get; set; }

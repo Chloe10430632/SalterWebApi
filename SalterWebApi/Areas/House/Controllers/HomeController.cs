@@ -1,7 +1,9 @@
 ﻿using CloudinaryDotNet.Actions;
 using HomeServiceHelper.IService;
 using HomeServiceHelper.Models.DTO.ViewModels;
+using HomeServiceHelper.Models.DTO.ViewModels.Review;
 using HomeServiceHelper.Service;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -39,10 +41,13 @@ namespace SalterWebApi.Areas.House.Controllers
         }
 
         //透過ID搜尋顯示房屋細節
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetDetail(int id)
+        [HttpGet("{roomTypeId}")]
+        public async Task<IActionResult> GetDetail(int roomTypeId)
         {
-            var result = await _homService.SerchHouseDetailAsync(id);
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? currentUserId = int.TryParse(userIdStr, out int id) ? id : null;
+
+            var result = await _homService.SerchHouseDetailAsync(roomTypeId, currentUserId);
 
             if (result == null)
             {
@@ -230,8 +235,44 @@ namespace SalterWebApi.Areas.House.Controllers
 
             return Ok(new { message = "訂單已成功取消" });
         }
+
+        // 更新評論
+        [Authorize]
+        [HttpPut("updateReview")]
+        public async Task<IActionResult> Update([FromBody] ReviewUpdateDTO dto)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId)) return Unauthorized();
+            dto.MemberId = currentUserId;
+
+            var success = await _homService.UpdateReviewAsync(dto);
+            if (!success)
+            {
+                // 這裡可以根據需求回傳更細的錯誤
+                return BadRequest("更新失敗，請確認資料是否存在或是否有權限。");
+            }
+            return Ok(new { message = "評論已更新" });
+        }
+
+        // 刪除評論
+        [Authorize]
+        [HttpDelete("delete/{reviewId}")]
+        public async Task<IActionResult> Delete(int reviewId)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId)) return Unauthorized();
+            
+
+            var success = await _homService.DeleteReviewAsync(reviewId, currentUserId);
+            if (!success)
+            {
+                return BadRequest("刪除失敗。");
+            }
+            return Ok(new { message = "評論已刪除" });
+        }
     }
+}
 
     
-}
+
 

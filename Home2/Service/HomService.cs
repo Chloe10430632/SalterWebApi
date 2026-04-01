@@ -1,7 +1,9 @@
 ﻿using HomeRepositoryHelper.IRepository;
 using HomeServiceHelper.IService;
 using HomeServiceHelper.Models.DTO.ViewModels;
+using HomeServiceHelper.Models.DTO.ViewModels.Review;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using SalterEFModels.EFModels;
 using System;
 using System.Collections.Generic;
@@ -137,7 +139,7 @@ namespace HomeServiceHelper.Service
         }
 
         // 根據房型ID取得該房型的詳細資訊（包含房子資訊、所有圖片、評論等）
-        public async Task<HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId)
+        public async Task<HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId, int? currentUserId = null)
         {
             // 1. 取得基本資料 (維持原樣)
             var rooms = await _roomTypeRepo.GetAll();
@@ -163,6 +165,8 @@ namespace HomeServiceHelper.Service
                     var user = allUsers.FirstOrDefault(u => u.Id == rv.UserId);
                     return new ReviewItemDTO
                     {
+                        ReviewId = rv.ReviewId,
+                        UserId = rv.UserId,
                         Rating = rv.Rating,
                         Comment = rv.Comment,
                         CreatedTime = rv.CreatedTime,
@@ -186,6 +190,16 @@ namespace HomeServiceHelper.Service
                               .Select(ra => ra.AmenityId)
                               .ToList();
 
+            bool isBooked = false;
+            if (currentUserId.HasValue)
+            {
+                // 檢查該使用者是否在此房型有「待付款(0)」或「已付款(1)」的訂單
+                isBooked = await _context.HomBookings.AnyAsync(b =>
+                    b.RoomTypeId == roomTypeId &&
+                    b.UserId == currentUserId &&
+                    (b.Status == "0" || b.Status == "1"));
+            }
+
             // 組合成 DTO 
             return new HouseDetailViewDTO
             {
@@ -202,7 +216,8 @@ namespace HomeServiceHelper.Service
                 Amenities = amenitiesList,
                 AmenityIds = amenityIds,
                 AllImages = images,
-                Reviews = roomReviews
+                Reviews = roomReviews,
+                IsAlreadyBooked = isBooked
             };
         }
 
@@ -508,7 +523,7 @@ namespace HomeServiceHelper.Service
             var booking = await _context.HomBookings
                 .Where(b => b.UserId == userId
                          && b.RoomTypeId == roomTypeId
-                         && b.Status == "1"
+                         && b.Status == "2"
                          && !b.HomReviews.Any()
                          ) // 確保還沒評論過
                 .OrderByDescending(b => b.CheckOutDate)
@@ -516,23 +531,6 @@ namespace HomeServiceHelper.Service
                 .FirstOrDefaultAsync();
 
             return booking == 0 ? null : (int?)booking;
-        }
-
-        //新增評論到指定的房型(要有預約訂單的使用者才能評論!!)
-        public async Task<bool> AddReviewAsync(ReviewCreateDTO dto)
-        {
-            var newReview = new HomReview
-            {
-                RoomTypeId = dto.RoomTypeId,
-                Rating = dto.Rating,
-                Comment = dto.Comment,
-                UserId = dto.MemberId,
-                BookingId = dto.BookingId, // 關聯到訂單
-                CreatedTime = DateTime.Now
-            };
-
-            _context.HomReviews.Add(newReview);
-            return await _context.SaveChangesAsync() > 0;
         }
 
         //建立訂單編號
@@ -582,12 +580,13 @@ namespace HomeServiceHelper.Service
         {
             return await _context.HomBookings
         .Where(b => b.UserId == userId)
-        .Include(b => b.RoomType) // 💡 記得 Include 才能抓到房間名稱
+        .Include(b => b.RoomType)
         .OrderByDescending(b => b.CreatedTime)
         .Select(b => new BookingListViewModel
         {
             BookingId = b.BookingId,
             RoomTypeName = b.RoomType.Name,
+            RoomTypeId = b.RoomTypeId,
             // RoomImage = b.RoomType.ImageUrl, // 如果有圖片的話
             CheckInDate = b.CheckInDate ?? DateTime.MinValue,
             CheckOutDate = b.CheckOutDate ?? DateTime.MinValue,
@@ -598,7 +597,66 @@ namespace HomeServiceHelper.Service
         .ToListAsync();
         }
 
-        
+        //新增評論到指定的房型(要有預約訂單的使用者才能評論!!)
+        public async Task<bool> AddReviewAsync(ReviewCreateDTO dto)
+        {
+            var newReview = new HomReview
+            {
+                RoomTypeId = dto.RoomTypeId,
+                Rating = dto.Rating,
+                Comment = dto.Comment,
+                UserId = dto.MemberId,
+                BookingId = dto.BookingId, // 關聯到訂單
+                CreatedTime = DateTime.Now
+            };
+
+            _context.HomReviews.Add(newReview);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        //更新評論
+        public async Task<bool> UpdateReviewAsync(ReviewUpdateDTO dto)
+        {
+            var review = await _context.HomReviews.FirstOrDefaultAsync(r => r.ReviewId == dto.ReviewId);
+
+            if (review == null || review.UserId != dto.MemberId)
+            {
+                return false; // 找不到評論或使用者不符，無法更新
+            }
+            review.Rating = dto.Rating;
+            review.Comment = dto.Comment;
+            review.CreatedTime = DateTime.Now;
+            try
+            {
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        //刪除評論
+        public async Task<bool> DeleteReviewAsync(int reviewId, int memberId)
+        {
+            var review = await _context.HomReviews.FirstOrDefaultAsync(r => r.ReviewId == reviewId);
+            if (review == null || review.UserId != memberId)
+            {
+                return false; // 找不到評論或使用者不符，無法刪除
+            }
+            _context.HomReviews.Remove(review);
+            try
+            {
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+        }
     }
 
 }
