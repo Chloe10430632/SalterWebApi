@@ -28,8 +28,8 @@ namespace SalterWebApi.Areas.Experience
 
 
         #region 前端收單 
-        //[Authorize]
-        [AllowAnonymous]
+        [Authorize]
+        //[AllowAnonymous]
         [HttpPost("GetOrderForm")] //測完用post以ts黨設定傳入資料
         //[HttpGet("GetOrderForm")]
         //public async Task<IActionResult> GetOrderForm([FromQuery] DTransacRequest dto)
@@ -37,12 +37,12 @@ namespace SalterWebApi.Areas.Experience
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            //if (string.IsNullOrEmpty(userIdStr))
-            //{
-            //    return Unauthorized(new { message = "無效的憑證，請重新登入" });
-            //}
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            }
 
-                var result = await _sECpay.GetPaymentForm(dto);
+            var result = await _sECpay.GetPaymentForm(dto);
 
                 if (!result.IsSuccess)
                     return BadRequest(result);
@@ -81,13 +81,13 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 交易完成 
-        [HttpPost("Finish")]
-        [Consumes("application/x-www-form-urlencoded")] // 必加，接收返回商店按鈕的 POST
-        public IActionResult Finish([FromForm] IFormCollection collection)
-        {
-            // 這裡通常是跳轉回你的前端 (localhost:4200)
-            return Redirect("http://localhost:4200/finish");
-        }
+        //[HttpPost("Finish")]
+        //[Consumes("application/x-www-form-urlencoded")] // 必加，接收返回商店按鈕的 POST
+        //public IActionResult Finish([FromForm] IFormCollection collection)
+        //{
+        //    // 這裡通常是跳轉回你的前端 (localhost:4200)
+        //    return Redirect("https://sartorially-carbonylic-bennie.ngrok-free.dev/transaction/finish");
+        //}
         #endregion
     }
 
