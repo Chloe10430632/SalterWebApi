@@ -288,13 +288,15 @@ public class TripRepository : ITripRepository
     public async Task<TripGearItem?> GetGearItemByIdAsync(int gearItemId)
     => await _db.TripGearItems.FindAsync(gearItemId);
 
-    public async Task<bool> DeleteGearItemAsync(int gearItemId)
+    public async Task DeleteGearItemAsync(int gearItemId)
     {
+        var checks = _db.TripGearChecks.Where(c => c.TripGearItemId == gearItemId);
+        _db.TripGearChecks.RemoveRange(checks);
+
         var entity = await _db.TripGearItems.FindAsync(gearItemId);
-        if (entity == null) return false;
-        _db.TripGearItems.Remove(entity);
+        if (entity != null) _db.TripGearItems.Remove(entity);
+
         await _db.SaveChangesAsync();
-        return true;
     }
 
     public async Task<bool> ToggleGearCheckAsync(int gearItemId, int userId)

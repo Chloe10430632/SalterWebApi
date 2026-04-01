@@ -46,7 +46,7 @@ public interface ITripRepository
     Task<TripGearItem> CreateGearItemAsync(TripGearItem entity);
     Task<TripGearItem?> UpdateGearItemAsync(TripGearItem entity);
     Task<TripGearItem?> GetGearItemByIdAsync(int gearItemId);
-    Task<bool> DeleteGearItemAsync(int gearItemId);
+    Task DeleteGearItemAsync(int gearItemId);
     Task<bool> ToggleGearCheckAsync(int gearItemId, int userId);
     #endregion
 
