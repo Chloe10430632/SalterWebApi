@@ -20,6 +20,7 @@ namespace ExpServiceHelper.DTO
         public string? PublicId { get; set; }
         //
         public string? Title { get; set; }
+        public string? Difficulty { get; set; }
 
     }
 }

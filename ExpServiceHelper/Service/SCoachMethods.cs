@@ -34,7 +34,7 @@ namespace ExpServiceHelper.Service
                 CoachName = c.Name,
                 AvatarUrl = c.AvatarUrl,
                 // 提醒：在資料庫層級 string.Join 可能會報錯，建議到記憶體再處理，或者直接選成 List
-                District = c.TripDistricts.Select(m => m.Name).ToList(),
+                District = c.District != null ? c.District.Name : "未設定",
                 DistrictId = c.DistrictId,
                 CityId = c.CityId,
                 Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
@@ -215,9 +215,9 @@ namespace ExpServiceHelper.Service
                          CoachId = c.Id,
                          CoachName = c.Name,
                          AvatarUrl = c.AvatarUrl,
-                         District = c.TripDistricts.Select(m => m.Name).ToList(),
+                         District = c.District != null ? c.District.Name : "未設定",
                          DistrictId = c.DistrictId,
-                         CityId = c.CityId,
+                         CityId = c.District != null ? c.District.CityId : (int?)null,
                          AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
                          ReviewCount = c.ExpReviews.Count(),
                          Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
@@ -294,6 +294,7 @@ namespace ExpServiceHelper.Service
             // 這一步才是真正的「更新」！
             if (!string.IsNullOrEmpty(dto.Name)) { thisCoach.Name = dto.Name; }
             if (!string.IsNullOrEmpty(dto.Introduction)) { thisCoach.Introduction = dto.Introduction; }
+            if (dto.CityId.HasValue) { thisCoach.CityId = dto.CityId; }
             if (dto.DistrictId.HasValue) { thisCoach.DistrictId = dto.DistrictId; }
 
             thisCoach.UpdatedAt = DateTime.Now;

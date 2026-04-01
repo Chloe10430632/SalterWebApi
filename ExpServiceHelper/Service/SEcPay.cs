@@ -60,8 +60,8 @@ namespace ExpServiceHelper.Service
                             .Return.ToServer($"{ngrokUrl}/api/Transac/Transaction/PayResult")//【ToServer】: 綠界通知你的 Server (背景)
                             .Return.ToClient($"{frontendUrl}/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)
                             .Transaction.New(
-                                    no: $"{transac.Id}{DateTime.Now:yyMMddHHmmss}",
-                                description: "Purchase",
+                                    no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
+                                description: dto.Description ?? "SalterOrder",
                                 date: DateTime.Now)
                             .Transaction.UseMethod(EPaymentMethod.Credit)
                             .Transaction.WithItems(items)
@@ -80,15 +80,32 @@ namespace ExpServiceHelper.Service
                 var value = prop.GetValue(payment)?.ToString();
                 if (value != null)
                 {
-                    sb.Append($"<input type='hidden' name='{prop.Name}' value='{value}' />");
+                    // 【關鍵修正】：手動將 C# 屬性名稱轉換為綠界 API 要求的名稱
+                    string fieldName = prop.Name switch
+                    {
+                        "MerchantId" => "MerchantID",
+                        "ReturnUrl" => "ReturnURL",
+                        "OrderResultUrl" => "OrderResultURL",
+                        "ClientBackUrl" => "ClientBackURL",
+                        "MerchantTradeNo" => "MerchantTradeNo",
+                        "MerchantTradeDate" => "MerchantTradeDate",
+                        "PaymentType" => "PaymentType",
+                        "TotalAmount" => "TotalAmount",
+                        "TradeDesc" => "TradeDesc",
+                        "ItemName" => "ItemName",
+                        "ChoosePayment" => "ChoosePayment",
+                        "CheckMacValue" => "CheckMacValue",
+                        "EncryptType" => "EncryptType",
+                        _ => prop.Name // 其他欄位保持原樣
+                    };
+
+                    sb.Append($"<input type='hidden' name='{fieldName}' value='{value}' />");
                 }
             }
             sb.Append("</form>");
             sb.Append("<script>document.getElementById('ecpay-form').submit();</script>");
 
-            var html = sb.ToString();
-
-
+           
             return new DAPIResponse<string>
             {
                 IsSuccess = true,
