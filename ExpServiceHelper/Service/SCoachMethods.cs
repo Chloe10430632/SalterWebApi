@@ -538,6 +538,40 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #region 課程模板展示
+        public async Task<DAPIResponse<DCourseInfo>> ThisTemp(int tempId) {
+            var tempSession = await _context.ExpCourseTemplates
+                               .FirstOrDefaultAsync(c => c.Id == tempId);
+            if (tempSession == null) return new DAPIResponse<DCourseInfo> { IsSuccess = false, Message = "找不到該課程資訊" };
+
+            var result = await _context.ExpCourseTemplates
+                    .Where(c => c.Id == tempId)
+                    .Select(c => new DCourseInfo
+                    {
+                        CoachId = c.CoachId,
+                        Title = c.Title,
+                       
+
+                    }).FirstOrDefaultAsync();
+
+            if (result == null)
+            {
+                return new DAPIResponse<DCourseInfo>
+                {
+                    IsSuccess = false,
+                    Message = "找不到該課程資訊"
+                };
+            }
+
+            return new DTO.DAPIResponse<DCourseInfo>
+            {
+                IsSuccess = true,
+                Message = "課程展示中",
+                Data = result
+            };
+        }
+        #endregion
+
         #region 課程選時間上架 
         public async Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId)
         {

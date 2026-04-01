@@ -9,6 +9,7 @@ namespace ExpServiceHelper.DTO
 {
     public class DCourseInfo
     {
+       public int? CourseId { get; set; } 
         public int? CoachId { get; set; }
         public List<DateOnly>? SelectedDates { get; set; } = new List<DateOnly>();
         public string? TimeSlot { get; set; } = string.Empty;// 譬如 "09:00-11:00"
@@ -21,6 +22,9 @@ namespace ExpServiceHelper.DTO
         //
         public string? Title { get; set; }
         public string? Difficulty { get; set; }
+        public decimal? Price { get; set; }
+        public string? Description { get; set; }
+        public string? Location { get; set; }
 
     }
 }
