@@ -28,18 +28,12 @@ namespace SalterWebApi.Areas.Experience
 
 
         #region 前端收單 
-        [Authorize]
+        //[Authorize]
+        [AllowAnonymous]
         [HttpPost("GetOrderForm")] //測完用post以ts黨設定傳入資料
-        //[HttpGet("GetOrderForm")]
-        //public async Task<IActionResult> GetOrderForm([FromQuery] DTransacRequest dto)
         public async Task<IActionResult> GetOrderForm(DTransacRequest dto)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userIdStr))
-            {
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
-            }
 
                 var result = await _sECpay.GetPaymentForm(dto);
 
