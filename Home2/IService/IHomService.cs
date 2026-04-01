@@ -27,7 +27,7 @@ namespace HomeServiceHelper.IService
         Task<IEnumerable<HouseDetailViewDTO>> SearchHousesAsync(HouseSearchDTO search);
 
         // 詳情與首頁推薦
-        Task<HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId);
+        Task<HouseDetailViewDTO> SerchHouseDetailAsync(int roomTypeId, int? currentUserId = null);
         Task<IEnumerable<HouseDetailViewDTO>> GetTopRoomsAsync(int count);
 
         // 基礎資料撈取

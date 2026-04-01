@@ -41,10 +41,13 @@ namespace SalterWebApi.Areas.House.Controllers
         }
 
         //透過ID搜尋顯示房屋細節
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetDetail(int id)
+        [HttpGet("{roomTypeId}")]
+        public async Task<IActionResult> GetDetail(int roomTypeId)
         {
-            var result = await _homService.SerchHouseDetailAsync(id);
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? currentUserId = int.TryParse(userIdStr, out int id) ? id : null;
+
+            var result = await _homService.SerchHouseDetailAsync(roomTypeId, currentUserId);
 
             if (result == null)
             {

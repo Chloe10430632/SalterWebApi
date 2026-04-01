@@ -26,6 +26,7 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
         public List<AmenityItemDTO> Amenities { get; set; } = new(); // 設施清單
         public List<int>? AmenityIds { get; set; }
         public List<ReviewItemDTO> Reviews { get; set; } = new();
+        public bool IsAlreadyBooked { get; set; } //是否已預約（待付款或已付款）
 
     }
 }
