@@ -182,10 +182,10 @@ public class TripRepository : ITripRepository
     {
         return await _db.TripFavorites
             .Include(f => f.Trip)
+                .ThenInclude(t => t.TripMembers)  
             .Where(f => f.UserId == userId)
             .ToListAsync();
     }
-
     public async Task<bool> AddFavoriteAsync(int tripId, int userId)
     {
         var exists = await _db.TripFavorites

@@ -26,7 +26,8 @@ public class TripController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetList([FromQuery] TripQueryDto query)
     {
-        var data = await _service.GetTripListAsync(query);
+        var userId = GetUserId();
+        var data = await _service.GetTripListAsync(query, userId);
         return Ok(ApiResponse<TripListResultDto>.Ok(data));
     }
 
@@ -34,7 +35,8 @@ public class TripController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var data = await _service.GetTripDetailAsync(id);
+        var userId = GetUserId();
+        var data = await _service.GetTripDetailAsync(id, userId);
         if (data == null)
             return NotFound(ApiResponse<TripDetailDto>.Fail("找不到行程", 404));
         return Ok(ApiResponse<TripDetailDto>.Ok(data));

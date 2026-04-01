@@ -19,7 +19,7 @@ public class TripService : ITripService
 
     #region 行程
 
-    public async Task<TripListResultDto> GetTripListAsync(TripQueryDto query)
+    public async Task<TripListResultDto> GetTripListAsync(TripQueryDto query, int? userId = null)
     {
         var (trips, totalCount) = await _repo.GetTripsAsync(
             query.Keyword, query.TripType, query.Status, query.CityId,
@@ -29,15 +29,14 @@ public class TripService : ITripService
 
         return new TripListResultDto
         {
-            Trips = trips.Select(ToSummaryDto).ToList(),
+            Trips = trips.Select(t => ToSummaryDto(t, userId)).ToList(),
             TotalCount = totalCount,
             Page = query.Page,
             PageSize = query.PageSize,
             TotalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize)
         };
     }
-
-    public async Task<TripDetailDto?> GetTripDetailAsync(int tripId)
+    public async Task<TripDetailDto?> GetTripDetailAsync(int tripId, int? userId = null)
     {
         var trip = await _repo.GetTripByIdAsync(tripId);
         if (trip == null) return null;
@@ -64,6 +63,7 @@ public class TripService : ITripService
             AnnouncementCount = trip.TripAnnouncements?.Count ?? 0,
             GearItemCount = trip.TripGearItems?.Count ?? 0,
             OrganizerProfilePicture = trip.OrganizerUser?.ProfilePicture,
+            IsFavorite = userId.HasValue && (trip.TripFavorites?.Any(f => f.UserId == userId.Value) ?? false),
             Members = trip.TripMembers?.Select(m => new TripMemberDto
             {
                 UserId = m.UserId,
@@ -79,15 +79,12 @@ public class TripService : ITripService
                 {
                     Id = ttl.Id,
                     LocationName = ttl.Location?.Name ?? "",
-                    //CityName = ttl.Location?.District?.City?.Name ?? "",
-                    //DistrictName = ttl.Location?.District?.Name ?? "",
                     LocationRole = ttl.LocationRole,
                     Note = ttl.Note,
                     SortOrder = ttl.SortOrder
                 }).ToList() ?? new()
         };
     }
-
     public async Task<ServiceResult<int>> CreateTripAsync(TripRequestDto dto, int organizerUserId)
     {
         // 日期驗證
@@ -176,7 +173,7 @@ public class TripService : ITripService
     public async Task<List<TripSummaryDto>> GetMyTripsAsync(int userId, string? role = null)
     {
         var trips = await _repo.GetMyTripsAsync(userId, role);
-        return trips.Select(ToSummaryDto).ToList();
+        return trips.Select(t => ToSummaryDto(t, userId)).ToList();
     }
 
     #endregion
@@ -216,20 +213,20 @@ public class TripService : ITripService
         var favorites = await _repo.GetFavoritesAsync(userId);
         return favorites
             .Where(f => f.Trip != null)
-            .Select(f => ToSummaryDto(f.Trip!))
+            .Select(f => ToSummaryDto(f.Trip!, userId))
             .ToList();
     }
 
     public async Task<ServiceResult> AddFavoriteAsync(int tripId, int userId)
     {
-        var result = await _repo.AddFavoriteAsync(tripId, userId);
-        return result ? ServiceResult.Success("收藏成功") : ServiceResult.Fail("已收藏過");
+        await _repo.AddFavoriteAsync(tripId, userId);
+        return ServiceResult.Success("收藏成功");
     }
 
     public async Task<ServiceResult> RemoveFavoriteAsync(int tripId, int userId)
     {
-        var result = await _repo.RemoveFavoriteAsync(tripId, userId);
-        return result ? ServiceResult.Success("取消收藏成功") : ServiceResult.Fail("尚未收藏");
+        await _repo.RemoveFavoriteAsync(tripId, userId);
+        return ServiceResult.Success("取消收藏成功");
     }
 
     #endregion
@@ -636,7 +633,7 @@ public class TripService : ITripService
 
     #region Manual Mappings方法
 
-    private static TripSummaryDto ToSummaryDto(TripTrip t) => new()
+    private static TripSummaryDto ToSummaryDto(TripTrip t, int? userId = null) => new()
     {
         Id = t.Id,
         Title = t.Title,
@@ -650,7 +647,8 @@ public class TripService : ITripService
         CoverImageUrl = t.CoverImageUrl,
         OrganizerName = t.OrganizerUser?.UserName ?? "未知",
         FavoriteCount = t.TripFavorites?.Count ?? 0,
-        CreatedAt = t.CreatedAt
+        CreatedAt = t.CreatedAt,
+        IsFavorite = userId.HasValue && (t.TripFavorites?.Any(f => f.UserId == userId.Value) ?? false)
     };
 
     #endregion

@@ -18,6 +18,7 @@ public class TripSummaryDto
     public string OrganizerName { get; set; } = null!;
     public int FavoriteCount { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsFavorite { get; set; }
 }
 #endregion
 

@@ -5,8 +5,8 @@ namespace TripServiceHelper.IService;
 public interface ITripService
 {
     #region 行程
-    Task<TripListResultDto> GetTripListAsync(TripQueryDto query);
-    Task<TripDetailDto?> GetTripDetailAsync(int tripId);
+    Task<TripListResultDto> GetTripListAsync(TripQueryDto query, int? userId = null);
+    Task<TripDetailDto?> GetTripDetailAsync(int tripId, int? userId = null);
     Task<ServiceResult<int>> CreateTripAsync(TripRequestDto dto, int organizerUserId);
     Task<ServiceResult> UpdateTripAsync(int tripId, TripRequestDto dto, int userId);
     Task<ServiceResult> DeleteTripAsync(int tripId, int userId);
