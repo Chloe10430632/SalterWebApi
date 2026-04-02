@@ -78,15 +78,6 @@ public interface ITripRepository
     Task UpdateLocationSortAsync(List<(int locationId, int sortOrder)> items);
     #endregion
 
-    #region 提醒
-    // 提醒
-    Task<List<TripReminder>> GetRemindersAsync(int tripId, int userId);
-    Task<TripReminder> CreateReminderAsync(TripReminder entity);
-    Task<TripReminder?> UpdateReminderAsync(TripReminder entity);
-    Task<TripReminder?> GetReminderByIdAsync(int reminderId);
-    Task<bool> ToggleReminderAsync(int reminderId);
-    #endregion
-
     #region 城市
     // 城市
     Task<List<TripCity>> GetCitiesAsync();

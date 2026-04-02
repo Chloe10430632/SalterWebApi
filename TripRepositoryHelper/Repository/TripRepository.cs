@@ -104,8 +104,6 @@ public class TripRepository : ITripRepository
             .Include(t => t.TripGearItems)
                 .ThenInclude(g => g.TripGearChecks)
             .Include(t => t.TripTripLocations)
-            .Include(t => t.TripReminders)
-            .Include(t => t.TripTimelines)
             .FirstOrDefaultAsync(t => t.Id == tripId);
 
         if (entity == null) return false;
@@ -116,8 +114,6 @@ public class TripRepository : ITripRepository
         _db.TripGearChecks.RemoveRange(entity.TripGearItems.SelectMany(g => g.TripGearChecks));
         _db.TripGearItems.RemoveRange(entity.TripGearItems);
         _db.TripTripLocations.RemoveRange(entity.TripTripLocations);
-        _db.TripReminders.RemoveRange(entity.TripReminders);
-        _db.TripTimelines.RemoveRange(entity.TripTimelines);
 
         _db.TripTrips.Remove(entity);
         await _db.SaveChangesAsync();
@@ -484,41 +480,6 @@ public class TripRepository : ITripRepository
                 sortOrder, DateTime.Now, locationId);
         }
     }
-    #endregion
-
-    #region 提醒
-
-    public async Task<List<TripReminder>> GetRemindersAsync(int tripId, int userId)
-    {
-        return await _db.TripReminders
-            .Where(r => r.TripId == tripId && r.UserId == userId)
-            .ToListAsync();
-    }
-
-    public async Task<TripReminder> CreateReminderAsync(TripReminder entity)
-    {
-        _db.TripReminders.Add(entity);
-        await _db.SaveChangesAsync();
-        return entity;
-    }
-
-    public async Task<TripReminder?> UpdateReminderAsync(TripReminder entity)
-    {
-        _db.TripReminders.Update(entity);
-        await _db.SaveChangesAsync();
-        return entity;
-    }
-    public async Task<TripReminder?> GetReminderByIdAsync(int reminderId)
-    => await _db.TripReminders.FindAsync(reminderId);
-    public async Task<bool> ToggleReminderAsync(int reminderId)
-    {
-        var entity = await _db.TripReminders.FindAsync(reminderId);
-        if (entity == null) return false;
-        entity.IsEnabled = !entity.IsEnabled;
-        await _db.SaveChangesAsync();
-        return true;
-    }
-
     #endregion
 
     #region 城市

@@ -137,12 +137,6 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<TripMember> TripMembers { get; set; }
 
-    public virtual DbSet<TripNote> TripNotes { get; set; }
-
-    public virtual DbSet<TripReminder> TripReminders { get; set; }
-
-    public virtual DbSet<TripTimeline> TripTimelines { get; set; }
-
     public virtual DbSet<TripTrip> TripTrips { get; set; }
 
     public virtual DbSet<TripTripLocation> TripTripLocations { get; set; }
@@ -170,7 +164,6 @@ public partial class SalterDbContext : DbContext
     public virtual DbSet<UserUser> UserUsers { get; set; }
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1498,20 +1491,6 @@ public partial class SalterDbContext : DbContext
                 .HasConstraintName("FK__TripDistr__city___7814D14C");
         });
 
-        modelBuilder.Entity<TripFavoriteFolder>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_TripFavoriteFolders");
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.Name).HasMaxLength(100).HasColumnName("name");
-            entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasColumnType("datetime").HasColumnName("updated_at");
-            entity.HasOne(d => d.User).WithMany()
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
-        });
-
-
         modelBuilder.Entity<TripFavorite>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__TripFavo__3213E83F4766FD43");
@@ -1523,14 +1502,14 @@ public partial class SalterDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.FolderId).HasColumnName("folder_id");
             entity.Property(e => e.TripId).HasColumnName("trip_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.FolderId).HasColumnName("folder_id");
-                
-           
+
             entity.HasOne(d => d.Folder).WithMany(p => p.TripFavorites)
                 .HasForeignKey(d => d.FolderId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_TripFavorites_Folder");
 
             entity.HasOne(d => d.Trip).WithMany(p => p.TripFavorites)
                 .HasForeignKey(d => d.TripId)
@@ -1541,6 +1520,30 @@ public partial class SalterDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TripFavorites_User");
+        });
+
+        modelBuilder.Entity<TripFavoriteFolder>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TripFavo__3213E83F2D143273");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TripFavoriteFolders)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TripFavoriteFolders_User");
         });
 
         modelBuilder.Entity<TripGearCheck>(entity =>
@@ -1661,107 +1664,6 @@ public partial class SalterDbContext : DbContext
                 .HasConstraintName("FK_TripMembers_User");
         });
 
-        modelBuilder.Entity<TripNote>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__TripNote__3213E83FF7197CE4");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Content).HasColumnName("content");
-            entity.Property(e => e.TimelineId).HasColumnName("timeline_id");
-            entity.Property(e => e.TripId).HasColumnName("trip_id");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UpdatedByUserId).HasColumnName("updated_by_user_id");
-            entity.Property(e => e.Version)
-                .HasDefaultValue(1)
-                .HasColumnName("version");
-
-            entity.HasOne(d => d.Timeline).WithMany(p => p.TripNotes)
-                .HasForeignKey(d => d.TimelineId)
-                .HasConstraintName("FK_TripNotes_Timeline");
-
-            entity.HasOne(d => d.Trip).WithMany(p => p.TripNotes)
-                .HasForeignKey(d => d.TripId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TripNotes_Trips");
-
-            entity.HasOne(d => d.UpdatedByUser).WithMany(p => p.TripNotes)
-                .HasForeignKey(d => d.UpdatedByUserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TripNotes_User");
-        });
-
-        modelBuilder.Entity<TripReminder>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__TripRemi__3213E83F79CAB5BE");
-
-            entity.HasIndex(e => new { e.TripId, e.UserId, e.RemindOffsetMinutes }, "UX_TripReminders").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.IsEnabled)
-                .HasDefaultValue(true)
-                .HasColumnName("is_enabled");
-            entity.Property(e => e.LastSentAt)
-                .HasColumnType("datetime")
-                .HasColumnName("last_sent_at");
-            entity.Property(e => e.RemindOffsetMinutes).HasColumnName("remind_offset_minutes");
-            entity.Property(e => e.TripId).HasColumnName("trip_id");
-            entity.Property(e => e.UpdatedAt)
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-
-            entity.HasOne(d => d.Trip).WithMany(p => p.TripReminders)
-                .HasForeignKey(d => d.TripId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TripReminders_Trips");
-        });
-
-        modelBuilder.Entity<TripTimeline>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__TripTime__3213E83FF5CB1CD2");
-
-            entity.ToTable("TripTimeline");
-
-            entity.HasIndex(e => new { e.TripId, e.SortOrder }, "UX_TripTimeline_Sort").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-            entity.Property(e => e.EndAt)
-                .HasColumnType("datetime")
-                .HasColumnName("end_at");
-            entity.Property(e => e.SortOrder).HasColumnName("sort_order");
-            entity.Property(e => e.StartAt)
-                .HasColumnType("datetime")
-                .HasColumnName("start_at");
-            entity.Property(e => e.Title)
-                .HasMaxLength(200)
-                .HasColumnName("title");
-            entity.Property(e => e.TripId).HasColumnName("trip_id");
-            entity.Property(e => e.TripLocationId).HasColumnName("trip_location_id");
-            entity.Property(e => e.UpdatedAt)
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-
-            entity.HasOne(d => d.Trip).WithMany(p => p.TripTimelines)
-                .HasForeignKey(d => d.TripId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TripTimeline_Trips");
-
-            entity.HasOne(d => d.TripLocation).WithMany(p => p.TripTimelines)
-                .HasForeignKey(d => d.TripLocationId)
-                .HasConstraintName("FK_TripTimeline_TripLocation");
-        });
-
         modelBuilder.Entity<TripTrip>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__TripTrip__3213E83F94C72B9D");
@@ -1818,13 +1720,14 @@ public partial class SalterDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__TripTrip__3213E83FDFFF3B7D");
 
-            entity.HasIndex(e => new { e.TripId, e.SortOrder }, "UX_TripTripLocations_Sort").IsUnique();
+            entity.HasIndex(e => new { e.TripId, e.DayNumber, e.SortOrder }, "UX_TripTripLocations_Sort").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.DayNumber).HasColumnName("day_number");
             entity.Property(e => e.LocationId).HasColumnName("location_id");
             entity.Property(e => e.LocationRole)
                 .HasMaxLength(50)
@@ -1833,7 +1736,6 @@ public partial class SalterDbContext : DbContext
                 .HasMaxLength(500)
                 .HasColumnName("note");
             entity.Property(e => e.SortOrder).HasColumnName("sort_order");
-            entity.Property(e => e.DayNumber).HasColumnName("day_number");
             entity.Property(e => e.TripId).HasColumnName("trip_id");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")

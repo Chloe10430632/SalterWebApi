@@ -59,13 +59,6 @@ public interface ITripService
 
     #endregion
 
-    #region 提醒
-    Task<ServiceResult<List<TripReminderDto>>> GetRemindersAsync(int tripId, int userId);
-    Task<ServiceResult> CreateReminderAsync(int tripId, TripReminderRequestDto dto, int userId);
-    Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto, int userId);
-    Task<ServiceResult> ToggleReminderAsync(int reminderId);
-    #endregion
-
     #region 城市
     Task<List<TripCityDto>> GetCitiesAsync();
     Task<List<TripDistrictDto>> GetDistrictsAsync(int cityId);

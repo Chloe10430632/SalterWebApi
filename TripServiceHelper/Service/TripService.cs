@@ -628,64 +628,6 @@ public class TripService : ITripService
     }
     #endregion
 
-    #region 提醒
-
-    public async Task<ServiceResult<List<TripReminderDto>>> GetRemindersAsync(int tripId, int userId)
-    {
-        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
-        var isMember = await _repo.IsMemberAsync(tripId, userId);
-
-        if (!isOrganizer && !isMember)
-            return ServiceResult<List<TripReminderDto>>.Fail("請先加入行程才能查看提醒", 403);
-
-        var list = await _repo.GetRemindersAsync(tripId, userId);
-        var result = list.Select(r => new TripReminderDto
-        {
-            Id = r.Id,
-            RemindOffsetMinutes = r.RemindOffsetMinutes,
-            IsEnabled = r.IsEnabled,
-            LastSentAt = r.LastSentAt
-        }).ToList();
-
-        return ServiceResult<List<TripReminderDto>>.Success(result);
-    }
-
-    public async Task<ServiceResult> CreateReminderAsync(int tripId, TripReminderRequestDto dto, int userId)
-    {
-        var entity = new TripReminder
-        {
-            TripId = tripId,
-            UserId = userId,
-            RemindOffsetMinutes = dto.RemindOffsetMinutes,
-            IsEnabled = dto.IsEnabled,
-            UpdatedAt = DateTime.Now
-        };
-        await _repo.CreateReminderAsync(entity);
-        return ServiceResult.Success("提醒新增成功");
-    }
-
-    public async Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto, int userId)
-    {
-        var entity = await _repo.GetReminderByIdAsync(reminderId);
-        if (entity == null) return ServiceResult.Fail("找不到提醒", 404);
-
-        if (entity.UserId != userId)
-            return ServiceResult.Fail("只能修改自己的提醒", 403);
-
-        entity.RemindOffsetMinutes = dto.RemindOffsetMinutes;
-        entity.IsEnabled = dto.IsEnabled;
-        await _repo.UpdateReminderAsync(entity);
-        return ServiceResult.Success("提醒更新成功");
-    }
-
-    public async Task<ServiceResult> ToggleReminderAsync(int reminderId)
-    {
-        var result = await _repo.ToggleReminderAsync(reminderId);
-        return result ? ServiceResult.Success("提醒狀態已更新") : ServiceResult.Fail("找不到提醒");
-    }
-
-    #endregion
-
     #region 城市
 
     public async Task<List<TripCityDto>> GetCitiesAsync()

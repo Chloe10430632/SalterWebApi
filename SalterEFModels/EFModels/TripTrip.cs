@@ -43,11 +43,5 @@ public partial class TripTrip
 
     public virtual ICollection<TripMember> TripMembers { get; set; } = new List<TripMember>();
 
-    public virtual ICollection<TripNote> TripNotes { get; set; } = new List<TripNote>();
-
-    public virtual ICollection<TripReminder> TripReminders { get; set; } = new List<TripReminder>();
-
-    public virtual ICollection<TripTimeline> TripTimelines { get; set; } = new List<TripTimeline>();
-
     public virtual ICollection<TripTripLocation> TripTripLocations { get; set; } = new List<TripTripLocation>();
 }

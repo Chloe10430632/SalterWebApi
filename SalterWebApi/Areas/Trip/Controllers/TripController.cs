@@ -435,55 +435,6 @@ public class TripController : ControllerBase
     }       
     #endregion
 
-    #region 提醒
-
-    [HttpGet("{id}/reminders")]
-    public async Task<IActionResult> GetReminders(int id)
-    {
-        var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
-        var result = await _service.GetRemindersAsync(id, userId.Value);
-        if (!result.IsSuccess)
-            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
-        return Ok(ApiResponse<List<TripReminderDto>>.Ok(result.Data!));
-    }
-
-    [HttpPost("{id}/reminders")]
-    public async Task<IActionResult> CreateReminder(int id, [FromBody] TripReminderRequestDto dto)
-    {
-        var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
-        var result = await _service.CreateReminderAsync(id, dto, userId.Value);
-        if (!result.IsSuccess)
-            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
-        return Ok(ApiResponse<string>.Ok(result.Message));
-    }
-
-    [HttpPut("reminders/{rid}")]
-    public async Task<IActionResult> UpdateReminder(int rid, [FromBody] TripReminderRequestDto dto)
-    {
-        var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
-        var result = await _service.UpdateReminderAsync(rid, dto, userId.Value);
-        if (!result.IsSuccess)
-            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
-        return Ok(ApiResponse<string>.Ok(result.Message));
-    }
-
-    [HttpPatch("reminders/{rid}/toggle")]
-    public async Task<IActionResult> ToggleReminder(int rid)
-    {
-        var result = await _service.ToggleReminderAsync(rid);
-        if (!result.IsSuccess)
-            return NotFound(ApiResponse<string>.Fail(result.Message, 404));
-        return Ok(ApiResponse<string>.Ok(result.Message));
-    }
-
-    #endregion
-
     #region 城市
 
     [AllowAnonymous]
