@@ -230,12 +230,12 @@ namespace ExpServiceHelper.Service
                         //                    .ToListAsync();
                         //    foreach (var order in 你的order表) { order.Status = 1; }
                         //    break;
-                        //case 4: //房源
-                        //    var houseOrder = await _context.你的order表
-                        //                    .Where(o => o.ExpTransactionId == transactionId)
-                        //                    .ToListAsync();
-                        //    foreach (var order in 你的order表) { order.Status = 1; }
-                        //    break;
+                        case 4: //房源
+                            var houseBookings = await _context.HomBookings
+                                            .Where(o => o.TransactionsId == transactionId)
+                                            .ToListAsync();
+                            foreach (var booking in houseBookings) { booking.Status = "1"; booking.UpdateTime = DateTime.Now; }
+                            break;
 
 
                         default:

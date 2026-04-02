@@ -1,4 +1,7 @@
 ﻿using CloudinaryDotNet.Actions;
+using ExpServiceHelper.DTO;
+using ExpServiceHelper.IService;
+using ExpServiceHelper.Service;
 using HomeServiceHelper.IService;
 using HomeServiceHelper.Models.DTO.ViewModels;
 using HomeServiceHelper.Models.DTO.ViewModels.Review;
@@ -18,10 +21,12 @@ namespace SalterWebApi.Areas.House.Controllers
     public class HomeController : ControllerBase
     {
         private readonly IHomService _homService;
+         private readonly ISECPay _sECpay;
 
-        public HomeController(IHomService homeService)
+        public HomeController(IHomService homeService,ISECPay sECpay)
         {
             _homService = homeService;
+            _sECpay = sECpay;
         }
 
         //取得所有房型
@@ -64,7 +69,7 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(await _homService.GetAllCityAsync());
         }
 
-        
+        // 取得分組預覽，支援城市篩選
         [HttpGet("city-groups")]
         public async Task<ActionResult<List<CityGroupDTO>>> GetCityGroups(string? city)
         {
@@ -80,6 +85,7 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(await _homService.GetTopRoomsAsync(count));
         }
 
+        //新增評論
         [HttpPost("reviews")]
         public async Task<IActionResult> AddReview([FromBody] ReviewCreateDTO dto)
         {
@@ -171,7 +177,8 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(result);
         }
 
-        
+
+        // 進階搜尋（包含日期、價格區間等）
         [HttpGet("select")]
         public async Task<IActionResult> GetAvailableHouses([FromQuery] HouseSearchDTO searchCriteria)
         {
@@ -180,7 +187,8 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(results);
         }
 
-        
+
+        // 建立預約訂單 ID 
         [Authorize]
         [HttpPost("createBookingId")]
         public async Task<IActionResult> CreateBookingId([FromBody] CreateBookingDTO dto)
@@ -202,7 +210,7 @@ namespace SalterWebApi.Areas.House.Controllers
             }
         }
 
-       
+        // 取得自己的預約訂單列表
         [Authorize]
         [HttpGet("getMemberBookings")]
         public async Task<IActionResult> GetMemberBookings()
@@ -217,7 +225,7 @@ namespace SalterWebApi.Areas.House.Controllers
             return Ok(result);
         }
 
-
+        // 取消預約訂單
         [Authorize]
         [HttpPost("cancelBooking/{id}")]
         public async Task<IActionResult> CancelBooking(int id)
@@ -269,6 +277,66 @@ namespace SalterWebApi.Areas.House.Controllers
                 return BadRequest("刪除失敗。");
             }
             return Ok(new { message = "評論已刪除" });
+        }
+
+        //交易
+        [Authorize]
+        [HttpPost("PayBooking/{bookingId}")]
+        public async Task<IActionResult> PayBooking(int bookingId)
+        {
+            // 從 Token 抓出目前的 UserId
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId))
+                return Unauthorized(new { message = "請重新登入" });
+
+            try
+            {
+                // 建立或取得 TransactionId
+                int transactionId = await _homService.CreateTransactionForBooking(bookingId, userId);
+
+                // 準備API 需要的 DTO
+                var payRequest = new DTransacRequest
+                {
+                    TransactionId = transactionId,
+                    ItemName = "房源預約費用",
+                    Description = $"預約編號 #{bookingId} 之付款單",
+                    // BaseUrl 可依需求傳入，或在 Service 內部由 Config 決定
+                };
+
+                // 呼叫 GetPaymentForm 產生 HTML 表單
+                var result = await _sECpay.GetPaymentForm(payRequest);
+
+                if (!result.IsSuccess)
+                    return BadRequest(result);
+
+                // 5. 回傳 HTML 給前端
+                return Content(result.Data, "text/html");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            
+        }
+
+       //接收綠界結果用的API
+        [HttpPost("UpdateTransacForm")]
+        [AllowAnonymous]
+        [Consumes("application/x-www-form-urlencoded")] // 綠界是用表單格式傳送
+        public async Task<string> UpdateTransacForm([FromForm] Dictionary<string, string> data)
+        {
+            // 呼叫 Service 裡的 UpdateTransacForm 邏輯 (改狀態、改 DB)
+            bool isSuccess = await _sECpay.UpdateTransacForm(data);
+
+            if (isSuccess)
+            {
+                // 綠界收到這個字串才代表這筆通知處理完成
+                return "1|OK";
+            }
+            else
+            {
+                return "0|Error";
+            }
         }
     }
 }
