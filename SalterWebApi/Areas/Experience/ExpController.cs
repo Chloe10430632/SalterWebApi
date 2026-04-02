@@ -221,25 +221,13 @@ namespace SalterWebApi.Areas.Experience
 
         #region 模板展示
         [Authorize]
-        [HttpGet("Temp/{tempId}")]
-        public async Task<IActionResult> ThisTemplate(int tempId) {
+        [HttpGet("Temp")]
+        public async Task<IActionResult> ThisTemplate() {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr))
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
 
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            if (int.TryParse(userIdStr, out int currentUserId)) {
-            
-                if (tempId == 0) return NotFound("沒有這個模板");
-            try {
-                var result = await _sCoachMethods.ThisTemp(tempId, currentUserId);
-                if (!result.IsSuccess) return NotFound(result.Message);
-                return Ok(new { isSuccess = true, message = "模板展示中", data = result });
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-            }
-            return BadRequest(new { message = "展示失敗，請檢查資料是否正確" });
+            var result = await _sCoachMethods.ThisTemp(userId);
+            return Ok(result);
         }
         #endregion
 
