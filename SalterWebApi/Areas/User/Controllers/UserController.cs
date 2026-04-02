@@ -258,10 +258,13 @@ namespace SalterWebApi.Areas.User.Controllers
         [HttpPost("AskXiaoSha")]
         public async Task<IActionResult> AskXiaoSha([FromBody] ChatRequest request)
         {
-            Console.WriteLine("==== 小沙接收到請求了！ ====");
+            Console.WriteLine("======================================");
+            Console.WriteLine($"[入口] 收到前端請求！時間：{DateTime.Now:HH:mm:ss}");
+
             if (string.IsNullOrEmpty(request.Message))
                 return BadRequest(new { message = "旅伴，你想問小沙什麼呢？🌊" });
-            Console.WriteLine($"收到訊息內容: {request.Message}");
+
+            Console.WriteLine("[警告] 前端傳來的 request 或 Message 是空的！");
 
             try
             {
@@ -280,7 +283,10 @@ namespace SalterWebApi.Areas.User.Controllers
                 };
 
                 // 3. 設定 URL (完全照抄你的 Python URL: v1beta + gemini-flash-latest)
-                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={_apiKey}";
+
+                var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key={_apiKey}";
+
+                Console.WriteLine($"[發送] 準備呼叫 Google API... 模型：gemini-1.5-pro");
 
                 // 4. 發送 POST 請求
                 var response = await httpClient.PostAsJsonAsync(url, data);
@@ -296,11 +302,19 @@ namespace SalterWebApi.Areas.User.Controllers
                                             .GetProperty("text")
                                             .GetString();
 
+                    Console.WriteLine("[成功] Google 正常回傳回覆了！");
+                    Console.WriteLine("======================================");
+
                     return Ok(new { reply = botReply });
                 }
                 else
                 {
                     var errorResult = await response.Content.ReadAsStringAsync();
+                    var errorDetail = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[失敗] Google API 報錯！狀態碼：{response.StatusCode}");
+                    Console.WriteLine($"[錯誤細節]：{errorDetail}");
+                    Console.WriteLine("======================================");
+
                     return BadRequest(new { error = $"Gemini API 錯誤: {errorResult}" });
                 }
             }
