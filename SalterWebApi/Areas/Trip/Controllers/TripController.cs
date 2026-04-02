@@ -26,11 +26,17 @@ public class TripController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetList([FromQuery] TripQueryDto query)
     {
-        var userId = GetUserId();
-        var data = await _service.GetTripListAsync(query, userId);
-        return Ok(ApiResponse<TripListResultDto>.Ok(data));
+        try
+        {
+            var userId = GetUserId();
+            var data = await _service.GetTripListAsync(query, userId);
+            return Ok(ApiResponse<TripListResultDto>.Ok(data));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<string>.Fail(ex.InnerException?.Message ?? ex.Message, 500));
+        }
     }
-
     [AllowAnonymous]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
@@ -149,6 +155,68 @@ public class TripController : ControllerBase
         if (userId == null)
             return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
         var result = await _service.RemoveFavoriteAsync(id, userId.Value);
+        if (!result.IsSuccess)
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+        return Ok(ApiResponse<string>.Ok(result.Message));
+    }
+
+    #endregion
+
+    #region 收藏資料夾
+
+    [HttpGet("folders")]
+    public async Task<IActionResult> GetFolders()
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var data = await _service.GetFoldersAsync(userId.Value);
+        return Ok(ApiResponse<List<TripFavoriteFolderDto>>.Ok(data));
+    }
+
+    [HttpPost("folders")]
+    public async Task<IActionResult> CreateFolder([FromBody] TripFavoriteFolderRequestDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.CreateFolderAsync(dto, userId.Value);
+        if (!result.IsSuccess)
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+        return Ok(ApiResponse<TripFavoriteFolderDto>.Ok(result.Data!));
+    }
+
+    [HttpPut("folders/{folderId}")]
+    public async Task<IActionResult> UpdateFolder(int folderId, [FromBody] TripFavoriteFolderRequestDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.UpdateFolderAsync(folderId, dto, userId.Value);
+        if (!result.IsSuccess)
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+        return Ok(ApiResponse<string>.Ok(result.Message));
+    }
+
+    [HttpDelete("folders/{folderId}")]
+    public async Task<IActionResult> DeleteFolder(int folderId)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.DeleteFolderAsync(folderId, userId.Value);
+        if (!result.IsSuccess)
+            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+        return Ok(ApiResponse<string>.Ok(result.Message));
+    }
+
+    [HttpPut("{id}/favorite/folder")]
+    public async Task<IActionResult> MoveFavoriteToFolder(int id, [FromBody] MoveFavoriteToFolderDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+        var result = await _service.MoveFavoriteToFolderAsync(id, userId.Value, dto.FolderId);
         if (!result.IsSuccess)
             return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
         return Ok(ApiResponse<string>.Ok(result.Message));
@@ -315,13 +383,20 @@ public class TripController : ControllerBase
     [HttpPost("{id}/locations")]
     public async Task<IActionResult> CreateLocation(int id, [FromBody] TripLocationRequestDto dto)
     {
-        var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
-        var result = await _service.CreateLocationAsync(id, dto, userId.Value);
-        if (!result.IsSuccess)
-            return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
-        return Ok(ApiResponse<string>.Ok(result.Message));
+        try
+        {
+            var userId = GetUserId();
+            if (userId == null)
+                return Unauthorized(ApiResponse<string>.Fail("無效的憑證", 401));
+            var result = await _service.CreateLocationAsync(id, dto, userId.Value);
+            if (!result.IsSuccess)
+                return StatusCode(result.Code, ApiResponse<string>.Fail(result.Message, result.Code));
+            return Ok(ApiResponse<string>.Ok(result.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<string>.Fail(ex.InnerException?.Message ?? ex.Message, 500));
+        }
     }
 
     [HttpPut("locations/{lid}")]

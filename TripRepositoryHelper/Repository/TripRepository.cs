@@ -37,7 +37,10 @@ public class TripRepository : ITripRepository
         if (!string.IsNullOrEmpty(tripType))
             q = q.Where(t => t.TripType == tripType);
         if (!string.IsNullOrEmpty(status))
-            q = q.Where(t => t.Status == status);
+        {
+            var statuses = status.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            q = q.Where(t => statuses.Contains(t.Status));
+        }
         //if (cityId.HasValue)
         //    q = q.Where(t => t.TripTripLocations.Any(
         //        ttl => ttl.Location.District.CityId == cityId.Value));
@@ -213,6 +216,64 @@ public class TripRepository : ITripRepository
     }
 
     #endregion
+
+    #region 收藏資料夾
+    public async Task<List<TripFavoriteFolder>> GetFoldersAsync(int userId)
+    {
+        return await _db.TripFavoriteFolders
+            .Where(f => f.UserId == userId)
+            .Include(f => f.TripFavorites)
+            .OrderBy(f => f.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<TripFavoriteFolder?> GetFolderByIdAsync(int folderId)
+    {
+        return await _db.TripFavoriteFolders
+            .FirstOrDefaultAsync(f => f.Id == folderId);
+    }
+
+    public async Task<TripFavoriteFolder> CreateFolderAsync(TripFavoriteFolder folder)
+    {
+        _db.TripFavoriteFolders.Add(folder);
+        await _db.SaveChangesAsync();
+        return folder;
+    }
+
+    public async Task UpdateFolderAsync(TripFavoriteFolder folder)
+    {
+        _db.TripFavoriteFolders.Update(folder);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task DeleteFolderAsync(int folderId)
+    {
+        // 先把資料夾內的收藏移到未分類
+        var favorites = await _db.TripFavorites
+            .Where(f => f.FolderId == folderId)
+            .ToListAsync();
+        favorites.ForEach(f => f.FolderId = null);
+        await _db.SaveChangesAsync();
+
+        var folder = await _db.TripFavoriteFolders.FindAsync(folderId);
+        if (folder != null)
+        {
+            _db.TripFavoriteFolders.Remove(folder);
+            await _db.SaveChangesAsync();
+        }
+    }
+
+    public async Task MoveFavoriteToFolderAsync(int tripId, int userId, int? folderId)
+    {
+        var favorite = await _db.TripFavorites
+            .FirstOrDefaultAsync(f => f.TripId == tripId && f.UserId == userId);
+        if (favorite != null)
+        {
+            favorite.FolderId = folderId;
+            await _db.SaveChangesAsync();
+        }
+    }
+#endregion
 
     #region 公告
 
@@ -409,27 +470,19 @@ public class TripRepository : ITripRepository
     }
     public async Task UpdateLocationSortAsync(List<(int locationId, int sortOrder)> items)
     {
+        // 先設成負數避免衝突
         foreach (var (locationId, _) in items)
         {
-            var entity = await _db.TripTripLocations.FindAsync(locationId);
-            if (entity != null)
-            {
-                entity.SortOrder = -entity.SortOrder;
-                entity.UpdatedAt = DateTime.Now;
-            }
+            await _db.Database.ExecuteSqlRawAsync(
+                "UPDATE TripTripLocations SET sort_order = -id WHERE id = {0}", locationId);
         }
-        await _db.SaveChangesAsync();
-
+        // 再設成正確的 sortOrder
         foreach (var (locationId, sortOrder) in items)
         {
-            var entity = await _db.TripTripLocations.FindAsync(locationId);
-            if (entity != null)
-            {
-                entity.SortOrder = sortOrder;
-                entity.UpdatedAt = DateTime.Now;
-            }
+            await _db.Database.ExecuteSqlRawAsync(
+                "UPDATE TripTripLocations SET sort_order = {0}, updated_at = {1} WHERE id = {2}",
+                sortOrder, DateTime.Now, locationId);
         }
-        await _db.SaveChangesAsync();
     }
     #endregion
 

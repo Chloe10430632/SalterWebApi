@@ -28,6 +28,17 @@ public interface ITripRepository
     Task<List<TripFavorite>> GetFavoritesAsync(int userId);
     Task<bool> AddFavoriteAsync(int tripId, int userId);
     Task<bool> RemoveFavoriteAsync(int tripId, int userId);
+
+
+    #endregion
+
+    #region 收藏資料夾
+    Task<List<TripFavoriteFolder>> GetFoldersAsync(int userId);
+    Task<TripFavoriteFolder?> GetFolderByIdAsync(int folderId);
+    Task<TripFavoriteFolder> CreateFolderAsync(TripFavoriteFolder folder);
+    Task UpdateFolderAsync(TripFavoriteFolder folder);
+    Task DeleteFolderAsync(int folderId);
+    Task MoveFavoriteToFolderAsync(int tripId, int userId, int? folderId);
     #endregion
 
     #region 公告

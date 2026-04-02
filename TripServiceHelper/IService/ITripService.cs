@@ -25,7 +25,15 @@ public interface ITripService
     Task<ServiceResult> RemoveFavoriteAsync(int tripId, int userId);
     #endregion
 
-   #region 公告
+    #region 收藏資料夾
+    Task<List<TripFavoriteFolderDto>> GetFoldersAsync(int userId);
+    Task<ServiceResult<TripFavoriteFolderDto>> CreateFolderAsync(TripFavoriteFolderRequestDto dto, int userId);
+    Task<ServiceResult> UpdateFolderAsync(int folderId, TripFavoriteFolderRequestDto dto, int userId);
+    Task<ServiceResult> DeleteFolderAsync(int folderId, int userId);
+    Task<ServiceResult> MoveFavoriteToFolderAsync(int tripId, int userId, int? folderId);
+    #endregion
+
+    #region 公告
     Task<ServiceResult<List<TripAnnouncementDto>>> GetAnnouncementsAsync(int tripId, int userId);
     Task<ServiceResult> CreateAnnouncementAsync(int tripId, TripAnnouncementRequestDto dto, int userId);
     Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementUpdateDto dto, int userId);

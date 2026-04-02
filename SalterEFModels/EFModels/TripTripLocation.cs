@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SalterEFModels.EFModels;
 
@@ -8,6 +9,9 @@ public partial class TripTripLocation
     public int Id { get; set; }
 
     public int TripId { get; set; }
+
+    [Column("day_number")]
+    public int DayNumber { get; set; }
 
     public int LocationId { get; set; }
 

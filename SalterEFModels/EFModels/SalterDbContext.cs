@@ -127,6 +127,8 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<TripFavorite> TripFavorites { get; set; }
 
+    public virtual DbSet<TripFavoriteFolder> TripFavoriteFolders { get; set; }
+
     public virtual DbSet<TripGearCheck> TripGearChecks { get; set; }
 
     public virtual DbSet<TripGearItem> TripGearItems { get; set; }
@@ -1496,6 +1498,20 @@ public partial class SalterDbContext : DbContext
                 .HasConstraintName("FK__TripDistr__city___7814D14C");
         });
 
+        modelBuilder.Entity<TripFavoriteFolder>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_TripFavoriteFolders");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Name).HasMaxLength(100).HasColumnName("name");
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime").HasColumnName("updated_at");
+            entity.HasOne(d => d.User).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+
         modelBuilder.Entity<TripFavorite>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__TripFavo__3213E83F4766FD43");
@@ -1509,6 +1525,12 @@ public partial class SalterDbContext : DbContext
                 .HasColumnName("created_at");
             entity.Property(e => e.TripId).HasColumnName("trip_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.FolderId).HasColumnName("folder_id");
+                
+           
+            entity.HasOne(d => d.Folder).WithMany(p => p.TripFavorites)
+                .HasForeignKey(d => d.FolderId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(d => d.Trip).WithMany(p => p.TripFavorites)
                 .HasForeignKey(d => d.TripId)
@@ -1811,6 +1833,7 @@ public partial class SalterDbContext : DbContext
                 .HasMaxLength(500)
                 .HasColumnName("note");
             entity.Property(e => e.SortOrder).HasColumnName("sort_order");
+            entity.Property(e => e.DayNumber).HasColumnName("day_number");
             entity.Property(e => e.TripId).HasColumnName("trip_id");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
