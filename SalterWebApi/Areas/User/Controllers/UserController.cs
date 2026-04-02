@@ -284,7 +284,7 @@ namespace SalterWebApi.Areas.User.Controllers
 
                 // 3. 設定 URL (完全照抄你的 Python URL: v1beta + gemini-flash-latest)
 
-                var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key={_apiKey}";
+                var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={_apiKey}";
 
                 Console.WriteLine($"[發送] 準備呼叫 Google API... 模型：gemini-1.5-pro");
 
