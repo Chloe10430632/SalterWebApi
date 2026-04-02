@@ -53,6 +53,9 @@ namespace ExpServiceHelper.IService
         #region 課程模板編輯
         Task<DAPIResponse<DCourseTempEdit>> EditTemplate(DCourseTempEdit dto, int TemplateId, int currentUserId);
         #endregion
+        # region 模板展示
+        Task<DAPIResponse<DCourseInfo>> ThisTemp(int tempId);
+        #endregion
         #region  課程上架 
         Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
         #endregion

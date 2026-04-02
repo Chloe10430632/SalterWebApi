@@ -219,6 +219,21 @@ namespace SalterWebApi.Areas.Experience
         }
         #endregion
 
+        #region 模板展示
+        [Authorize]
+        [HttpGet("Temp/{'tempid'}")]
+        public async Task<IActionResult> ThisTemplate(int tempId) { 
+            if (tempId == 0) return NotFound("沒有這個模板");
+            try {
+                var result = await _sCoachMethods.ThisTemp(tempId);
+                if (!result.IsSuccess) return NotFound(result.Message);
+                return Ok(new { isSuccess = true, message = "模板展示中", data = result });
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        
+        }
+        #endregion
+
         #region 課程選時間上架 
         [Authorize]
         [HttpPost("CourseTime/{templateId}")]
@@ -277,7 +292,7 @@ namespace SalterWebApi.Areas.Experience
             {
                 var result = await _sCoachMethods.ThisCourse(sessionId);
                 if (!result.IsSuccess) return NotFound(result.Message);
-                return Ok(result);
+                return Ok(new { isSuccess = true,message = "課程展示中", data = result });
             }
             catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
 

@@ -19,6 +19,7 @@ namespace ExpServiceHelper.DTO
         //
         public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();
         public string? PublicId { get; set; }
+        public List<string>? ImageUrl { get; set; } =new List<string>();
         //
         public string? Title { get; set; }
         public string? Difficulty { get; set; }

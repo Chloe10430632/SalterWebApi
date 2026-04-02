@@ -550,8 +550,11 @@ namespace ExpServiceHelper.Service
                     {
                         CoachId = c.CoachId,
                         Title = c.Title,
-                       
-
+                        Description = c.Description,
+                        ImageUrl = c.ExpCoursePhotos.Select(p =>p.PhotoUrl).ToList(),
+                        Price = c.Price,
+                        Difficulty = c.Difficulty,
+                        Location = c.Location,
                     }).FirstOrDefaultAsync();
 
             if (result == null)
