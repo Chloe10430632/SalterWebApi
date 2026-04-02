@@ -373,22 +373,25 @@ namespace SalterWebApi.Areas.Experience
         #endregion
 
         #region 查看收藏(保持愛心) 
-        [Authorize]
+        //[Authorize]
         [HttpGet("FavHeart")]
         public async Task<IActionResult> GetHeart()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // 沒登入 → 回傳空清單，不要回 401
             if (string.IsNullOrEmpty(userIdStr))
             {
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+                return Ok(new { Issuccess = true, data = new List<int>() });
             }
+
             if (int.TryParse(userIdStr, out int currentUserId))
             {
                 var favIds = await _sCoachMethods.HeartIds(currentUserId);
                 return Ok(new { Issuccess = true, data = favIds });
             }
-            return BadRequest("沒有收藏");
+
+            return Ok(new { Issuccess = true, data = new List<int>() });
         }
 
         #endregion
