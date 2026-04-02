@@ -322,7 +322,7 @@ namespace SalterWebApi.Areas.House.Controllers
        //接收綠界結果用的API
         [HttpPost("UpdateTransacForm")]
         [AllowAnonymous]
-        [Consumes("application/x-www-form-urlencoded")] // 綠界是用表單格式傳送
+        //[Consumes("application/x-www-form-urlencoded")] // 綠界是用表單格式傳送
         public async Task<string> UpdateTransacForm([FromForm] Dictionary<string, string> data)
         {
             // 呼叫 Service 裡的 UpdateTransacForm 邏輯 (改狀態、改 DB)
