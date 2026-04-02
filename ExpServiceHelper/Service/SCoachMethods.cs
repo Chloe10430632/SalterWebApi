@@ -539,10 +539,15 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 課程模板展示
-        public async Task<DAPIResponse<DCourseInfo>> ThisTemp(int tempId) {
-            var tempSession = await _context.ExpCourseTemplates
+        public async Task<DAPIResponse<DCourseInfo>> ThisTemp(int tempId, int currentUserId) {
+            var temp = await _context.ExpCourseTemplates
                                .FirstOrDefaultAsync(c => c.Id == tempId);
-            if (tempSession == null) return new DAPIResponse<DCourseInfo> { IsSuccess = false, Message = "找不到該課程資訊" };
+            if (temp == null) return new DAPIResponse<DCourseInfo> { IsSuccess = false, Message = "找不到該課程資訊" };
+           
+            var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.Id == temp.CoachId);
+            if (coach == null || coach.UserId != currentUserId)
+                return new DTO.DAPIResponse<DCourseInfo> { IsSuccess = false, Message = "冒牌教練!" };
+
 
             var result = await _context.ExpCourseTemplates
                     .Where(c => c.Id == tempId)
