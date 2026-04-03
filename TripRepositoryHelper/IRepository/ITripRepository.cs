@@ -28,6 +28,17 @@ public interface ITripRepository
     Task<List<TripFavorite>> GetFavoritesAsync(int userId);
     Task<bool> AddFavoriteAsync(int tripId, int userId);
     Task<bool> RemoveFavoriteAsync(int tripId, int userId);
+
+
+    #endregion
+
+    #region 收藏資料夾
+    Task<List<TripFavoriteFolder>> GetFoldersAsync(int userId);
+    Task<TripFavoriteFolder?> GetFolderByIdAsync(int folderId);
+    Task<TripFavoriteFolder> CreateFolderAsync(TripFavoriteFolder folder);
+    Task UpdateFolderAsync(TripFavoriteFolder folder);
+    Task DeleteFolderAsync(int folderId);
+    Task MoveFavoriteToFolderAsync(int tripId, int userId, int? folderId);
     #endregion
 
     #region 公告
@@ -65,15 +76,6 @@ public interface ITripRepository
     Task<TripCity> CreateCityAsync(TripCity city);
     Task<TripDistrict> CreateDistrictAsync(TripDistrict district);
     Task UpdateLocationSortAsync(List<(int locationId, int sortOrder)> items);
-    #endregion
-
-    #region 提醒
-    // 提醒
-    Task<List<TripReminder>> GetRemindersAsync(int tripId, int userId);
-    Task<TripReminder> CreateReminderAsync(TripReminder entity);
-    Task<TripReminder?> UpdateReminderAsync(TripReminder entity);
-    Task<TripReminder?> GetReminderByIdAsync(int reminderId);
-    Task<bool> ToggleReminderAsync(int reminderId);
     #endregion
 
     #region 城市

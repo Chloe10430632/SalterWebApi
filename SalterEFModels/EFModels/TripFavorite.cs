@@ -13,6 +13,10 @@ public partial class TripFavorite
 
     public DateTime CreatedAt { get; set; }
 
+    public int? FolderId { get; set; }
+
+    public virtual TripFavoriteFolder? Folder { get; set; }
+
     public virtual TripTrip Trip { get; set; } = null!;
 
     public virtual UserUser User { get; set; } = null!;

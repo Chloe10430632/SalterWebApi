@@ -5,8 +5,8 @@ namespace TripServiceHelper.IService;
 public interface ITripService
 {
     #region 行程
-    Task<TripListResultDto> GetTripListAsync(TripQueryDto query);
-    Task<TripDetailDto?> GetTripDetailAsync(int tripId);
+    Task<TripListResultDto> GetTripListAsync(TripQueryDto query, int? userId = null);
+    Task<TripDetailDto?> GetTripDetailAsync(int tripId, int? userId = null);
     Task<ServiceResult<int>> CreateTripAsync(TripRequestDto dto, int organizerUserId);
     Task<ServiceResult> UpdateTripAsync(int tripId, TripRequestDto dto, int userId);
     Task<ServiceResult> DeleteTripAsync(int tripId, int userId);
@@ -25,7 +25,15 @@ public interface ITripService
     Task<ServiceResult> RemoveFavoriteAsync(int tripId, int userId);
     #endregion
 
-   #region 公告
+    #region 收藏資料夾
+    Task<List<TripFavoriteFolderDto>> GetFoldersAsync(int userId);
+    Task<ServiceResult<TripFavoriteFolderDto>> CreateFolderAsync(TripFavoriteFolderRequestDto dto, int userId);
+    Task<ServiceResult> UpdateFolderAsync(int folderId, TripFavoriteFolderRequestDto dto, int userId);
+    Task<ServiceResult> DeleteFolderAsync(int folderId, int userId);
+    Task<ServiceResult> MoveFavoriteToFolderAsync(int tripId, int userId, int? folderId);
+    #endregion
+
+    #region 公告
     Task<ServiceResult<List<TripAnnouncementDto>>> GetAnnouncementsAsync(int tripId, int userId);
     Task<ServiceResult> CreateAnnouncementAsync(int tripId, TripAnnouncementRequestDto dto, int userId);
     Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementUpdateDto dto, int userId);
@@ -49,13 +57,6 @@ public interface ITripService
     Task<ServiceResult> UpdateLocationSortAsync(int tripId, TripLocationSortDto dto, int userId);
     Task<List<TripLocationSearchDto>> GetAllLocationsAsync(string? keyword);
 
-    #endregion
-
-    #region 提醒
-    Task<ServiceResult<List<TripReminderDto>>> GetRemindersAsync(int tripId, int userId);
-    Task<ServiceResult> CreateReminderAsync(int tripId, TripReminderRequestDto dto, int userId);
-    Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto, int userId);
-    Task<ServiceResult> ToggleReminderAsync(int reminderId);
     #endregion
 
     #region 城市

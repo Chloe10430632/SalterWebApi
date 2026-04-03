@@ -19,7 +19,7 @@ public class TripService : ITripService
 
     #region 行程
 
-    public async Task<TripListResultDto> GetTripListAsync(TripQueryDto query)
+    public async Task<TripListResultDto> GetTripListAsync(TripQueryDto query, int? userId = null)
     {
         var (trips, totalCount) = await _repo.GetTripsAsync(
             query.Keyword, query.TripType, query.Status, query.CityId,
@@ -29,15 +29,14 @@ public class TripService : ITripService
 
         return new TripListResultDto
         {
-            Trips = trips.Select(ToSummaryDto).ToList(),
+            Trips = trips.Select(t => ToSummaryDto(t, userId)).ToList(),
             TotalCount = totalCount,
             Page = query.Page,
             PageSize = query.PageSize,
             TotalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize)
         };
     }
-
-    public async Task<TripDetailDto?> GetTripDetailAsync(int tripId)
+    public async Task<TripDetailDto?> GetTripDetailAsync(int tripId, int? userId = null)
     {
         var trip = await _repo.GetTripByIdAsync(tripId);
         if (trip == null) return null;
@@ -64,6 +63,7 @@ public class TripService : ITripService
             AnnouncementCount = trip.TripAnnouncements?.Count ?? 0,
             GearItemCount = trip.TripGearItems?.Count ?? 0,
             OrganizerProfilePicture = trip.OrganizerUser?.ProfilePicture,
+            IsFavorite = userId.HasValue && (trip.TripFavorites?.Any(f => f.UserId == userId.Value) ?? false),
             Members = trip.TripMembers?.Select(m => new TripMemberDto
             {
                 UserId = m.UserId,
@@ -79,15 +79,12 @@ public class TripService : ITripService
                 {
                     Id = ttl.Id,
                     LocationName = ttl.Location?.Name ?? "",
-                    //CityName = ttl.Location?.District?.City?.Name ?? "",
-                    //DistrictName = ttl.Location?.District?.Name ?? "",
                     LocationRole = ttl.LocationRole,
                     Note = ttl.Note,
                     SortOrder = ttl.SortOrder
                 }).ToList() ?? new()
         };
     }
-
     public async Task<ServiceResult<int>> CreateTripAsync(TripRequestDto dto, int organizerUserId)
     {
         // 日期驗證
@@ -176,7 +173,7 @@ public class TripService : ITripService
     public async Task<List<TripSummaryDto>> GetMyTripsAsync(int userId, string? role = null)
     {
         var trips = await _repo.GetMyTripsAsync(userId, role);
-        return trips.Select(ToSummaryDto).ToList();
+        return trips.Select(t => ToSummaryDto(t, userId)).ToList();
     }
 
     #endregion
@@ -216,20 +213,94 @@ public class TripService : ITripService
         var favorites = await _repo.GetFavoritesAsync(userId);
         return favorites
             .Where(f => f.Trip != null)
-            .Select(f => ToSummaryDto(f.Trip!))
+            .Select(f =>
+            {
+                var dto = ToSummaryDto(f.Trip!, userId);
+                dto.FolderId = f.FolderId;
+                return dto;
+            })
             .ToList();
     }
 
     public async Task<ServiceResult> AddFavoriteAsync(int tripId, int userId)
     {
-        var result = await _repo.AddFavoriteAsync(tripId, userId);
-        return result ? ServiceResult.Success("收藏成功") : ServiceResult.Fail("已收藏過");
+        await _repo.AddFavoriteAsync(tripId, userId);
+        return ServiceResult.Success("收藏成功");
     }
 
     public async Task<ServiceResult> RemoveFavoriteAsync(int tripId, int userId)
     {
-        var result = await _repo.RemoveFavoriteAsync(tripId, userId);
-        return result ? ServiceResult.Success("取消收藏成功") : ServiceResult.Fail("尚未收藏");
+        await _repo.RemoveFavoriteAsync(tripId, userId);
+        return ServiceResult.Success("取消收藏成功");
+    }
+
+    #endregion
+
+    #region 收藏資料夾
+
+    public async Task<List<TripFavoriteFolderDto>> GetFoldersAsync(int userId)
+    {
+        var folders = await _repo.GetFoldersAsync(userId);
+        return folders.Select(f => new TripFavoriteFolderDto
+        {
+            Id = f.Id,
+            Name = f.Name,
+            FavoriteCount = f.TripFavorites?.Count ?? 0,
+            CreatedAt = f.CreatedAt
+        }).ToList();
+    }
+
+    public async Task<ServiceResult<TripFavoriteFolderDto>> CreateFolderAsync(TripFavoriteFolderRequestDto dto, int userId)
+    {
+        var folder = new TripFavoriteFolder
+        {
+            UserId = userId,
+            Name = dto.Name,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
+        };
+        var created = await _repo.CreateFolderAsync(folder);
+        return ServiceResult<TripFavoriteFolderDto>.Success(new TripFavoriteFolderDto
+        {
+            Id = created.Id,
+            Name = created.Name,
+            FavoriteCount = 0,
+            CreatedAt = created.CreatedAt
+        }, "資料夾建立成功");
+    }
+
+    public async Task<ServiceResult> UpdateFolderAsync(int folderId, TripFavoriteFolderRequestDto dto, int userId)
+    {
+        var folder = await _repo.GetFolderByIdAsync(folderId);
+        if (folder == null) return ServiceResult.Fail("找不到資料夾", 404);
+        if (folder.UserId != userId) return ServiceResult.Fail("無權限修改此資料夾", 403);
+
+        folder.Name = dto.Name;
+        folder.UpdatedAt = DateTime.Now;
+        await _repo.UpdateFolderAsync(folder);
+        return ServiceResult.Success("資料夾更新成功");
+    }
+
+    public async Task<ServiceResult> DeleteFolderAsync(int folderId, int userId)
+    {
+        var folder = await _repo.GetFolderByIdAsync(folderId);
+        if (folder == null) return ServiceResult.Fail("找不到資料夾", 404);
+        if (folder.UserId != userId) return ServiceResult.Fail("無權限刪除此資料夾", 403);
+
+        await _repo.DeleteFolderAsync(folderId);
+        return ServiceResult.Success("資料夾已刪除，原有收藏已移至未分類");
+    }
+
+    public async Task<ServiceResult> MoveFavoriteToFolderAsync(int tripId, int userId, int? folderId)
+    {
+        if (folderId.HasValue)
+        {
+            var folder = await _repo.GetFolderByIdAsync(folderId.Value);
+            if (folder == null) return ServiceResult.Fail("找不到資料夾", 404);
+            if (folder.UserId != userId) return ServiceResult.Fail("無權限使用此資料夾", 403);
+        }
+        await _repo.MoveFavoriteToFolderAsync(tripId, userId, folderId);
+        return ServiceResult.Success("已移動至指定資料夾");
     }
 
     #endregion
@@ -279,17 +350,24 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementUpdateDto dto, int userId)
     {
-        var entity = await _repo.GetAnnouncementByIdAsync(announcementId);
-        if (entity == null) return ServiceResult.Fail("找不到公告", 404);
+        try
+        {
+            var entity = await _repo.GetAnnouncementByIdAsync(announcementId);
+            if (entity == null) return ServiceResult.Fail("找不到公告", 404);
 
-        if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
-            return ServiceResult.Fail("只有主辦人可以編輯公告", 403);
+            if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
+                return ServiceResult.Fail("只有主辦人可以編輯公告", 403);
 
-        entity.Title = dto.Title ?? entity.Title;
-        entity.Content = dto.Content ?? entity.Content;
-        entity.UpdatedAt = DateTime.Now;
-        await _repo.UpdateAnnouncementAsync(entity);
-        return ServiceResult.Success("公告更新成功");
+            entity.Title = dto.Title ?? entity.Title;
+            entity.Content = dto.Content ?? entity.Content;
+            entity.UpdatedAt = DateTime.Now;
+            await _repo.UpdateAnnouncementAsync(entity);
+            return ServiceResult.Success("公告更新成功");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail(ex.InnerException?.Message ?? ex.Message, 500);
+        }
     }
 
     public async Task<ServiceResult> DeleteAnnouncementAsync(int announcementId, int userId)
@@ -362,18 +440,25 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> UpdateGearItemAsync(int gearItemId, TripGearItemRequestDto dto, int userId)
     {
-        var entity = await _repo.GetGearItemByIdAsync(gearItemId);
-        if (entity == null) return ServiceResult.Fail("找不到裝備", 404);
+        try
+        {
+            var entity = await _repo.GetGearItemByIdAsync(gearItemId);
+            if (entity == null) return ServiceResult.Fail("找不到裝備", 404);
 
-        var isOrganizer = await _repo.IsOrganizerAsync(entity.TripId, userId);
-        var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
-        if (!isOrganizer && !isMember)
-            return ServiceResult.Fail("只有行程成員可以編輯裝備", 403);
+            var isOrganizer = await _repo.IsOrganizerAsync(entity.TripId, userId);
+            var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
+            if (!isOrganizer && !isMember)
+                return ServiceResult.Fail("只有行程成員可以編輯裝備", 403);
 
-        entity.ItemName = dto.ItemName;
-        entity.IsRequired = dto.IsRequired;
-        await _repo.UpdateGearItemAsync(entity);
-        return ServiceResult.Success("裝備更新成功");
+            entity.ItemName = dto.ItemName;
+            entity.IsRequired = dto.IsRequired;
+            await _repo.UpdateGearItemAsync(entity);
+            return ServiceResult.Success("裝備更新成功");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail(ex.InnerException?.Message ?? ex.Message, 500);
+        }
     }
 
     public async Task<ServiceResult> DeleteGearItemAsync(int gearItemId, int userId)
@@ -418,6 +503,7 @@ public class TripService : ITripService
             LocationRole = ttl.LocationRole,
             Note = ttl.Note,
             SortOrder = ttl.SortOrder,
+            DayNumber = ttl.DayNumber,
             Lat = ttl.Location?.Lat,
             Lng = ttl.Location?.Lng,
         }).ToList();
@@ -433,10 +519,8 @@ public class TripService : ITripService
             var isMember = await _repo.IsMemberAsync(tripId, userId);
             if (!isOrganizer && !isMember)
                 return ServiceResult.Fail("只有行程成員可以新增地點", 403);
-
             var normalizedCity = dto.CityName?.Replace("臺", "台") ?? "";
             var normalizedDistrict = dto.DistrictName?.Replace("臺", "台") ?? "";
-
             var city = await _repo.GetCityByNameAsync(normalizedCity);
             if (city == null)
             {
@@ -447,7 +531,6 @@ public class TripService : ITripService
                     UpdatedAt = DateTime.Now
                 });
             }
-
             var district = await _repo.GetDistrictByNameAsync(normalizedDistrict, city.Id);
             if (district == null)
             {
@@ -459,7 +542,6 @@ public class TripService : ITripService
                     UpdatedAt = DateTime.Now
                 });
             }
-
             var location = await _repo.GetLocationByGooglePlaceIdAsync(dto.GooglePlaceId);
             if (location == null)
             {
@@ -477,7 +559,6 @@ public class TripService : ITripService
                 };
                 await _repo.CreateTripLocationAsync(location);
             }
-
             var entity = new TripTripLocation
             {
                 TripId = tripId,
@@ -485,10 +566,10 @@ public class TripService : ITripService
                 LocationRole = dto.LocationRole,
                 Note = dto.Note,
                 SortOrder = dto.SortOrder,
+                DayNumber = dto.DayNumber,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
-
             await _repo.CreateLocationAsync(entity);
             return ServiceResult.Success("地點新增成功");
         }
@@ -510,6 +591,7 @@ public class TripService : ITripService
                 return ServiceResult.Fail("只有行程成員可以編輯地點", 403);
             entity.LocationRole = dto.LocationRole ?? entity.LocationRole;
             entity.Note = dto.Note ?? entity.Note;
+            entity.DayNumber = dto.DayNumber ?? entity.DayNumber;
             entity.UpdatedAt = DateTime.Now;
             await _repo.UpdateLocationAsync(entity);
             return ServiceResult.Success("地點更新成功");
@@ -560,64 +642,6 @@ public class TripService : ITripService
     }
     #endregion
 
-    #region 提醒
-
-    public async Task<ServiceResult<List<TripReminderDto>>> GetRemindersAsync(int tripId, int userId)
-    {
-        var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
-        var isMember = await _repo.IsMemberAsync(tripId, userId);
-
-        if (!isOrganizer && !isMember)
-            return ServiceResult<List<TripReminderDto>>.Fail("請先加入行程才能查看提醒", 403);
-
-        var list = await _repo.GetRemindersAsync(tripId, userId);
-        var result = list.Select(r => new TripReminderDto
-        {
-            Id = r.Id,
-            RemindOffsetMinutes = r.RemindOffsetMinutes,
-            IsEnabled = r.IsEnabled,
-            LastSentAt = r.LastSentAt
-        }).ToList();
-
-        return ServiceResult<List<TripReminderDto>>.Success(result);
-    }
-
-    public async Task<ServiceResult> CreateReminderAsync(int tripId, TripReminderRequestDto dto, int userId)
-    {
-        var entity = new TripReminder
-        {
-            TripId = tripId,
-            UserId = userId,
-            RemindOffsetMinutes = dto.RemindOffsetMinutes,
-            IsEnabled = dto.IsEnabled,
-            UpdatedAt = DateTime.Now
-        };
-        await _repo.CreateReminderAsync(entity);
-        return ServiceResult.Success("提醒新增成功");
-    }
-
-    public async Task<ServiceResult> UpdateReminderAsync(int reminderId, TripReminderRequestDto dto, int userId)
-    {
-        var entity = await _repo.GetReminderByIdAsync(reminderId);
-        if (entity == null) return ServiceResult.Fail("找不到提醒", 404);
-
-        if (entity.UserId != userId)
-            return ServiceResult.Fail("只能修改自己的提醒", 403);
-
-        entity.RemindOffsetMinutes = dto.RemindOffsetMinutes;
-        entity.IsEnabled = dto.IsEnabled;
-        await _repo.UpdateReminderAsync(entity);
-        return ServiceResult.Success("提醒更新成功");
-    }
-
-    public async Task<ServiceResult> ToggleReminderAsync(int reminderId)
-    {
-        var result = await _repo.ToggleReminderAsync(reminderId);
-        return result ? ServiceResult.Success("提醒狀態已更新") : ServiceResult.Fail("找不到提醒");
-    }
-
-    #endregion
-
     #region 城市
 
     public async Task<List<TripCityDto>> GetCitiesAsync()
@@ -636,7 +660,7 @@ public class TripService : ITripService
 
     #region Manual Mappings方法
 
-    private static TripSummaryDto ToSummaryDto(TripTrip t) => new()
+    private static TripSummaryDto ToSummaryDto(TripTrip t, int? userId = null) => new()
     {
         Id = t.Id,
         Title = t.Title,
@@ -650,7 +674,8 @@ public class TripService : ITripService
         CoverImageUrl = t.CoverImageUrl,
         OrganizerName = t.OrganizerUser?.UserName ?? "未知",
         FavoriteCount = t.TripFavorites?.Count ?? 0,
-        CreatedAt = t.CreatedAt
+        CreatedAt = t.CreatedAt,
+        IsFavorite = userId.HasValue && (t.TripFavorites?.Any(f => f.UserId == userId.Value) ?? false)
     };
 
     #endregion

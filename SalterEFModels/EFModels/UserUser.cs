@@ -75,6 +75,8 @@ public partial class UserUser
 
     public virtual ICollection<TripAnnouncement> TripAnnouncements { get; set; } = new List<TripAnnouncement>();
 
+    public virtual ICollection<TripFavoriteFolder> TripFavoriteFolders { get; set; } = new List<TripFavoriteFolder>();
+
     public virtual ICollection<TripFavorite> TripFavorites { get; set; } = new List<TripFavorite>();
 
     public virtual ICollection<TripGearCheck> TripGearChecks { get; set; } = new List<TripGearCheck>();
@@ -82,8 +84,6 @@ public partial class UserUser
     public virtual ICollection<TripGearItem> TripGearItems { get; set; } = new List<TripGearItem>();
 
     public virtual ICollection<TripMember> TripMembers { get; set; } = new List<TripMember>();
-
-    public virtual ICollection<TripNote> TripNotes { get; set; } = new List<TripNote>();
 
     public virtual ICollection<TripTrip> TripTrips { get; set; } = new List<TripTrip>();
 

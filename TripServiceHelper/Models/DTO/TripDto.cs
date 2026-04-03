@@ -18,6 +18,9 @@ public class TripSummaryDto
     public string OrganizerName { get; set; } = null!;
     public int FavoriteCount { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsFavorite { get; set; }
+    public int? FolderId { get; set; }
+    public string? FolderName { get; set; }
 }
 #endregion
 
@@ -84,6 +87,7 @@ public class TripLocationDto
     public string? LocationRole { get; set; }
     public string? Note { get; set; }
     public int SortOrder { get; set; }
+    public int DayNumber { get; set; }
     public decimal? Lat { get; set; }  
     public decimal? Lng { get; set; }
 }
@@ -168,6 +172,28 @@ public class CheckedMemberDto
 }
 #endregion
 
+#region 收藏資料夾
+public class TripFavoriteFolderDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
+    public int FavoriteCount { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class TripFavoriteFolderRequestDto
+{
+    [Required(ErrorMessage = "資料夾名稱不能為空")]
+    [MaxLength(100, ErrorMessage = "資料夾名稱最多 100 字")]
+    public string Name { get; set; } = null!;
+}
+
+public class MoveFavoriteToFolderDto
+{
+    public int? FolderId { get; set; } // null 代表移到未分類
+}
+#endregion
+
 #region 提醒
 public class TripReminderDto
 {
@@ -190,6 +216,7 @@ public class TripReminderRequestDto
 // 建立用
 public class TripLocationRequestDto
 {
+    public int DayNumber { get; set; } = 1;
     public string LocationName { get; set; } = null!;
     public string? AddressText { get; set; }
     public string? GooglePlaceId { get; set; }
@@ -205,6 +232,7 @@ public class TripLocationRequestDto
 // 更新用
 public class TripLocationUpdateDto
 {
+    public int? DayNumber { get; set; }
     public string? LocationRole { get; set; }
     public string? Note { get; set; }
     public int? SortOrder { get; set; }
