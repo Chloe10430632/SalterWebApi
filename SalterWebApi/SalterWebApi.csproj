@@ -39,4 +39,10 @@
     <ProjectReference Include="..\TripServiceHelper\TripServiceHelper.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<None Update="instruction.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
 </Project>

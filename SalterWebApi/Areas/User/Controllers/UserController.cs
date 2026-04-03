@@ -25,16 +25,29 @@ namespace SalterWebApi.Areas.User.Controllers
         private readonly string _apiKey;
         private readonly string _systemInstruction;
 
-        public UserController(IUserService userService, IFileService fileService, IConfiguration config)
+
+        public UserController(IUserService userService, IFileService fileService, IConfiguration config, IHostEnvironment env)
         {
             _userService = userService;
             _fileService = fileService;
-
             _apiKey = config["Gemini:ApiKey"] ?? throw new ArgumentNullException("Gemini API Key 沒設定好喔！");
 
             // 讀取你的 instruction.txt (確保檔案放在專案根目錄)
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "instruction.txt");
-            _systemInstruction = System.IO.File.ReadAllText(filePath);
+            //var filePath = Path.Combine(Directory.GetCurrentDirectory(), "instruction.txt");
+            //_systemInstruction = System.IO.File.ReadAllText(filePath);
+
+            var filePath = Path.Combine(env.ContentRootPath, "instruction.txt");
+
+            if (System.IO.File.Exists(filePath))
+            {
+                _systemInstruction = System.IO.File.ReadAllText(filePath);
+            }
+            else
+            {
+                // 💡 防呆機制：如果找不到檔案，給一個預設指令，避免整個 API 崩潰
+                _systemInstruction = "你是一個海邊小助手小沙，請使用繁體中文回答。";
+                Console.WriteLine($"警告：找不到指令檔 {filePath}，已使用預設指令。");
+            }
         }
 
         // GET: api/<UserController>
