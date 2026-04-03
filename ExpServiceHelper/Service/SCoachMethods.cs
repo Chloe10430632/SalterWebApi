@@ -682,9 +682,9 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 課程時段刪除
-        public async Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId)
+        public async Task<DAPIResponse<string>> DeleteCourseSession(int SessionId, int currentUserId)
         {
-            var session = await _context.ExpCourseSessions.FirstOrDefaultAsync(s => s.Id == courseSessionId);
+            var session = await _context.ExpCourseSessions.FirstOrDefaultAsync(s => s.Id == SessionId);
             if (session == null)
                 throw new Exception("沒有對應的資料");
 

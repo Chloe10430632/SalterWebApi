@@ -234,7 +234,7 @@ namespace SalterWebApi.Areas.Experience
         #region 課程選時間上架 
         [Authorize]
         [HttpPost("CourseTime/{templateId}")]
-        public async Task<IActionResult> OpenTimeCourse([FromBody] DCourseOpenSession dto, int templateId)
+        public async Task<IActionResult> OpenTimeCourse([FromForm] DCourseOpenSession dto, int templateId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr))
@@ -260,7 +260,7 @@ namespace SalterWebApi.Areas.Experience
 
         [Authorize]
         [HttpDelete("DeleteSession/{sessionId}")]
-        public async Task<IActionResult> deleteThisSession(int courseSessionId)
+        public async Task<IActionResult> deleteThisSession(int sessionId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr))
@@ -271,7 +271,7 @@ namespace SalterWebApi.Areas.Experience
             {
                 try
                 {
-                    var result = await _sCoachMethods.DeleteCourseSession(courseSessionId, currentUserId);
+                    var result = await _sCoachMethods.DeleteCourseSession(sessionId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
