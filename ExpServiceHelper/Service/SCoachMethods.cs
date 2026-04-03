@@ -416,7 +416,8 @@ namespace ExpServiceHelper.Service
                     Difficulty = dto.Difficulty,
                     Price = dto.Price,
                     Location = dto.Location,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
                 //有傳圖片再做這步
                 if (dto.PhotoUrls != null && dto.PhotoUrls.Any())
@@ -632,6 +633,54 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #region 拿該教練所有「已上架」的課程時段
+        public async Task<DAPIResponse<List<DCourseInfo>>> GetAllPublishedSessions(int currentUserId)
+        {
+            // 1. 先確認身分並拿到 CoachId
+            var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.UserId == currentUserId);
+            if (coach == null) return new DAPIResponse<List<DCourseInfo>> { IsSuccess = false, Message = "找不到教練身份" };
+
+            // 2. 抓取該教練所有已上架的 Session (包含模板資訊)
+            var sessions = await _context.ExpCourseSessions
+                .Where(s => s.CoachId == coach.Id)
+                .OrderByDescending(s => s.UpdatedAt) // 最新上架的排前面
+                .Select(s => new DCourseInfo
+                {
+                    // Session 自身的資訊 (這才是刪除/下架要用的 ID)
+                    SessionId = s.Id,
+                    TimeSlot = s.TimeSlot,
+                    MaxStudents = s.MaxParticipants,
+                    // 這裡處理日期，因為你原本是用 List<DateOnly>
+                    SelectedDates = s.SessionDate.HasValue
+                                    ? new List<DateOnly> { s.SessionDate.Value }
+                                    : new List<DateOnly>(),
+
+                    // 關聯模板的資訊 (從 CourseTemplate 導航屬性抓)
+                    TempId = s.CourseTemplateId,
+                    Title = s.CourseTemplate.Title,
+                    Price = s.CourseTemplate.Price,
+                    Location = s.CourseTemplate.Location,
+                    Difficulty = s.CourseTemplate.Difficulty,
+
+                    // 抓模板的第一張照片作為縮圖
+                    ImageUrls = s.CourseTemplate.ExpCoursePhotos.Select(p => new DPhoto
+                    {
+                        PhotoUrl = p.PhotoUrl,
+                        PublicId = p.PublicId
+                    }).ToList(),
+
+                    UpdatedAt = s.UpdatedAt
+                }).ToListAsync();
+
+            return new DAPIResponse<List<DCourseInfo>>
+            {
+                IsSuccess = true,
+                Message = "讀取上架時段成功",
+                Data = sessions
+            };
+        }
+        #endregion
+
         #region 課程時段刪除
         public async Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId)
         {
@@ -658,7 +707,7 @@ namespace ExpServiceHelper.Service
 
         #endregion
 
-        #region 課程展示介紹
+        #region 課程大眾展示介紹
         public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId)
         {
             var courseSession = await _context.ExpCourseSessions

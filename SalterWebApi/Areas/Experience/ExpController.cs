@@ -280,7 +280,20 @@ namespace SalterWebApi.Areas.Experience
         }
         #endregion
 
-        #region 課程展示介紹
+        #region 上架中
+        [Authorize]
+        [HttpGet("AllSessions")]
+        public async Task<IActionResult> GetAllSessions()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
+
+            var result = await _sCoachMethods.GetAllPublishedSessions(userId);
+            return Ok(result);
+        }
+        #endregion
+
+        #region 課程大眾展示介紹
         [HttpGet("CourseInfo/{sessionId}")]
         public async Task<IActionResult> CourseInfo(int sessionId)
         {

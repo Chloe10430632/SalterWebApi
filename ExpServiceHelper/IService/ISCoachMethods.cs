@@ -59,6 +59,9 @@ namespace ExpServiceHelper.IService
         #region  課程上架 
         Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
         #endregion
+        #region 已上架
+        Task<DAPIResponse<List<DCourseInfo>>> GetAllPublishedSessions(int currentUserId);
+        #endregion
         #region 課程時段刪除
         Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId);
         #endregion
