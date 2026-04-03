@@ -15,6 +15,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using TripRepositoryHelper.IRepository;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Collections.Specialized.BitVector32;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -56,7 +57,10 @@ namespace ExpServiceHelper.Service
         #region DI
         private readonly SalterDbContext _context;
         private readonly SPhoto _sPhoto;
-        public SCoachMethods(SalterDbContext dbContext, SPhoto sPhoto) { _context = dbContext; _sPhoto = sPhoto; }
+        private readonly ITripRepository _tr;
+
+        public SCoachMethods(SalterDbContext dbContext, SPhoto sPhoto, ITripRepository tr) {
+            _context = dbContext; _sPhoto = sPhoto; _tr = tr; }
         #endregion
 
         #region 入口
@@ -412,7 +416,8 @@ namespace ExpServiceHelper.Service
                     Difficulty = dto.Difficulty,
                     Price = dto.Price,
                     Location = dto.Location,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
                 //有傳圖片再做這步
                 if (dto.PhotoUrls != null && dto.PhotoUrls.Any())
@@ -466,13 +471,18 @@ namespace ExpServiceHelper.Service
             var t = _context.ExpCourseTemplates
                 .Include(x => x.ExpCoursePhotos)
                 .FirstOrDefault(c => c.Id == TemplateId);
-            if (t == null) return null;
+            if (t == null) return new DAPIResponse<DCourseTempEdit> { IsSuccess = false, Message = "後端找不到模板" };
 
             if (!string.IsNullOrEmpty(dto.Title)) { t.Title = dto.Title; }
             if (!string.IsNullOrEmpty(dto.Description)) { t.Description = dto.Description; }
             if (!string.IsNullOrEmpty(dto.Difficulty)) { t.Difficulty = dto.Difficulty; }
             if (dto.Price > 0) { t.Price = dto.Price; }
             if (!string.IsNullOrEmpty(dto.Location)) { t.Location = dto.Location; }
+            if (dto.LocationData != null && !string.IsNullOrEmpty(dto.LocationData.GooglePlaceId))
+            {
+                t.LocationId = await EnsureLocationExistsAsync(dto.LocationData);
+                t.Location = dto.LocationData.LocationName;
+            }
             if (dto.ExistingPhotosJson != null)
             {
                 // --- A. 處理新圖片上傳 ---
@@ -502,17 +512,17 @@ namespace ExpServiceHelper.Service
                         new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                     );
 
-                    if (existingPhotos != null)
+                    if (existingPhotos != null && existingPhotos.Any())
                     {
                         // 2. 拿到「想要保留」的 ID 清單 (例如：["id1", "id2"])
-                        var keepPublicIds = existingPhotos.Select(p => p.PublicId).ToList();
+                        var keepPublicIds = existingPhotos.Select(p => p.PublicId).Where(id => !string.IsNullOrEmpty(id)).ToList();
 
                         // 3. 【宣告 photosToRemove】：
                         // 找出「原本在資料庫」但「不在保留名單內」的照片
                         //只針對「已經有 Id」且「已經在資料庫」的照片進行比對
                         var photosToRemove = t.ExpCoursePhotos
-                            .Where(p => p.Id != 0) // 👈 關鍵！只抓已經存在資料庫的老照片，避開剛 Add 進去的新照片
-                            .Where(p => !keepPublicIds.Contains(p.PublicId) && !string.IsNullOrEmpty(p.PublicId))
+                            .Where(p => p.Id != 0 && !string.IsNullOrEmpty(p.PublicId)) // 👈 關鍵！只抓已經存在資料庫的老照片，避開剛 Add 進去的新照片
+                            .Where(p => !keepPublicIds.Contains(p.PublicId))
                             .ToList();
 
                         // 4. 如果真的有要刪除的，才動手
@@ -535,6 +545,40 @@ namespace ExpServiceHelper.Service
 
             await _context.SaveChangesAsync();
             return new DTO.DAPIResponse<DCourseTempEdit> { IsSuccess = true, Message = "修改成功", Data = dto };
+        }
+        #endregion
+
+        #region 課程模板展示
+        public async Task<DAPIResponse<List<DCourseInfo>>> ThisTemp( int currentUserId) {
+            // 1. 先確認這個 User 是不是教練，並拿到他的 CoachId
+            var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.UserId == currentUserId);
+            if (coach == null) return new DAPIResponse<List<DCourseInfo>> { IsSuccess = false, Message = "找不到教練身份" };
+
+            // 2. 抓取該教練所有的模板
+            var templates = await _context.ExpCourseTemplates
+                .Where(t => t.CoachId == coach.Id)
+                .Select(t => new DCourseInfo
+                {
+                    TempId = t.Id, // 記得傳 ID，前端編輯才抓得到
+                    CoachId = t.CoachId,
+                    Title = t.Title,
+                    Description = t.Description,
+                    ImageUrls = t.ExpCoursePhotos.Select(p => new DPhoto {
+                        PhotoUrl = p.PhotoUrl,
+                        PublicId = p.PublicId
+                    }).ToList(),
+                    Price = t.Price,
+                    Difficulty = t.Difficulty,
+                    Location = t.Location,
+                    UpdatedAt = t.UpdatedAt // 補上時間
+                }).ToListAsync();
+
+            return new DAPIResponse<List<DCourseInfo>>
+            {
+                IsSuccess = true,
+                Message = "讀取教練模板成功",
+                Data = templates
+            };
         }
         #endregion
 
@@ -589,10 +633,58 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 課程時段刪除
-        public async Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId)
+        #region 拿該教練所有「已上架」的課程時段
+        public async Task<DAPIResponse<List<DCourseInfo>>> GetAllPublishedSessions(int currentUserId)
         {
-            var session = await _context.ExpCourseSessions.FirstOrDefaultAsync(s => s.Id == courseSessionId);
+            // 1. 先確認身分並拿到 CoachId
+            var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.UserId == currentUserId);
+            if (coach == null) return new DAPIResponse<List<DCourseInfo>> { IsSuccess = false, Message = "找不到教練身份" };
+
+            // 2. 抓取該教練所有已上架的 Session (包含模板資訊)
+            var sessions = await _context.ExpCourseSessions
+                .Where(s => s.CoachId == coach.Id)
+                .OrderByDescending(s => s.UpdatedAt) // 最新上架的排前面
+                .Select(s => new DCourseInfo
+                {
+                    // Session 自身的資訊 (這才是刪除/下架要用的 ID)
+                    SessionId = s.Id,
+                    TimeSlot = s.TimeSlot,
+                    MaxStudents = s.MaxParticipants,
+                    // 這裡處理日期，因為你原本是用 List<DateOnly>
+                    SelectedDates = s.SessionDate.HasValue
+                                    ? new List<DateOnly> { s.SessionDate.Value }
+                                    : new List<DateOnly>(),
+
+                    // 關聯模板的資訊 (從 CourseTemplate 導航屬性抓)
+                    TempId = s.CourseTemplateId,
+                    Title = s.CourseTemplate.Title,
+                    Price = s.CourseTemplate.Price,
+                    Location = s.CourseTemplate.Location,
+                    Difficulty = s.CourseTemplate.Difficulty,
+
+                    // 抓模板的第一張照片作為縮圖
+                    ImageUrls = s.CourseTemplate.ExpCoursePhotos.Select(p => new DPhoto
+                    {
+                        PhotoUrl = p.PhotoUrl,
+                        PublicId = p.PublicId
+                    }).ToList(),
+
+                    UpdatedAt = s.UpdatedAt
+                }).ToListAsync();
+
+            return new DAPIResponse<List<DCourseInfo>>
+            {
+                IsSuccess = true,
+                Message = "讀取上架時段成功",
+                Data = sessions
+            };
+        }
+        #endregion
+
+        #region 課程時段刪除
+        public async Task<DAPIResponse<string>> DeleteCourseSession(int SessionId, int currentUserId)
+        {
+            var session = await _context.ExpCourseSessions.FirstOrDefaultAsync(s => s.Id == SessionId);
             if (session == null)
                 throw new Exception("沒有對應的資料");
 
@@ -615,7 +707,7 @@ namespace ExpServiceHelper.Service
 
         #endregion
 
-        #region 課程展示介紹
+        #region 課程大眾展示介紹
         public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId)
         {
             var courseSession = await _context.ExpCourseSessions
@@ -654,6 +746,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
+        #region 最新開課
         public async Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId)
         {
             var result = await _context.ExpCourseSessions
@@ -686,6 +779,7 @@ namespace ExpServiceHelper.Service
                 Data = result
             };
         }
+        #endregion
         #endregion
 
         #region ~~評論~~
@@ -868,12 +962,40 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 結帳 
-        //用套件 + 前台回傳結帳需求時的邏輯
-        //在SECPay
         #endregion
-        #endregion
+        #region 呼叫TripLocation
+        private async Task<int> EnsureLocationExistsAsync(TripLocationRequestDto dto)
+        {
+            var normalizedCity = dto.CityName?.Replace("臺", "台") ?? "";
+            var normalizedDistrict = dto.DistrictName?.Replace("臺", "台") ?? "";
 
+            // 1. 處理縣市
+            var city = await _tr.GetCityByNameAsync(normalizedCity)
+                       ?? await _tr.CreateCityAsync(new TripCity { Name = normalizedCity });
+
+            // 2. 處理區域
+            var district = await _tr.GetDistrictByNameAsync(normalizedDistrict, city.Id)
+                           ?? await _tr.CreateDistrictAsync(new TripDistrict { Name = normalizedDistrict, CityId = city.Id });
+
+            // 3. 處理地點
+            var location = await _tr.GetLocationByGooglePlaceIdAsync(dto.GooglePlaceId);
+            if (location == null)
+            {
+                location = new TripLocation
+                {
+                    GooglePlaceId = dto.GooglePlaceId,
+                    Name = dto.LocationName,
+                    AddressText = dto.AddressText ?? "",
+                    Lat = dto.Lat ?? 0,
+                    Lng = dto.Lng ?? 0,
+                    CityId = city.Id,
+                    DistrictId = district.Id
+                };
+                await _tr.CreateTripLocationAsync(location);
+            }
+            return location.Id; // 回傳 ID 供後續關聯使用
+        }
+        #endregion
 
 
         #region 交易流程

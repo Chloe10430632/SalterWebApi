@@ -103,6 +103,7 @@ builder.Services.AddScoped<IRCoachIndex, RCoachIndex>();
 builder.Services.AddScoped<ISCoachIndex, SCoachIndex>();
 builder.Services.AddScoped<ISCoachMethods, SCoachMethods>();
 builder.Services.AddScoped<SPhoto>();
+
 //¥æ©ö ª`¤J
 builder.Services.AddScoped<ISECPay, SECPay>(); 
 

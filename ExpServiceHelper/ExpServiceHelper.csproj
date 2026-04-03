@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ExpRepositoryHelper\ExpRepositoryHelper.csproj" />
     <ProjectReference Include="..\SalterEFModels\SalterEFModels.csproj" />
+    <ProjectReference Include="..\TripRepositoryHelper\TripRepositoryHelper.csproj" />
   </ItemGroup>
 
 </Project>

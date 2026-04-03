@@ -219,10 +219,22 @@ namespace SalterWebApi.Areas.Experience
         }
         #endregion
 
+        #region 模板展示
+        [Authorize]
+        [HttpGet("Temp")]
+        public async Task<IActionResult> ThisTemplate() {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
+
+            var result = await _sCoachMethods.ThisTemp(userId);
+            return Ok(result);
+        }
+        #endregion
+
         #region 課程選時間上架 
         [Authorize]
         [HttpPost("CourseTime/{templateId}")]
-        public async Task<IActionResult> OpenTimeCourse([FromBody] DCourseOpenSession dto, int templateId)
+        public async Task<IActionResult> OpenTimeCourse([FromForm] DCourseOpenSession dto, int templateId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr))
@@ -248,7 +260,7 @@ namespace SalterWebApi.Areas.Experience
 
         [Authorize]
         [HttpDelete("DeleteSession/{sessionId}")]
-        public async Task<IActionResult> deleteThisSession(int courseSessionId)
+        public async Task<IActionResult> deleteThisSession(int sessionId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr))
@@ -259,7 +271,7 @@ namespace SalterWebApi.Areas.Experience
             {
                 try
                 {
-                    var result = await _sCoachMethods.DeleteCourseSession(courseSessionId, currentUserId);
+                    var result = await _sCoachMethods.DeleteCourseSession(sessionId, currentUserId);
                     if (result.IsSuccess) return Ok(result);
                 }
                 catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
@@ -268,7 +280,24 @@ namespace SalterWebApi.Areas.Experience
         }
         #endregion
 
-        #region 課程展示介紹
+        #region 上架中
+        [Authorize]
+        [HttpGet("AllSessions")]
+        public async Task<IActionResult> GetAllSessions()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
+            try
+            {
+                var result = await _sCoachMethods.GetAllPublishedSessions(userId);
+                return Ok(result);
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+
+        }
+        #endregion
+
+        #region 課程大眾展示介紹
         [HttpGet("CourseInfo/{sessionId}")]
         public async Task<IActionResult> CourseInfo(int sessionId)
         {
@@ -277,7 +306,7 @@ namespace SalterWebApi.Areas.Experience
             {
                 var result = await _sCoachMethods.ThisCourse(sessionId);
                 if (!result.IsSuccess) return NotFound(result.Message);
-                return Ok(result);
+                return Ok(new { isSuccess = true,message = "課程展示中", data = result });
             }
             catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
 
@@ -317,44 +346,57 @@ namespace SalterWebApi.Areas.Experience
 
         #region 收藏
         #region 收藏  
-        [Authorize]
+       
         [HttpPost("Favorites")]
-        public async Task<IActionResult> MyFavCoach(DCoachFav dto)
+        public async Task<IActionResult> MyFavCoach(DCoachFav dto, int userId)
         {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == System.Security.Claims.ClaimTypes.NameIdentifier);
 
-            if (string.IsNullOrEmpty(userIdStr))
+            int currentUserId = 0;
+
+            if (userIdClaim != null)
             {
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+                // 抓到了！轉成數字
+                currentUserId = int.Parse(userIdClaim.Value);
             }
-            //轉int
-            if (int.TryParse(userIdStr, out int currentUserId))
+            foreach (var c in User.Claims)
             {
-                //多傳入一個 currentUserId
-                var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
-                return Ok(new { Issuccess = true, data = result });
+                Console.WriteLine($"類型: {c.Type}, 內容: {c.Value}");
             }
-            return BadRequest("登入後才能使用功能");
+
+            // 2. 丟給 Service (Service 裡面有 UserId == 0 的守衛條款)
+            var result = await _sCoachIndex.MyFavCoach(dto, currentUserId);
+
+            // 3. 根據結果回傳 (注意：這裡的 issuccess 要跟前端判斷的一致)
+            if (result == "請先登入後才能收藏喔！")
+            {
+                return Ok(new { isSuccess = false, data = result });
+            }
+
+            return Ok(new { isSuccess = true, data = result });
         }
         #endregion
 
         #region 查看收藏(保持愛心) 
-        [Authorize]
+        //[Authorize]
         [HttpGet("FavHeart")]
         public async Task<IActionResult> GetHeart()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // 沒登入 → 回傳空清單，不要回 401
             if (string.IsNullOrEmpty(userIdStr))
             {
-                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+                return Ok(new { Issuccess = true, data = new List<int>() });
             }
+
             if (int.TryParse(userIdStr, out int currentUserId))
             {
                 var favIds = await _sCoachMethods.HeartIds(currentUserId);
                 return Ok(new { Issuccess = true, data = favIds });
             }
-            return BadRequest("沒有收藏");
+
+            return Ok(new { Issuccess = true, data = new List<int>() });
         }
 
         #endregion
