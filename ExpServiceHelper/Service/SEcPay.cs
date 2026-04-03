@@ -56,9 +56,9 @@ namespace ExpServiceHelper.Service
             var config = new PaymentConfiguration();
             var payment = config.Send.ToApi(serviceUrl)
                             .Send.ToMerchant(merchantId) // MerchantID
-                            .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV
-                            .Return.ToServer($"{ngrokUrl}/api/Transac/Transaction/PayResult")//【ToServer】: 綠界通知你的 Server (背景)
-                            .Return.ToClient($"{frontendUrl}/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)
+                            .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
+                            .Return.ToServer("https://sartorially-carbonylic-bennie.ngrok-free.dev/api/Home/UpdateTransacForm")//【ToServer】: 綠界通知你的 Server (背景)  
+                            .Return.ToClient("http://localhost:4200/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
                                 description: dto.Description ?? "SalterOrder",
@@ -175,8 +175,20 @@ namespace ExpServiceHelper.Service
                 if (alreadyPaid) return true;
 
                 // 取得扣除後 14 位日期後的剩餘字串，即為原始流水號
-                if (merchantTradeNo.Length < 14) return false;
-                int transactionId = int.Parse(merchantTradeNo.Substring(0, merchantTradeNo.Length - 13));
+                //if (merchantTradeNo.Length < 14) return false;
+                //int transactionId = int.Parse(merchantTradeNo.Substring(1, merchantTradeNo.Length - 1 - 13));
+
+                // 假設 merchantTradeNo = "S5100080260402231005"
+                // 1. 先去掉開頭的 'S' -> 得到 "5100080260402231005"
+                string noWithoutS = merchantTradeNo.Substring(1);
+
+                // 2. 扣掉結尾固定的 12 位日期 -> 得到 "5100080"
+                // 不管 ID 是 50 還是 5100080，只要後面日期是 12 位，這行永遠正確
+                string idPart = noWithoutS.Substring(0, noWithoutS.Length - 12);
+
+                // 3. 轉成數字
+                int transactionId = int.Parse(idPart);
+
 
                 // 1. 將 Dictionary 資料對應到 EF Model
                 var payResult = new ExpTthirdPartyPayment
@@ -230,12 +242,12 @@ namespace ExpServiceHelper.Service
                         //                    .ToListAsync();
                         //    foreach (var order in 你的order表) { order.Status = 1; }
                         //    break;
-                        //case 4: //房源
-                        //    var houseOrder = await _context.你的order表
-                        //                    .Where(o => o.ExpTransactionId == transactionId)
-                        //                    .ToListAsync();
-                        //    foreach (var order in 你的order表) { order.Status = 1; }
-                        //    break;
+                        case 4: //房源
+                            var houseBookings = await _context.HomBookings
+                                            .Where(o => o.TransactionsId == transactionId)
+                                            .ToListAsync();
+                            foreach (var booking in houseBookings) { booking.Status = "1"; booking.UpdateTime = DateTime.Now; }
+                            break;
 
 
                         default:

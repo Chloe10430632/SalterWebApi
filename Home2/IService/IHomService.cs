@@ -49,7 +49,8 @@ namespace HomeServiceHelper.IService
         Task<bool> CreateFullHouseAsync(HouseCreateDTO dto);
         Task<bool> UpdateFullHouseAsync(HouseUpdateDTO dto);
 
-
+        //新增交易單
+        public Task<int> CreateTransactionForBooking(int bookingId, int userId);
 
 
     }

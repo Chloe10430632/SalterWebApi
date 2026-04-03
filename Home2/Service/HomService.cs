@@ -657,6 +657,40 @@ namespace HomeServiceHelper.Service
             }
 
         }
+
+        //新增交易單
+        public async Task<int> CreateTransactionForBooking(int bookingId, int userId)
+        {
+            //找到對應的預約訂單
+            var booking = await _context.HomBookings.FirstOrDefaultAsync
+                (b => b.BookingId == bookingId && b.UserId == userId);
+            if(booking == null) throw new Exception("找不到該預約訂單");
+
+            //如果有交易紀錄，直接回傳舊的ID
+            if (booking.TransactionsId != null) return (int)booking.TransactionsId;
+
+            //建立新的交易紀錄
+            var newTrans = new ExpTransaction
+            {
+                SenderUserId = userId,
+                ReceiveUserId = 1, //平台的 UserId 是 1
+                Status = 0, // 0: 待付款
+                TypeId = 4, // 4: 房屋的交易
+                Flow = 1, // 1: 支出
+                Amount = booking.TotalPrice,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.ExpTransactions.Add(newTrans);
+            await _context.SaveChangesAsync(); //存檔先產生交易紀錄的ID
+
+            //將交易紀錄ID回寫到預約訂單
+            booking.TransactionsId = newTrans.Id;
+            await _context.SaveChangesAsync(); //更新預約訂單
+
+            return newTrans.Id;
+        }
     }
 
 }
