@@ -350,17 +350,24 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> UpdateAnnouncementAsync(int announcementId, TripAnnouncementUpdateDto dto, int userId)
     {
-        var entity = await _repo.GetAnnouncementByIdAsync(announcementId);
-        if (entity == null) return ServiceResult.Fail("找不到公告", 404);
+        try
+        {
+            var entity = await _repo.GetAnnouncementByIdAsync(announcementId);
+            if (entity == null) return ServiceResult.Fail("找不到公告", 404);
 
-        if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
-            return ServiceResult.Fail("只有主辦人可以編輯公告", 403);
+            if (!await _repo.IsOrganizerAsync(entity.TripId, userId))
+                return ServiceResult.Fail("只有主辦人可以編輯公告", 403);
 
-        entity.Title = dto.Title ?? entity.Title;
-        entity.Content = dto.Content ?? entity.Content;
-        entity.UpdatedAt = DateTime.Now;
-        await _repo.UpdateAnnouncementAsync(entity);
-        return ServiceResult.Success("公告更新成功");
+            entity.Title = dto.Title ?? entity.Title;
+            entity.Content = dto.Content ?? entity.Content;
+            entity.UpdatedAt = DateTime.Now;
+            await _repo.UpdateAnnouncementAsync(entity);
+            return ServiceResult.Success("公告更新成功");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail(ex.InnerException?.Message ?? ex.Message, 500);
+        }
     }
 
     public async Task<ServiceResult> DeleteAnnouncementAsync(int announcementId, int userId)
@@ -433,18 +440,25 @@ public class TripService : ITripService
 
     public async Task<ServiceResult> UpdateGearItemAsync(int gearItemId, TripGearItemRequestDto dto, int userId)
     {
-        var entity = await _repo.GetGearItemByIdAsync(gearItemId);
-        if (entity == null) return ServiceResult.Fail("找不到裝備", 404);
+        try
+        {
+            var entity = await _repo.GetGearItemByIdAsync(gearItemId);
+            if (entity == null) return ServiceResult.Fail("找不到裝備", 404);
 
-        var isOrganizer = await _repo.IsOrganizerAsync(entity.TripId, userId);
-        var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
-        if (!isOrganizer && !isMember)
-            return ServiceResult.Fail("只有行程成員可以編輯裝備", 403);
+            var isOrganizer = await _repo.IsOrganizerAsync(entity.TripId, userId);
+            var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
+            if (!isOrganizer && !isMember)
+                return ServiceResult.Fail("只有行程成員可以編輯裝備", 403);
 
-        entity.ItemName = dto.ItemName;
-        entity.IsRequired = dto.IsRequired;
-        await _repo.UpdateGearItemAsync(entity);
-        return ServiceResult.Success("裝備更新成功");
+            entity.ItemName = dto.ItemName;
+            entity.IsRequired = dto.IsRequired;
+            await _repo.UpdateGearItemAsync(entity);
+            return ServiceResult.Success("裝備更新成功");
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult.Fail(ex.InnerException?.Message ?? ex.Message, 500);
+        }
     }
 
     public async Task<ServiceResult> DeleteGearItemAsync(int gearItemId, int userId)
