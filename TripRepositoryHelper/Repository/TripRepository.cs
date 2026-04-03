@@ -480,6 +480,12 @@ public class TripRepository : ITripRepository
                 sortOrder, DateTime.Now, locationId);
         }
     }
+    public async Task<int> GetMaxSortOrderAsync(int tripId, int dayNumber)
+    {
+        return await _db.TripTripLocations
+            .Where(t => t.TripId == tripId && t.DayNumber == dayNumber)
+            .MaxAsync(t => (int?)t.SortOrder) ?? 0;
+    }
     #endregion
 
     #region 城市
