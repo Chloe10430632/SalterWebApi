@@ -12,7 +12,6 @@ namespace ExpServiceHelper.DTO
         public int? TempId { get; set; }
         public int? SessionId { get; set; } 
         public int? CoachId { get; set; }
-        public List<DateOnly>? SelectedDates { get; set; } = new List<DateOnly>();
         public string? TimeSlot { get; set; } = string.Empty;// 譬如 "09:00-11:00"
         public int? MaxStudents { get; set; }
         public int? CurrentStudents { get; set; }
@@ -28,6 +27,8 @@ namespace ExpServiceHelper.DTO
         public string? Description { get; set; }
         public string? Location { get; set; }
         public string? GooglePlaceId {  get; set; }
-
+        //
+        public DateOnly? StartDate { get; set; } 
+        public DateOnly? EndDate { get; set; }
     }
 }

@@ -165,6 +165,10 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=123.192.123.82,1433;Initial Catalog=Salter;User ID=sa;Password=DX9Qu!3wKWXrbyk;Trust Server Certificate=True");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CardActivityType>(entity =>
@@ -590,8 +594,9 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.CourseTemplateId).HasColumnName("course_template_id");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.CurrentParticipants).HasColumnName("current_participants");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
             entity.Property(e => e.MaxParticipants).HasColumnName("max_participants");
-            entity.Property(e => e.SessionDate).HasColumnName("session_date");
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
             entity.Property(e => e.TimeSlot)
                 .HasMaxLength(50)
                 .HasColumnName("time_slot");
