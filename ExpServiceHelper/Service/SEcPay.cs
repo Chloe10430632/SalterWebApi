@@ -28,8 +28,7 @@ namespace ExpServiceHelper.Service
         {
 
             var ngrokUrl = _config["ECPay:CallbackUrl"];
-            var frontendUrl = ngrokUrl;
-
+            var ClientBackURL = _config["ECPay:ClientBackURL"];
 
             var merchantId = _config["ECPay:MerchantID"];
             var hashKey = _config["ECPay:HashKey"];
@@ -57,8 +56,8 @@ namespace ExpServiceHelper.Service
             var payment = config.Send.ToApi(serviceUrl)
                             .Send.ToMerchant(merchantId) // MerchantID
                             .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
-                            .Return.ToServer("https://sartorially-carbonylic-bennie.ngrok-free.dev/api/Home/UpdateTransacForm")//【ToServer】: 綠界通知你的 Server (背景)  
-                            .Return.ToClient("http://localhost:4200/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
+                            .Return.ToServer($"{ngrokUrl}/api/Home/UpdateTransacForm")//【ToServer】: 綠界通知你的 Server (背景)  
+                            .Return.ToClient($"{ClientBackURL}/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
                                 description: dto.Description ?? "SalterOrder",
