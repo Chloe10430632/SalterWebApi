@@ -29,6 +29,7 @@ namespace ExpServiceHelper.DTO
         public string? GooglePlaceId {  get; set; }
         //
         public DateOnly? StartDate { get; set; } 
-        public DateOnly? EndDate { get; set; }
+       // public DateOnly? EndDate { get; set; }
+
     }
 }

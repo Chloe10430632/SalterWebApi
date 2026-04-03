@@ -593,36 +593,39 @@ namespace ExpServiceHelper.Service
             if (coach == null || coach.UserId != currentUserId)
                 return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "冒牌教練!" };
 
+            if (dto.StartDate == null) return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "請選擇日期" };
 
             //選時間和人數
-            //DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-            //DateOnly day60 = today.AddDays(60);
+            DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+            DateOnly day60 = today.AddDays(60);
 
-            //foreach (var date in dto.StartDate.Value)
-            //{
+            DateOnly date = dto.StartDate.Value;
 
-            //    if (date < today || date > day60) continue;
-            //    //找有沒有衝堂
-            //    bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
-            //        s.CoachId == t.CoachId &&
-            //        s.SessionDate == date &&
-            //        s.TimeSlot == dto.TimeSlot);
-            //    if (isConflict) throw new Exception("尚未習得隱分身之術 你逆");
+            if (date < today || date > day60)
+            
+                return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "日期超出範圍" };
+            
+            //找有沒有衝堂
+            bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
+                    s.CoachId == t.CoachId &&
+                    s.StartDate == date &&
+                    s.TimeSlot == dto.TimeSlot);
+                if (isConflict) throw new Exception("尚未習得隱分身之術 你逆");
 
-            //    var newSession = new ExpCourseSession
-            //    {
-            //        CourseTemplateId = TemplateId,
-            //        CoachId = t.CoachId,
-            //        SessionDate = date,
-            //        TimeSlot = dto.TimeSlot,
-            //        MaxParticipants = dto.MaxStudents,
-            //        CurrentParticipants = 0,
-            //        CreatedAt = DateTime.Now,
-            //        UpdatedAt = DateTime.Now
-            //    };
-            //    await _context.ExpCourseSessions.AddAsync(newSession);
-            //}
-            //await _context.SaveChangesAsync();
+                var newSession = new ExpCourseSession
+                {
+                    CourseTemplateId = TemplateId,
+                    CoachId = t.CoachId,
+                    StartDate = date,
+                    TimeSlot = dto.TimeSlot,
+                    MaxParticipants = dto.MaxStudents,
+                    CurrentParticipants = 0,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                await _context.ExpCourseSessions.AddAsync(newSession);
+            
+            await _context.SaveChangesAsync();
             return new DTO.DAPIResponse<DCourseOpenSession>
             {
                 IsSuccess = true,
@@ -650,13 +653,7 @@ namespace ExpServiceHelper.Service
                     SessionId = s.Id,
                     TimeSlot = s.TimeSlot,
                     MaxStudents = s.MaxParticipants,
-                    // 這裡處理日期，因為你原本是用 List<DateOnly>
-                    //SelectedDates = s.SessionDate.HasValue
-                                   // ? new List<DateOnly> { s.SessionDate.Value }
-                                    //: new List<DateOnly>(),
-
-                    //StartDate = DateOnly.Parse(s.StartDate),
-                    //EndDate = DateOnly.Parse(s.EndDate),
+                    StartDate = s.StartDate,
                     // 關聯模板的資訊 (從 CourseTemplate 導航屬性抓)
                     TempId = s.CourseTemplateId,
                     Title = s.CourseTemplate.Title,
@@ -721,12 +718,8 @@ namespace ExpServiceHelper.Service
                     .Select(c => new DCourseInfo
                     {
                         CoachId = c.CoachId,
-                        //SelectedDates = s.SessionDate.HasValue
-                        // ? new List<DateOnly> { s.SessionDate.Value }
-                        //: new List<DateOnly>(),
 
-                        //StartDate = DateOnly.Parse(s.StartDate),
-                        //EndDate = DateOnly.Parse(s.EndDate),
+                        StartDate = c.StartDate,
                         TimeSlot = c.TimeSlot,
                         MaxStudents = c.MaxParticipants,
                         UpdatedAt = c.UpdatedAt,
@@ -760,11 +753,8 @@ namespace ExpServiceHelper.Service
                 .Select(c => new DCourseInfo
                 {
                     CoachId = c.CoachId,
-                    //SelectedDates = c.SessionDate.HasValue
-                    //  ? new List<DateOnly> { c.SessionDate.Value }
-                    //: new List<DateOnly>(),
-                    //StartDate = DateOnly.Parse(c.StartDate),
-                    //EndDate = DateOnly.Parse(c.EndDate),
+                   
+                    StartDate = c.StartDate,
                     TimeSlot = c.TimeSlot,
                     MaxStudents = c.MaxParticipants,
                     UpdatedAt = c.UpdatedAt,
