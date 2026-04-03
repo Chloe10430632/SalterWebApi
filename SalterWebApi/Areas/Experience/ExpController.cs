@@ -287,9 +287,13 @@ namespace SalterWebApi.Areas.Experience
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId)) return Unauthorized();
+            try
+            {
+                var result = await _sCoachMethods.GetAllPublishedSessions(userId);
+                return Ok(result);
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
 
-            var result = await _sCoachMethods.GetAllPublishedSessions(userId);
-            return Ok(result);
         }
         #endregion
 
