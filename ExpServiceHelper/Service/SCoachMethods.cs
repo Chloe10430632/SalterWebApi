@@ -209,6 +209,29 @@ namespace ExpServiceHelper.Service
         }
         #endregion  
 
+        #region 自己自介 
+        public async Task<DCoachInfo> MyCoachInfo(int userId) {
+            var q = _context.ExpCoaches
+                .Where(c => c.UserId == userId)
+                .Select(c => new DCoachInfo
+                {
+                    CoachId = c.Id,
+                    CoachName = c.Name,
+                    AvatarUrl = c.AvatarUrl,
+                    District = c.District != null ? c.District.Name : "未設定",
+                    DistrictId = c.DistrictId,
+                    CityId = c.District != null ? c.District.CityId : (int?)null,
+                    AvgRating = c.ExpReviews.Any() ? Math.Round(c.ExpReviews.Average(r => (double)r.Rating), 1) : 0,
+                    ReviewCount = c.ExpReviews.Count(),
+                    Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName).ToList(),
+                    Introduction = c.Introduction,
+                    CreatedAt = c.CreatedAt
+                });
+            var result = await q.FirstOrDefaultAsync();
+            return result;
+        }
+        #endregion
+
         #region 詳細自介
         public async Task<DCoachInfo> ThisCoachInfo(int coachId)
         {

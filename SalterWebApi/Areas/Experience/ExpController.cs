@@ -149,8 +149,28 @@ namespace SalterWebApi.Areas.Experience
         }
         #endregion
 
-        #region 教練自介
-        [HttpGet("Info/{coachId}")]
+        #region 抓自己
+        [Authorize]
+        [HttpGet("MyInfo")]
+        public async Task<IActionResult> MyInfo() {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            }
+
+            if (int.TryParse(userIdStr, out int currentUserId))
+            {
+                var result = await _sCoachMethods.MyCoachInfo(currentUserId);
+                return Ok(new { isSuccess = true, data = result });
+            }
+            return BadRequest("你是誰?");
+        }
+            #endregion
+
+            #region 教練自介
+            [HttpGet("Info/{coachId}")]
         public async Task<IActionResult> CoachInfo(int coachId)
         {
             if (coachId == 0) return NotFound("這位教練還沒出生");

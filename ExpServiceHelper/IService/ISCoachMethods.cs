@@ -35,6 +35,9 @@ namespace ExpServiceHelper.IService
         #region 教練編輯
         Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId);
         #endregion
+        #region 自己自介 
+        Task<DCoachInfo> MyCoachInfo(int userId);
+        #endregion
         #region 詳細自介
         Task<DCoachInfo> ThisCoachInfo(int coachId);
         #endregion
@@ -81,7 +84,9 @@ namespace ExpServiceHelper.IService
 
         #endregion
 
+        #region 專業名稱 
         Task<List<DSpeciallity>> Sports();
+        #endregion
 
         #region 評論
         #region 新增評論
