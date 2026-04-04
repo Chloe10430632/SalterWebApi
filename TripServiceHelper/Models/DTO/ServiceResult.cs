@@ -24,6 +24,12 @@ public class ServiceResult<T>
     public static ServiceResult<T> Success(T data, string message = "成功")
         => new() { IsSuccess = true, Code = 200, Message = message, Data = data };
 
-    public static ServiceResult<T> Fail(string message, int code = 400)
+    public static ServiceResult<T> Fail(T data, string message, int code = 400)
+        => new() { IsSuccess = false, Code = code, Message = message };
+
+    public static ServiceResult Success( string message = "成功")
+     => new() { IsSuccess = true, Code = 200, Message = message };
+
+    public static ServiceResult Fail(string message, int code = 400)
         => new() { IsSuccess = false, Code = code, Message = message };
 }
