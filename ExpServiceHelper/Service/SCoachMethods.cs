@@ -834,6 +834,41 @@ namespace ExpServiceHelper.Service
             };
         }
         #endregion
+
+        #region 參加過的課
+        public async Task<DAPIResponse<List<DCourseOrder>>> GetUserCourseHistory(int userId) {
+            var history = await _context.ExpCourseOrders
+                    .Where(o => o.UserId == userId)
+                    .Select(o => new DCourseOrder
+                    {
+                        // --- 課程與時段資料 ---
+                        CourseSessionId = o.CourseSessionId,
+                        UserId = o.UserId,
+                        Title = o.CourseSession.CourseTemplate.Title,
+                        Price = o.CourseSession.CourseTemplate.Price,
+                        StratDate = o.CourseSession.StartDate,
+                        // --- 教練資料 ---
+                        CoachId = o.CourseSession.CoachId,
+                        CoachName = o.CourseSession.CourseTemplate.Coach.Name,
+                        AvatarUrl = o.CourseSession.CourseTemplate.Coach.AvatarUrl,
+                        // --- 評論資料 ---
+                        ReviewContent = o.ExpReviews.FirstOrDefault().ReviewContent,
+                        CreatReviewAt = o.ExpReviews.FirstOrDefault().ReviewedAt,
+                        UpdateReviewAt = o.ExpReviews.FirstOrDefault().UpdateAt,
+                        // --- 交易狀態 ---
+                        ExpTransactionId = o.ExpTransactionId,
+                        ReservedAt = o.ReservedAt,
+                        UpdatedTransacAt = o.UpdatedAt,
+                        Status = o.Status
+                    }).ToListAsync();
+            return new DAPIResponse<List<DCourseOrder>>
+            {
+                IsSuccess = true,
+                Message = "讀取學習歷程成功",
+                Data = history
+            };
+        }
+        #endregion
         #endregion
 
         #region ~~評論~~
@@ -962,7 +997,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion
         #endregion
-
+        #region 專業運動種類
         public async Task<List<DSpeciallity>> Sports() { 
             var result = await _context.ExpSpecialities
                 .Select(s => new DSpeciallity
@@ -972,6 +1007,8 @@ namespace ExpServiceHelper.Service
                 }).ToListAsync();
             return result;
         }
+        #endregion
+
 
         #region 交易流程
         #region 新增預約課程

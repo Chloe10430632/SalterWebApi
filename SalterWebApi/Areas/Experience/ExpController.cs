@@ -128,7 +128,7 @@ namespace SalterWebApi.Areas.Experience
 
         #region 編輯自介 
         [Authorize]
-        [HttpPut("EditCoach/{coachId}")]
+        [HttpPut("EditCoach/{coachId}")] //TODO 測試是不是拿掉陸游上的ID 申請就正常了
         public async Task<IActionResult> EditThisCoach([FromForm] DCoachEdit dto, int coachId)
         {
             // 1. 抓取 JWS 裡面的 UserId
@@ -365,6 +365,25 @@ namespace SalterWebApi.Areas.Experience
                 return Ok(result);
             }
             catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
+        #endregion
+
+        #region 參加過的課
+        [Authorize]
+        [HttpGet("AttendHistory")]
+        public async Task<IActionResult> MySessionHistory() {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr))
+                return Unauthorized(new { message = "無效的憑證，請重新登入" });
+            try {
+                if (int.TryParse(userIdStr, out int currentUserId))
+                {
+                    var result = await _sCoachMethods.GetUserCourseHistory(currentUserId);
+                    if (result.IsSuccess) return Ok(new { isSuccsee=true, data=result, message = "拿到學系紀錄啦！" });
+                }
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+            return BadRequest(new { message = "讀取失敗，請檢查資料是否正確" });
         }
         #endregion
         #endregion

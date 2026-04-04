@@ -71,6 +71,9 @@ namespace ExpServiceHelper.IService
         #region 課程展示
         Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId);
         #endregion
+        #region 參加過的課
+        Task<DAPIResponse<List<DCourseOrder>>> GetUserCourseHistory(int userId);
+        #endregion
         Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId);
         #endregion
 
