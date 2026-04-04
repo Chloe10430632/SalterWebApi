@@ -840,9 +840,10 @@ namespace ExpServiceHelper.Service
         #region 新增評論
         public async Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId)
         {
+            int status = 1; //付款完是1
             //先去「訂單表 (ExpCourseOrders)」確認有沒有這筆訂單，順便把 CoachId 拿回來
             var order = await _context.ExpCourseOrders
-                .Where(o => o.Id == courseOId && o.UserId == userId)
+                .Where(o => o.Id == courseOId && o.Status == status && o.UserId == userId)
                 .Select(o => new
                 {
                     CoachId = o.CourseSession.CoachId
@@ -922,6 +923,42 @@ namespace ExpServiceHelper.Service
                     ReviewedAt = r.ReviewedAt,
                 });
             return await review.ToListAsync();
+        }
+        #endregion
+
+        #region 拿最新三筆
+        public async Task<DAPIResponse<IEnumerable<DReview>>> ThreeReviewsByCoach(int coachId)
+        {
+            var result = await _context.ExpReviews
+                .Where(c => c.CoachId == coachId)         
+                .OrderByDescending(c => c.Id)   
+                .Take(3)
+                .Select(c => new DReview
+                {
+                    CoachId = c.CoachId,
+
+                    ReviewId = c.Id,
+                    Rating = c.Rating,
+                    ReviewContent = c.ReviewContent,
+                    CourseOrderId = c.CourseOrderId,
+                    ReviewedAt = c.ReviewedAt,
+                    UpdateAt = c.UpdateAt
+                })
+                .ToListAsync();                     
+
+            if (result == null)
+                return new DAPIResponse<IEnumerable<DReview>>
+                {
+                    IsSuccess = false,
+                    Message = "此教練目前沒有開課資訊"
+                };
+
+            return new DAPIResponse<IEnumerable<DReview>>
+            {
+                IsSuccess = true,
+                Message = "課程展示中",
+                Data = result
+            };
         }
         #endregion
         #endregion

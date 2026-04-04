@@ -44,9 +44,6 @@ namespace ExpServiceHelper.IService
         #region 系統推薦
         Task<List<DCoachRecommend>> CoachRecommand(int thisCoachId);
         #endregion
-        #region 查看評論
-        Task<List<DCoachReview>> CoachReviews(int coachId);
-        #endregion
         #endregion
 
         #region ~~課程~~
@@ -100,6 +97,12 @@ namespace ExpServiceHelper.IService
         #endregion
         #region 刪除評論
         Task<DAPIResponse<string>> DeleteReview(int userId, int reviewId);
+        #endregion
+        #region 查看評論
+        Task<List<DCoachReview>> CoachReviews(int coachId);
+        #endregion
+        #region 最新三則
+        Task<DAPIResponse<IEnumerable<DReview>>> ThreeReviewsByCoach(int coachId);
         #endregion
         #endregion
 

@@ -304,16 +304,11 @@ namespace SalterWebApi.Areas.Experience
 
         #region 日期找課
         [Authorize]
-        [HttpGet("CourseDate/{day}")]
-        public async Task<IActionResult> getCourseByDate(string day) {
+        [HttpGet("CourseDate/{coachId}/{day}")]
+        public async Task<IActionResult> getCourseByDate(int coachId, string day)
+        {
             try
             {
-                var coachIdClaim = User.FindFirst("coachId")?.Value
-                                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (!int.TryParse(coachIdClaim, out int coachId))
-                    return Unauthorized(new { message = "無法識別身份" });
-
                 var result = await _sCoachMethods.CourseByDates(day, coachId);
                 return Ok(result);
             }
@@ -475,7 +470,7 @@ namespace SalterWebApi.Areas.Experience
         #region 新增評論
         [Authorize]
         [HttpPost("AddReview")]
-        public async Task<IActionResult> AddReview([FromBody] DReview dto, int courseId)
+        public async Task<IActionResult> AddReview([FromBody] DReview dto, int courseOrderId)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId))
@@ -485,7 +480,7 @@ namespace SalterWebApi.Areas.Experience
 
             if (!ModelState.IsValid) return BadRequest(new DAPIResponse<string> { IsSuccess = false, Message = "資料格式錯誤" });
 
-            var result = await _sCoachMethods.CreateReview(dto, currentUserId, courseId);
+            var result = await _sCoachMethods.CreateReview(dto, currentUserId, courseOrderId);
             if (result.IsSuccess)
                 return Ok(new { Issuccess = true, data = result });
             return BadRequest(new DAPIResponse<string>
@@ -543,11 +538,24 @@ namespace SalterWebApi.Areas.Experience
         public async Task<IActionResult> ContentDetails(int coachId)
         {
             if (coachId == 0) return NotFound("這位教練還沒出生");
+            try { 
             var result = await _sCoachMethods.CoachReviews(coachId);
             return Ok(new { Issuccess = true, data = result });
+                }
+            catch (Exception ex) { return BadRequest(ex.Message); }
         }
         #endregion
-
+        #region 拿最新三筆
+        [HttpGet("ThreeReviews/{coachId}")]
+        public async Task<IActionResult> ThreeReviews(int coachId) {
+            if (coachId == 0) return NotFound("這位教練還沒出生");
+            try { 
+            var result = await _sCoachMethods.ThreeReviewsByCoach(coachId);
+            return Ok(new { Issuccess = true, result = result });
+}
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+        #endregion
         #endregion
 
         #region 交易
