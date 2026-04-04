@@ -593,7 +593,7 @@ namespace ExpServiceHelper.Service
                     Price = t.Price,
                     Difficulty = t.Difficulty,
                     Location = t.Location,
-                    UpdatedAt = t.UpdatedAt // 補上時間
+                    UpdatedAt = t.UpdatedAt 
                 }).ToListAsync();
 
             return new DAPIResponse<List<DCourseInfo>>
@@ -700,6 +700,40 @@ namespace ExpServiceHelper.Service
                 Message = "讀取上架時段成功",
                 Data = sessions
             };
+        }
+        #endregion
+
+        #region 日期找課 
+        public async Task<DAPIResponse<List<DCourseInfo>>> CourseByDates(string day, int coachId) {
+
+            if (!DateOnly.TryParse(day, out var targetDate))
+                return new DAPIResponse<List<DCourseInfo>> { IsSuccess = false, Message = "日期格式錯誤" };
+
+            var todayCourse = await _context.ExpCourseSessions
+                .Where(d => d.CoachId == coachId && d.StartDate == DateOnly.Parse(day))
+                .Select(d => new DCourseInfo
+                {
+                    TempId = d.Id, 
+                    CoachId = d.CoachId,
+                    Title = d.CourseTemplate.Title,
+                    Description = d.CourseTemplate.Description,
+                    ImageUrls = d.CourseTemplate.ExpCoursePhotos.Select(p => new DPhoto
+                    {
+                        PhotoUrl = p.PhotoUrl,
+                        PublicId = p.PublicId
+                    }).ToList(),
+                    Price = d.CourseTemplate.Price,
+                    Difficulty = d.CourseTemplate.Difficulty,
+                    Location = d.CourseTemplate.Location,
+                    UpdatedAt = d.CourseTemplate.UpdatedAt
+                }).ToListAsync();
+            return new DAPIResponse<List<DCourseInfo>>
+            {
+                IsSuccess = true,
+                Message = "讀取成功",
+                Data = todayCourse
+            };
+
         }
         #endregion
 
@@ -904,7 +938,7 @@ namespace ExpServiceHelper.Service
 
         #region 交易流程
         #region 新增預約課程
-        public async Task<DAPIResponse<string>> SessionReserve(DCourseOrder dto, int userId)
+        public async Task<DAPIResponse<object>> SessionReserve(DCourseOrder dto, int userId)
         {
             //找這堂課，順便拿教練ID
             var session = await _context.ExpCourseSessions
@@ -912,12 +946,12 @@ namespace ExpServiceHelper.Service
                           .FirstOrDefaultAsync(r => r.Id == dto.CourseSessionId);
             if (session == null)
             {
-                return new DAPIResponse<string> { IsSuccess = false, Message = "沒有課程可以評論" };
+                return new DAPIResponse<object> { IsSuccess = false, Message = "沒有課程可以評論" };
             }
             //核對課堂名額
             if (session.CurrentParticipants >= session.MaxParticipants)
             {
-                return new DAPIResponse<string> { IsSuccess = false, Message = "額滿了 你晚了一步QQ" };
+                return new DAPIResponse<object> { IsSuccess = false, Message = "額滿了 你晚了一步QQ" };
             }
 
             //建立一筆 ExpTransaction，取得 TransactionId
@@ -949,11 +983,11 @@ namespace ExpServiceHelper.Service
 
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();
-            return new DAPIResponse<string>
+            return new DAPIResponse<object>
             {
                 IsSuccess = true,
                 Message = "預約成功，請繳費完成報名",
-                Data = reserve.ToString()
+                Data = transac.Id.ToString()
             };
         }
         #endregion

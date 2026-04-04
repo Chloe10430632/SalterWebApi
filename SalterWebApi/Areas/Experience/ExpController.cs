@@ -27,10 +27,12 @@ namespace SalterWebApi.Areas.Experience
         #region DI
         private readonly ISCoachIndex _sCoachIndex;
         private readonly ISCoachMethods _sCoachMethods;
-        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods) 
+        private readonly ISECPay _sECPay;
+        public ExpController(ISCoachIndex sCoachIndex, ISCoachMethods sCoachMethods, ISECPay sECPay)
         {
             _sCoachIndex = sCoachIndex;
             _sCoachMethods = sCoachMethods;
+            _sECPay = sECPay;
         }
         #endregion
         #region ~~入口~~
@@ -300,6 +302,28 @@ namespace SalterWebApi.Areas.Experience
         }
         #endregion
 
+        #region 日期找課
+        [Authorize]
+        [HttpGet("CourseDate/{day}")]
+        public async Task<IActionResult> getCourseByDate(string day) {
+            try
+            {
+                var coachIdClaim = User.FindFirst("coachId")?.Value
+                                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (!int.TryParse(coachIdClaim, out int coachId))
+                    return Unauthorized(new { message = "無法識別身份" });
+
+                var result = await _sCoachMethods.CourseByDates(day, coachId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        #endregion
+
         #region 上架中
         [Authorize]
         [HttpGet("AllSessions")]
@@ -548,14 +572,15 @@ namespace SalterWebApi.Areas.Experience
             return BadRequest(new { message = "失敗失敗" });
             }
         #endregion
-        #region 歷史交易紀錄 
-        #endregion
+
+        
         #endregion
 
         #region 營運 
         #endregion
 
-
+        #region 
+        #endregion
 
     }
 }

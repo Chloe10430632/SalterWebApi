@@ -62,6 +62,9 @@ namespace ExpServiceHelper.IService
         #region  課程上架 
         Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
         #endregion
+        #region 日期找課 
+        Task<DAPIResponse<List<DCourseInfo>>> CourseByDates(string day, int coachId);
+        #endregion
         #region 已上架
         Task<DAPIResponse<List<DCourseInfo>>> GetAllPublishedSessions(int currentUserId);
         #endregion
@@ -103,7 +106,7 @@ namespace ExpServiceHelper.IService
 
         #region 交易
         #region 預約課程
-        Task<DAPIResponse<string>> SessionReserve(DCourseOrder dto, int userId);
+        Task<DAPIResponse<object>> SessionReserve(DCourseOrder dto, int userId);
         #endregion
         #region 支付 
         #endregion

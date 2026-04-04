@@ -56,7 +56,7 @@ namespace ExpServiceHelper.Service
             var payment = config.Send.ToApi(serviceUrl)
                             .Send.ToMerchant(merchantId) // MerchantID
                             .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
-                            .Return.ToServer($"{ngrokUrl}/api/Home/UpdateTransacForm")//【ToServer】: 綠界通知你的 Server (背景)  
+                            .Return.ToServer($"{ngrokUrl}/api/Exp/Exp/PayResult")//【ToServer】: 綠界通知你的 Server (背景)  
                             .Return.ToClient($"{ClientBackURL}/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
@@ -256,9 +256,11 @@ namespace ExpServiceHelper.Service
 
 
                 // 4. 儲存變更
+                if (!data.TryGetValue("RtnCode", out var rtnCode) || rtnCode != "1")
+                    return false;
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync(); // 全部成功才存檔
-                if (data["RtnCode"] != "1") return false;
+                
                 return true;
             }
             catch (Exception ex)
