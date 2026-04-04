@@ -846,7 +846,8 @@ namespace ExpServiceHelper.Service
                         UserId = o.UserId,
                         Title = o.CourseSession.CourseTemplate.Title,
                         Price = o.CourseSession.CourseTemplate.Price,
-                        StratDate = o.CourseSession.StartDate,
+                        StartDate = o.CourseSession.StartDate,
+                        TimeSlot = o.CourseSession.TimeSlot,
                         // --- 教練資料 ---
                         CoachId = o.CourseSession.CoachId,
                         CoachName = o.CourseSession.CourseTemplate.Coach.Name,

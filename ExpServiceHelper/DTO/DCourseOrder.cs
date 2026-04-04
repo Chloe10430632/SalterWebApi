@@ -23,6 +23,7 @@ namespace ExpServiceHelper.DTO
         public decimal? Price { get; set; }
         public string? Title { get; set; }
         public DateOnly? StartDate { get; set; }
+        public string? TimeSlot { get; set; }
         //交易
         public int? ExpTransactionId { get; set; }
         public DateTime? ReservedAt { get; set; }
