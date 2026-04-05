@@ -74,7 +74,15 @@ namespace ExpServiceHelper.IService
         #region 參加過的課
         Task<List<DCourseOrder>> GetUserCourseHistory(int userId);
         #endregion
+        #region 所有開課日-月曆
+        Task<List<string>> GetCoachCourseDatesAsync(int coachId);
+        #endregion
+        #region 所有課
+        Task<List<DCourseInfo>> GetCoursesByDateAsync(int coachId, DateOnly date);
+        #endregion
+        #region 最近開課
         Task<DCourseInfo> LatestCourseByCoach(int coachId);
+        #endregion
         #endregion
 
         #region ~~收藏~~

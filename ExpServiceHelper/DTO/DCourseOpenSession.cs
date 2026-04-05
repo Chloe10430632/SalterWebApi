@@ -11,7 +11,7 @@ namespace ExpServiceHelper.DTO
         public int? SessionId { get; set; }
 
         public string? TimeSlot { get; set; } = string.Empty;// 譬如 "09:00-11:00"
-        public int? MaxStudents { get; set; }
+        public int? MaxParticipants { get; set; }
         public DateOnly? StartDate {  get; set; }
 
         internal IEnumerable<object> Parse(object startDate)

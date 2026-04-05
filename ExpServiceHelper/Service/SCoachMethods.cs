@@ -634,7 +634,7 @@ namespace ExpServiceHelper.Service
                     CoachId = t.CoachId,
                     StartDate = date,
                     TimeSlot = dto.TimeSlot,
-                    MaxParticipants = dto.MaxStudents,
+                    MaxParticipants = dto.MaxParticipants,
                     CurrentParticipants = 0,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
@@ -663,7 +663,7 @@ namespace ExpServiceHelper.Service
                     // Session 自身的資訊 (這才是刪除/下架要用的 ID)
                     SessionId = s.Id,
                     TimeSlot = s.TimeSlot,
-                    MaxStudents = s.MaxParticipants,
+                    MaxParticipants = s.MaxParticipants,
                     StartDate = s.StartDate,
                     // 關聯模板的資訊 (從 CourseTemplate 導航屬性抓)
                     TempId = s.CourseTemplateId,
@@ -751,9 +751,12 @@ namespace ExpServiceHelper.Service
                     {
                         CoachId = c.CoachId,
 
+                        SessionId = c.Id,
+                        TempId = c.CourseTemplateId,
                         StartDate = c.StartDate,
                         TimeSlot = c.TimeSlot,
-                        MaxStudents = c.MaxParticipants,
+                        MaxParticipants = c.MaxParticipants,
+                        CurrentParticipants = c.CurrentParticipants,
                         UpdatedAt = c.UpdatedAt,
                         Title = c.CourseTemplate.Title,
                     }).FirstOrDefaultAsync();
@@ -774,17 +777,24 @@ namespace ExpServiceHelper.Service
                 .Select(c => new DCourseInfo
                 {
                     CoachId = c.CoachId,
-                   
+
                     StartDate = c.StartDate,
                     TimeSlot = c.TimeSlot,
-                    MaxStudents = c.MaxParticipants,
+                    MaxParticipants = c.MaxParticipants,
+                    CurrentParticipants = c.CurrentParticipants,
                     UpdatedAt = c.UpdatedAt,
                     Title = c.CourseTemplate.Title,
+                    Price = c.CourseTemplate.Price,
+                    Location = c.CourseTemplate.Location,
+                    ImageUrls = c.CourseTemplate.ExpCoursePhotos.Select(p => new DPhoto
+                    {
+                        PhotoUrl = p.PhotoUrl
+                    }).ToList()
                 })
-                .FirstOrDefaultAsync();                     // 只取第一筆（最新）
+                .FirstOrDefaultAsync();                    
 
-            if (result == null)
-                throw new InvalidOperationException("課程找不到");
+            //if (result == null)
+            //    throw new InvalidOperationException("課程找不到");
 
             return result;
         }
@@ -818,6 +828,42 @@ namespace ExpServiceHelper.Service
                         Status = o.Status
                     }).ToListAsync();
             return history;
+        }
+        #endregion
+        #region 所有開課日-月利用
+        public async Task<List<string>> GetCoachCourseDatesAsync(int coachId) {
+            return await _context.ExpCourseSessions
+                        .Where(c => c.CoachId == coachId)
+                        .Select(c => c.StartDate.ToString())
+                        .Distinct()
+                        .ToListAsync();
+        }
+
+        #endregion
+        #region 所有開的課
+        public async Task<List<DCourseInfo>> GetCoursesByDateAsync(int coachId, DateOnly date)
+        {
+            return await _context.ExpCourseSessions
+                .Where(c => c.CoachId == coachId && c.StartDate == date)
+                .Select(c => new DCourseInfo
+                {
+                    SessionId = c.Id,
+                    TempId = c.CourseTemplateId,
+                    CoachId = c.CoachId,
+                    StartDate = c.StartDate,
+                    TimeSlot = c.TimeSlot,
+                    MaxParticipants = c.MaxParticipants,
+                    CurrentParticipants = c.CurrentParticipants,
+                    UpdatedAt = c.UpdatedAt,
+                    Title = c.CourseTemplate.Title,
+                    Price = c.CourseTemplate.Price,
+                    Location = c.CourseTemplate.Location,
+                    ImageUrls = c.CourseTemplate.ExpCoursePhotos.Select(p => new DPhoto
+                    {
+                        PhotoUrl = p.PhotoUrl,
+                        PublicId = p.PublicId
+                    }).ToList(),
+                }).ToListAsync();
         }
         #endregion
         #endregion

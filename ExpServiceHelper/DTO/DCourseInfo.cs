@@ -13,8 +13,8 @@ namespace ExpServiceHelper.DTO
         public int? SessionId { get; set; } 
         public int? CoachId { get; set; }
         public string? TimeSlot { get; set; } = string.Empty;// 譬如 "09:00-11:00"
-        public int? MaxStudents { get; set; }
-        public int? CurrentStudents { get; set; }
+        public int? MaxParticipants { get; set; }
+        public int? CurrentParticipants { get; set; }
         public DateTime? UpdatedAt { get; set; }
         //
         public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();

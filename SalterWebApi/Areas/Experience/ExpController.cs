@@ -450,6 +450,31 @@ namespace SalterWebApi.Areas.Experience
             return BadRequest(new { message = "讀取失敗，請檢查資料是否正確" });
         }
         #endregion
+
+        #region 所有開課日-月曆用
+        [HttpGet("GetCoachCourseDates/{coachId}")]
+        public async Task<ActionResult> GetCoachCourseDates(int coachId)
+        {
+            try
+            {
+                var result = await _sCoachMethods.GetCoachCourseDatesAsync(coachId);
+                return Ok(new { isSuccess = true, data = result });
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
+        #endregion
+        #region 所有開的課
+        [HttpGet("GetCoursesByDate/{coachId}/{date}")]
+        public async Task<ActionResult> GetCoursesByDate(int coachId, DateOnly date)
+        {
+            try
+            {
+                var result = await _sCoachMethods.GetCoursesByDateAsync(coachId, date);
+                return Ok(new { isSuccess = true, data = result });
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
+        #endregion
         #endregion
 
         #region~~專業~~
