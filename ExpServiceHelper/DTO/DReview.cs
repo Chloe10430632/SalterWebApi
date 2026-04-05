@@ -17,6 +17,7 @@ namespace ExpServiceHelper.DTO
         public DateTime? UpdateAt { get; set; }
         public DateTime? ReviewedAt { get; set; }
         public int status { get; set; }
+        public string? UserName { get; set; }
 
     }
 }

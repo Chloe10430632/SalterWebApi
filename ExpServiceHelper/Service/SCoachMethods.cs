@@ -803,7 +803,7 @@ namespace ExpServiceHelper.Service
         #region 參加過的課
         public async Task<List<DCourseOrder>> GetUserCourseHistory(int userId) {
             var history = await _context.ExpCourseOrders
-                    .Where(o => o.UserId == userId)
+                    //.Where(o => o.UserId == userId)
                     .Select(o => new DCourseOrder
                     {
                         // --- 課程與時段資料 ---
@@ -818,9 +818,14 @@ namespace ExpServiceHelper.Service
                         CoachName = o.CourseSession.CourseTemplate.Coach.Name,
                         AvatarUrl = o.CourseSession.CourseTemplate.Coach.AvatarUrl,
                         // --- 評論資料 ---
-                        ReviewContent = o.ExpReviews.FirstOrDefault().ReviewContent,
-                        CreatReviewAt = o.ExpReviews.FirstOrDefault().ReviewedAt,
-                        UpdateReviewAt = o.ExpReviews.FirstOrDefault().UpdateAt,
+                        ReviewContent = o.ExpReviews
+                            .Select(r => r.ReviewContent).FirstOrDefault(),
+                        CreatReviewAt = o.ExpReviews
+                             .Select(r => r.ReviewedAt).FirstOrDefault(),
+                        UpdateReviewAt = o.ExpReviews
+                            .Select(r => r.UpdateAt).FirstOrDefault(),
+                        Rating = o.ExpReviews
+                            .Select(r => r.Rating).FirstOrDefault(),
                         // --- 交易狀態 ---
                         ExpTransactionId = o.ExpTransactionId,
                         ReservedAt = o.ReservedAt,
@@ -945,6 +950,7 @@ namespace ExpServiceHelper.Service
                     Rating = r.Rating,
                     ReviewContent = r.ReviewContent,
                     ReviewedAt = r.ReviewedAt,
+
                 });
             return await review.ToListAsync();
         }
@@ -960,7 +966,7 @@ namespace ExpServiceHelper.Service
                 .Select(c => new DReview
                 {
                     CoachId = c.CoachId,
-
+                    UserName = c.User.UserName,
                     ReviewId = c.Id,
                     Rating = c.Rating,
                     ReviewContent = c.ReviewContent,
