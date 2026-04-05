@@ -30,10 +30,10 @@ namespace ExpServiceHelper.IService
 
         #region ~~教練~~
         #region 申請成為教練
-        Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId);
+        Task<DCoachEdit> CreateCoach(DCoachEdit dto, int currentUserId);
         #endregion
         #region 教練編輯
-        Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId);
+        Task<DCoachEdit> EditCoachInfo(DCoachEdit dto, int currentUserId);
         #endregion
         #region 自己自介 
         Task<DCoachInfo> MyCoachInfo(int userId);
@@ -48,33 +48,33 @@ namespace ExpServiceHelper.IService
 
         #region ~~課程~~
         #region 課程模板建立
-        Task<DAPIResponse<DCourseCreate>> CreateTemplate(DCourseCreate dto, int coachId);
+        Task<DCourseCreate> CreateTemplate(DCourseCreate dto, int coachId);
         #endregion
         #region 課程模板編輯
-        Task<DAPIResponse<DCourseTempEdit>> EditTemplate(DCourseTempEdit dto, int TemplateId, int currentUserId);
+        Task<DCourseTempEdit> EditTemplate(DCourseTempEdit dto, int TemplateId, int currentUserId);
         #endregion
         # region 模板展示
-        Task<DAPIResponse<List<DCourseInfo>>> ThisTemp(int currentUserId);
+        Task<List<DCourseInfo>> ThisTemp(int currentUserId);
         #endregion
         #region  課程上架 
-        Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
+        Task<DCourseOpenSession> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId);
         #endregion
         #region 日期找課 
-        Task<DAPIResponse<List<DCourseInfo>>> CourseByDates(string day, int coachId);
+        Task<List<DCourseInfo>> CourseByDates(string day, int coachId);
         #endregion
         #region 已上架
-        Task<DAPIResponse<List<DCourseInfo>>> GetAllPublishedSessions(int currentUserId);
+        Task<List<DCourseInfo>> GetAllPublishedSessions(int currentUserId);
         #endregion
         #region 課程時段刪除
-        Task<DAPIResponse<string>> DeleteCourseSession(int courseSessionId, int currentUserId);
+        Task<string> DeleteCourseSession(int courseSessionId, int currentUserId);
         #endregion
         #region 課程展示
-        Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId);
+        Task<DCourseInfo> ThisCourse(int courseId);
         #endregion
         #region 參加過的課
-        Task<DAPIResponse<List<DCourseOrder>>> GetUserCourseHistory(int userId);
+        Task<List<DCourseOrder>> GetUserCourseHistory(int userId);
         #endregion
-        Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId);
+        Task<DCourseInfo> LatestCourseByCoach(int coachId);
         #endregion
 
         #region ~~收藏~~
@@ -93,26 +93,26 @@ namespace ExpServiceHelper.IService
 
         #region 評論
         #region 新增評論
-        Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId);
+        Task<string> CreateReview(DReview dto, int userId, int courseOId);
         #endregion
         #region 編輯評論
-        Task<DAPIResponse<DReview>> EditReview(DReview dto, int userId, int courseId, int reviewId);
+        Task<DReview> EditReview(DReview dto, int userId, int courseId, int reviewId);
         #endregion
         #region 刪除評論
-        Task<DAPIResponse<string>> DeleteReview(int userId, int reviewId);
+        Task<string> DeleteReview(int userId, int reviewId);
         #endregion
         #region 查看評論
         Task<List<DCoachReview>> CoachReviews(int coachId);
         #endregion
         #region 最新三則
-        Task<DAPIResponse<IEnumerable<DReview>>> ThreeReviewsByCoach(int coachId);
+        Task<IEnumerable<DReview>> ThreeReviewsByCoach(int coachId);
         #endregion
         #endregion
 
 
         #region 交易
         #region 預約課程
-        Task<DAPIResponse<object>> SessionReserve(DCourseOrder dto, int userId);
+        Task<object> SessionReserve(DCourseOrder dto, int userId);
         #endregion
         #region 支付 
         #endregion

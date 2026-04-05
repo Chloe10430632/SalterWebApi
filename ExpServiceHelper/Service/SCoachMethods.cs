@@ -138,11 +138,11 @@ namespace ExpServiceHelper.Service
         #region~~教練~~
 
         #region 申請加入教練(新增)  
-        public async Task<DAPIResponse<int>> CreateCoach(DCoachEdit dto, int currentUserId)
+        public async Task<DCoachEdit> CreateCoach(DCoachEdit dto, int currentUserId)
         {
             // 1. 檢查是否已經是教練（協作規範：一人只能有一個教練身份）
             bool exists = await _context.ExpCoaches.AnyAsync(c => c.UserId == currentUserId);
-            if (exists) return new DAPIResponse<int> { IsSuccess = false, Message = "您已經是教練囉！" };
+            if (exists) return new DCoachEdit();
 
             //處理照片
             string upLoadUrl = "default_avatar_url";
@@ -161,7 +161,8 @@ namespace ExpServiceHelper.Service
                 }
                 else
                 {
-                    return new DAPIResponse<int> { IsSuccess = false, Message = "圖片上傳失敗" };
+                    throw new InvalidOperationException("圖存不進去");
+
                 }
             }
 
@@ -200,12 +201,7 @@ namespace ExpServiceHelper.Service
             }
             await _context.SaveChangesAsync();
 
-            return new DAPIResponse<int>
-            {
-                IsSuccess = true,
-                Message = "新教練誕生 ！",
-                Data = newCoach.Id // 這就是你要的號碼牌！
-            };
+            return dto;
         }
         #endregion  
 
@@ -259,17 +255,14 @@ namespace ExpServiceHelper.Service
         }
         #endregion
 
-        #region 教練編輯 ??mapAPI抓詳細地址??
-        public async Task<DAPIResponse<DCoachEdit>> EditCoachInfo(DCoachEdit dto, int currentUserId)
+        #region 教練編輯 
+        public async Task<DCoachEdit> EditCoachInfo(DCoachEdit dto, int currentUserId)
         {
             // 除了找 Coach ID，還要確認 user_id 也是本人
             var thisCoach = await _context.ExpCoaches
                 .FirstOrDefaultAsync(c => c.UserId == currentUserId);
 
-            if (thisCoach == null)
-            {
-                return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "權限不足或找不到教練資料" };
-            }
+            if (thisCoach == null) throw new InvalidOperationException("教練不匹配");
 
             if (dto.SpecialityIds != null)
             {
@@ -312,7 +305,7 @@ namespace ExpServiceHelper.Service
                     }
                     else
                     {
-                        return new DAPIResponse<DCoachEdit> { IsSuccess = false, Message = "圖片上傳失敗" };
+                        throw new InvalidOperationException("圖存不進去");
                     }
                 }
             }
@@ -329,11 +322,7 @@ namespace ExpServiceHelper.Service
             // 3. 存檔：這時候 EF 就會知道 thisCoach 被動過了，發出 UPDATE 指令
             await _context.SaveChangesAsync();
 
-            return new DAPIResponse<DCoachEdit>
-            {
-                IsSuccess = true,
-                Message = "更新成功！教練大人進化了！"
-            };
+            return dto;
         }
         #endregion
 
@@ -357,11 +346,11 @@ namespace ExpServiceHelper.Service
                 .Where(c => c.Id != thisCoachId) // 排除自己
                 .Where(c => c.DistrictId == currentCoachInfo.District &&
                             c.ExpCoachSpeciallityMappings.Any(s => currentCoachInfo.SpecialityIds.Contains(s.Specialities.SportsName)));
-            // 3. 執行隨機排序並取前 3 名
+            // 3. 執行隨機排序並取前 2 名
             // 提示：在 LINQ to Entities 中，Guid.NewGuid() 常用來模擬隨機排序//
             var recommendedList = await query
                 .OrderBy(c => Guid.NewGuid())
-                .Take(3)
+                .Take(2)
                 .Select(c => new DCoachRecommend
                 {
                     CoachId = c.Id,
@@ -372,7 +361,23 @@ namespace ExpServiceHelper.Service
                                     .ToList()
                 })
                 .ToListAsync();
-            //+排除自己
+
+            if (recommendedList.Count == 0)
+            {
+                recommendedList = await _context.ExpCoaches
+                    .Where(c => c.Id != thisCoachId) 
+                    .OrderByDescending(c => c.Id)    
+                    .Take(2)
+                    .Select(c => new DCoachRecommend
+                    {
+                        CoachId = c.Id,
+                        CoachName = c.Name,
+                        AvatarUrl = c.AvatarUrl,
+                        District = c.TripDistricts.Select(d => d.Name).ToList(),
+                        Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
+                                    .ToList()
+                    }).ToListAsync();
+            }
 
             return recommendedList;
         }
@@ -420,15 +425,14 @@ namespace ExpServiceHelper.Service
 
         #region~~課程~~
         #region 課程模板建立
-        public async Task<DAPIResponse<DCourseCreate>> CreateTemplate(DCourseCreate dto, int userId)
+        public async Task<DCourseCreate> CreateTemplate(DCourseCreate dto, int userId)
         {
             try
             {
                 var coachExists = await _context.ExpCoaches
                     .FirstOrDefaultAsync(c => c.UserId == userId);
 
-                if (coachExists == null)
-                    return new DAPIResponse<DCourseCreate> { IsSuccess = false, Message = "教練不存在" };
+                if (coachExists == null) throw new InvalidOperationException("教練不匹配");
 
                 //主表圖表分開處理
                 var t = new ExpCourseTemplate
@@ -472,14 +476,7 @@ namespace ExpServiceHelper.Service
                 //update
                 await _context.SaveChangesAsync();
 
-                return new DAPIResponse<DCourseCreate>
-                {
-                    IsSuccess = true,
-                    Message = "新課程模板做好啦 ！",
-                    Data = dto
-                };
-
-
+                return dto;
             }
             catch (Exception ex) { throw new Exception(ex.InnerException?.Message); }
 
@@ -489,12 +486,13 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 課程模板編輯
-        public async Task<DAPIResponse<DCourseTempEdit>> EditTemplate(DCourseTempEdit dto, int TemplateId, int currentUserId)
+        public async Task<DCourseTempEdit> EditTemplate(DCourseTempEdit dto, int TemplateId, int currentUserId)
         {
             var t = _context.ExpCourseTemplates
                 .Include(x => x.ExpCoursePhotos)
                 .FirstOrDefault(c => c.Id == TemplateId);
-            if (t == null) return new DAPIResponse<DCourseTempEdit> { IsSuccess = false, Message = "後端找不到模板" };
+            if (t == null) throw new InvalidOperationException("模板不匹配");
+
 
             if (!string.IsNullOrEmpty(dto.Title)) { t.Title = dto.Title; }
             if (!string.IsNullOrEmpty(dto.Description)) { t.Description = dto.Description; }
@@ -567,15 +565,15 @@ namespace ExpServiceHelper.Service
 
 
             await _context.SaveChangesAsync();
-            return new DTO.DAPIResponse<DCourseTempEdit> { IsSuccess = true, Message = "修改成功", Data = dto };
+            return dto;
         }
         #endregion
 
         #region 課程模板展示
-        public async Task<DAPIResponse<List<DCourseInfo>>> ThisTemp( int currentUserId) {
+        public async Task<List<DCourseInfo>> ThisTemp( int currentUserId) {
             // 1. 先確認這個 User 是不是教練，並拿到他的 CoachId
             var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.UserId == currentUserId);
-            if (coach == null) return new DAPIResponse<List<DCourseInfo>> { IsSuccess = false, Message = "找不到教練身份" };
+            throw new InvalidOperationException("教練不匹配");
 
             // 2. 抓取該教練所有的模板
             var templates = await _context.ExpCourseTemplates
@@ -596,17 +594,12 @@ namespace ExpServiceHelper.Service
                     UpdatedAt = t.UpdatedAt 
                 }).ToListAsync();
 
-            return new DAPIResponse<List<DCourseInfo>>
-            {
-                IsSuccess = true,
-                Message = "讀取教練模板成功",
-                Data = templates
-            };
+            return templates;
         }
         #endregion
 
         #region 課程選時間上架 
-        public async Task<DAPIResponse<DCourseOpenSession>> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId)
+        public async Task<DCourseOpenSession> OpenSession(DCourseOpenSession dto, int TemplateId, int currentUserId)
         {
             //找有沒有模板
             var t = await _context.ExpCourseTemplates.FirstOrDefaultAsync(t => t.Id == TemplateId);
@@ -614,9 +607,9 @@ namespace ExpServiceHelper.Service
             //使用者和教練對得上
             var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.Id == t.CoachId);
             if (coach == null || coach.UserId != currentUserId)
-                return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "冒牌教練!" };
+                throw new InvalidOperationException("教練不匹配");
 
-            if (dto.StartDate == null) return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "請選擇日期" };
+            if (dto.StartDate == null) return null;
 
             //選時間和人數
             DateOnly today = DateOnly.FromDateTime(DateTime.Now);
@@ -626,7 +619,7 @@ namespace ExpServiceHelper.Service
 
             if (date < today || date > day60)
             
-                return new DTO.DAPIResponse<DCourseOpenSession> { IsSuccess = false, Message = "日期超出範圍" };
+                return null;
             
             //找有沒有衝堂
             bool isConflict = await _context.ExpCourseSessions.AnyAsync(s =>
@@ -649,22 +642,17 @@ namespace ExpServiceHelper.Service
                 await _context.ExpCourseSessions.AddAsync(newSession);
             
             await _context.SaveChangesAsync();
-            return new DTO.DAPIResponse<DCourseOpenSession>
-            {
-                IsSuccess = true,
-                Message = "課程開放報名~",
-                Data = dto
-            };
+            return dto;
 
         }
         #endregion
 
         #region 拿該教練所有「已上架」的課程時段
-        public async Task<DAPIResponse<List<DCourseInfo>>> GetAllPublishedSessions(int currentUserId)
+        public async Task<List<DCourseInfo>> GetAllPublishedSessions(int currentUserId)
         {
             // 1. 先確認身分並拿到 CoachId
             var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.UserId == currentUserId);
-            if (coach == null) return new DAPIResponse<List<DCourseInfo>> { IsSuccess = false, Message = "找不到教練身份" };
+            if (coach == null) throw new InvalidOperationException("教練不匹配");
 
             // 2. 抓取該教練所有已上架的 Session (包含模板資訊)
             var sessions = await _context.ExpCourseSessions
@@ -694,20 +682,15 @@ namespace ExpServiceHelper.Service
                     UpdatedAt = s.UpdatedAt
                 }).ToListAsync();
 
-            return new DAPIResponse<List<DCourseInfo>>
-            {
-                IsSuccess = true,
-                Message = "讀取上架時段成功",
-                Data = sessions
-            };
+            return sessions;
         }
         #endregion
 
         #region 日期找課 
-        public async Task<DAPIResponse<List<DCourseInfo>>> CourseByDates(string day, int coachId) {
+        public async Task<List<DCourseInfo>> CourseByDates(string day, int coachId) {
 
             if (!DateOnly.TryParse(day, out var targetDate))
-                return new DAPIResponse<List<DCourseInfo>> { IsSuccess = false, Message = "日期格式錯誤" };
+                throw new InvalidOperationException("沒課");
 
             var todayCourse = await _context.ExpCourseSessions
                 .Where(d => d.CoachId == coachId && d.StartDate == DateOnly.Parse(day))
@@ -727,18 +710,13 @@ namespace ExpServiceHelper.Service
                     Location = d.CourseTemplate.Location,
                     UpdatedAt = d.CourseTemplate.UpdatedAt
                 }).ToListAsync();
-            return new DAPIResponse<List<DCourseInfo>>
-            {
-                IsSuccess = true,
-                Message = "讀取成功",
-                Data = todayCourse
-            };
+            return todayCourse;
 
         }
         #endregion
 
         #region 課程時段刪除
-        public async Task<DAPIResponse<string>> DeleteCourseSession(int SessionId, int currentUserId)
+        public async Task<string> DeleteCourseSession(int SessionId, int currentUserId)
         {
             var session = await _context.ExpCourseSessions.FirstOrDefaultAsync(s => s.Id == SessionId);
             if (session == null)
@@ -746,29 +724,26 @@ namespace ExpServiceHelper.Service
 
             var c = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.UserId == currentUserId);
             if (c == null || session.CoachId != c.Id)
-                return new DAPIResponse<string> { IsSuccess = false, Message = "權限不足，您只能刪除自己的課程" };
+                throw new InvalidOperationException("教練不匹配");
 
             if (session.CurrentParticipants > 0)
-                return new DAPIResponse<string>
-                {
-                    IsSuccess = false,
-                    Message = "有學生報名了，不能耍任性"
-                };
+                throw new InvalidOperationException("有學生報名了，不能耍任性");
+                  
 
             _context.ExpCourseSessions.Remove(session);
             await _context.SaveChangesAsync();
-            return new DAPIResponse<string> { IsSuccess = true, Message = "成功刪除時段" };
+            return "刪除成功";
 
         }
 
         #endregion
 
         #region 課程大眾展示介紹
-        public async Task<DAPIResponse<DCourseInfo>> ThisCourse(int courseId)
+        public async Task<DCourseInfo> ThisCourse(int courseId)
         {
             var courseSession = await _context.ExpCourseSessions
                                 .FirstOrDefaultAsync(c => c.Id == courseId);
-            if (courseSession == null) return new DAPIResponse<DCourseInfo> { IsSuccess = false, Message = "找不到該課程資訊" };
+            if (courseSession == null) throw new InvalidOperationException("課程不匹配");
 
             var result = await _context.ExpCourseSessions
                     .Where(c => c.Id == courseId)
@@ -784,25 +759,14 @@ namespace ExpServiceHelper.Service
                     }).FirstOrDefaultAsync();
 
             if (result == null)
-            {
-                return new DAPIResponse<DCourseInfo>
-                {
-                    IsSuccess = false,
-                    Message = "找不到該課程資訊"
-                };
-            }
+                throw new InvalidOperationException("課程找不到");
 
-            return new DTO.DAPIResponse<DCourseInfo>
-            {
-                IsSuccess = true,
-                Message = "課程展示中",
-                Data = result
-            };
+            return result;
         }
         #endregion
 
         #region 最新開課
-        public async Task<DAPIResponse<DCourseInfo>> LatestCourseByCoach(int coachId)
+        public async Task<DCourseInfo> LatestCourseByCoach(int coachId)
         {
             var result = await _context.ExpCourseSessions
                 .Where(c => c.CoachId == coachId)          // 篩這個教練的所有課
@@ -820,23 +784,14 @@ namespace ExpServiceHelper.Service
                 .FirstOrDefaultAsync();                     // 只取第一筆（最新）
 
             if (result == null)
-                return new DAPIResponse<DCourseInfo>
-                {
-                    IsSuccess = false,
-                    Message = "此教練目前沒有開課資訊"
-                };
+                throw new InvalidOperationException("課程找不到");
 
-            return new DAPIResponse<DCourseInfo>
-            {
-                IsSuccess = true,
-                Message = "課程展示中",
-                Data = result
-            };
+            return result;
         }
         #endregion
 
         #region 參加過的課
-        public async Task<DAPIResponse<List<DCourseOrder>>> GetUserCourseHistory(int userId) {
+        public async Task<List<DCourseOrder>> GetUserCourseHistory(int userId) {
             var history = await _context.ExpCourseOrders
                     .Where(o => o.UserId == userId)
                     .Select(o => new DCourseOrder
@@ -862,19 +817,14 @@ namespace ExpServiceHelper.Service
                         UpdatedTransacAt = o.UpdatedAt,
                         Status = o.Status
                     }).ToListAsync();
-            return new DAPIResponse<List<DCourseOrder>>
-            {
-                IsSuccess = true,
-                Message = "讀取學習歷程成功",
-                Data = history
-            };
+            return history;
         }
         #endregion
         #endregion
 
         #region ~~評論~~
         #region 新增評論
-        public async Task<DAPIResponse<string>> CreateReview(DReview dto, int userId, int courseOId)
+        public async Task<string> CreateReview(DReview dto, int userId, int courseOId)
         {
             int status = 1; //付款完是1
             //先去「訂單表 (ExpCourseOrders)」確認有沒有這筆訂單，順便把 CoachId 拿回來
@@ -886,7 +836,7 @@ namespace ExpServiceHelper.Service
                 }).FirstOrDefaultAsync();
             if (order == null)
             {
-                return new DAPIResponse<string> { IsSuccess = false, Message = "沒有課程可以評論" };
+                return "沒有課程可以評論" ;
             }
 
             var newReview = new ExpReview
@@ -901,19 +851,16 @@ namespace ExpServiceHelper.Service
             };
             await _context.ExpReviews.AddAsync(newReview);
             await _context.SaveChangesAsync();
-            return new DAPIResponse<string>
-            {
-                IsSuccess = true,
-                Message = "~感謝大大撥冗評論~"
-            };
+
+            return "~感謝大大撥冗評論~";
         }
         #endregion
 
         #region 編輯評論
-        public async Task<DAPIResponse<DReview>> EditReview(DReview dto, int userId, int courseId, int reviewId)
+        public async Task<DReview> EditReview(DReview dto, int userId, int courseId, int reviewId)
         {
             var r = await _context.ExpReviews.FirstOrDefaultAsync(r => r.Id == reviewId && r.UserId == userId);
-            if (r == null) return new DAPIResponse<DReview> { IsSuccess = false, Message = "找不倒評論" };
+            if (r == null) throw new InvalidOperationException("評論不匹配");
 
             //進行修改：直接把 DTO 的資料倒進去 Entity(原本的那筆)
             r.ReviewContent = dto.ReviewContent;
@@ -922,24 +869,19 @@ namespace ExpServiceHelper.Service
 
 
             await _context.SaveChangesAsync();
-            return new DAPIResponse<DReview>
-            {
-                IsSuccess = true,
-                Message = $"更新成功，Reviewed at {userId}",
-                Data = dto
-            };
+            return dto;
         }
         #endregion
 
         #region 刪除評論
-        public async Task<DAPIResponse<string>> DeleteReview(int userId, int reviewId)
+        public async Task<string> DeleteReview(int userId, int reviewId)
         {
             var review = await _context.ExpReviews.FirstOrDefaultAsync(r => r.Id == reviewId && r.UserId == userId);
             if (review == null)
                 throw new Exception("沒有對應的資料");
             _context.ExpReviews.Remove(review);
             await _context.SaveChangesAsync();
-            return new DAPIResponse<string> { IsSuccess = true, Message = "成功刪除評論" };
+            return  "成功刪除評論" ;
         }
         #endregion
 
@@ -963,7 +905,7 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 拿最新三筆
-        public async Task<DAPIResponse<IEnumerable<DReview>>> ThreeReviewsByCoach(int coachId)
+        public async Task<IEnumerable<DReview>> ThreeReviewsByCoach(int coachId)
         {
             var result = await _context.ExpReviews
                 .Where(c => c.CoachId == coachId)         
@@ -983,18 +925,8 @@ namespace ExpServiceHelper.Service
                 .ToListAsync();                     
 
             if (result == null)
-                return new DAPIResponse<IEnumerable<DReview>>
-                {
-                    IsSuccess = false,
-                    Message = "此教練目前沒有開課資訊"
-                };
-
-            return new DAPIResponse<IEnumerable<DReview>>
-            {
-                IsSuccess = true,
-                Message = "課程展示中",
-                Data = result
-            };
+                throw new InvalidOperationException("課程不匹配");
+            return result;
         }
         #endregion
         #endregion
@@ -1013,21 +945,17 @@ namespace ExpServiceHelper.Service
 
         #region 交易流程
         #region 新增預約課程
-        public async Task<DAPIResponse<object>> SessionReserve(DCourseOrder dto, int userId)
+        public async Task<object> SessionReserve(DCourseOrder dto, int userId)
         {
             //找這堂課，順便拿教練ID
             var session = await _context.ExpCourseSessions
                           .Include(s => s.CourseTemplate)
                           .FirstOrDefaultAsync(r => r.Id == dto.CourseSessionId);
-            if (session == null)
-            {
-                return new DAPIResponse<object> { IsSuccess = false, Message = "沒有課程可以評論" };
-            }
+            if (session == null) throw new Exception("沒有對應的資料");
+
             //核對課堂名額
             if (session.CurrentParticipants >= session.MaxParticipants)
-            {
-                return new DAPIResponse<object> { IsSuccess = false, Message = "額滿了 你晚了一步QQ" };
-            }
+                throw new Exception("額滿");
 
             //建立一筆 ExpTransaction，取得 TransactionId
             decimal? coursePrice = session.CourseTemplate.Price;
@@ -1058,12 +986,7 @@ namespace ExpServiceHelper.Service
 
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();
-            return new DAPIResponse<object>
-            {
-                IsSuccess = true,
-                Message = "預約成功，請繳費完成報名",
-                Data = transac.Id.ToString()
-            };
+            return session;
         }
         #endregion
         #region 歷史交易紀錄 
