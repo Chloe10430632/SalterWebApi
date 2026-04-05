@@ -28,7 +28,7 @@ public class TripRepository : ITripRepository
             .Include(t => t.TripTripLocations)
                 .ThenInclude(ttl => ttl.Location)
                     //.ThenInclude(l => l.District)
-                    //    .ThenInclude(d => d.City)
+                        //.ThenInclude(d => d.City)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
@@ -41,9 +41,9 @@ public class TripRepository : ITripRepository
             var statuses = status.Split(',', StringSplitOptions.RemoveEmptyEntries);
             q = q.Where(t => statuses.Contains(t.Status));
         }
-        //if (cityId.HasValue)
-        //    q = q.Where(t => t.TripTripLocations.Any(
-        //        ttl => ttl.Location.District.CityId == cityId.Value));
+        if (cityId.HasValue)
+            q = q.Where(t => t.TripTripLocations.Any(
+                ttl => ttl.Location != null && ttl.Location.CityId == cityId.Value));
         if (startFrom.HasValue)
             q = q.Where(t => t.StartAt >= startFrom.Value);
         if (startTo.HasValue)
