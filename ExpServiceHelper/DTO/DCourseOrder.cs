@@ -32,5 +32,7 @@ namespace ExpServiceHelper.DTO
         public DateTime? ReservedAt { get; set; }
         public DateTime? UpdatedTransacAt { get; set; }
         public int? Status { get; set; }
+        //
+        public int? CourseOrderId { get; set; }
     }
 }

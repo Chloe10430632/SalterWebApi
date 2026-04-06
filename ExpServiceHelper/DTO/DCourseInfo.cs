@@ -28,8 +28,9 @@ namespace ExpServiceHelper.DTO
         public string? Location { get; set; }
         public string? GooglePlaceId {  get; set; }
         //
-        public DateOnly? StartDate { get; set; } 
-       // public DateOnly? EndDate { get; set; }
-
+        public DateOnly? StartDate { get; set; }
+        // public DateOnly? EndDate { get; set; }
+        public int? ReviewId { get; set; }
+        public int? CoachUserId { get; set; }
     }
 }

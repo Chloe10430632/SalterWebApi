@@ -573,7 +573,7 @@ namespace ExpServiceHelper.Service
         public async Task<List<DCourseInfo>> ThisTemp( int currentUserId) {
             // 1. 先確認這個 User 是不是教練，並拿到他的 CoachId
             var coach = await _context.ExpCoaches.FirstOrDefaultAsync(c => c.UserId == currentUserId);
-            throw new InvalidOperationException("教練不匹配");
+            if (coach == null) throw new InvalidOperationException("教練不匹配");
 
             // 2. 抓取該教練所有的模板
             var templates = await _context.ExpCourseTemplates
@@ -664,13 +664,16 @@ namespace ExpServiceHelper.Service
                     SessionId = s.Id,
                     TimeSlot = s.TimeSlot,
                     MaxParticipants = s.MaxParticipants,
+                    CurrentParticipants = s.CurrentParticipants,
                     StartDate = s.StartDate,
+                    CoachUserId = s.CourseTemplate.Coach.UserId,
                     // 關聯模板的資訊 (從 CourseTemplate 導航屬性抓)
                     TempId = s.CourseTemplateId,
                     Title = s.CourseTemplate.Title,
                     Price = s.CourseTemplate.Price,
                     Location = s.CourseTemplate.Location,
                     Difficulty = s.CourseTemplate.Difficulty,
+                    Description = s.CourseTemplate.Description,
 
                     // 抓模板的第一張照片作為縮圖
                     ImageUrls = s.CourseTemplate.ExpCoursePhotos.Select(p => new DPhoto
@@ -708,7 +711,9 @@ namespace ExpServiceHelper.Service
                     Price = d.CourseTemplate.Price,
                     Difficulty = d.CourseTemplate.Difficulty,
                     Location = d.CourseTemplate.Location,
-                    UpdatedAt = d.CourseTemplate.UpdatedAt
+                    UpdatedAt = d.CourseTemplate.UpdatedAt,
+                    CoachUserId = d.CourseTemplate.Coach.UserId,
+
                 }).ToListAsync();
             return todayCourse;
 
@@ -759,6 +764,8 @@ namespace ExpServiceHelper.Service
                         CurrentParticipants = c.CurrentParticipants,
                         UpdatedAt = c.UpdatedAt,
                         Title = c.CourseTemplate.Title,
+                        CoachUserId = c.CourseTemplate.Coach.User.Id,
+                        Description = c.CourseTemplate.Description
                     }).FirstOrDefaultAsync();
 
             if (result == null)
@@ -777,7 +784,7 @@ namespace ExpServiceHelper.Service
                 .Select(c => new DCourseInfo
                 {
                     CoachId = c.CoachId,
-
+                    CoachUserId = c.CourseTemplate.Coach.User.Id,
                     StartDate = c.StartDate,
                     TimeSlot = c.TimeSlot,
                     MaxParticipants = c.MaxParticipants,
@@ -815,12 +822,13 @@ namespace ExpServiceHelper.Service
                         TimeSlot = o.CourseSession.TimeSlot,
                         Location = o.CourseSession.CourseTemplate.Location,
                         Difficulty = o.CourseSession.CourseTemplate.Difficulty,
+                        CourseOrderId = o.Id,
                         // --- 教練資料 ---
                         CoachId = o.CourseSession.CoachId,
                         CoachName = o.CourseSession.CourseTemplate.Coach.Name,
                         AvatarUrl = o.CourseSession.CourseTemplate.Coach.AvatarUrl,
                         // --- 評論資料 ---
-                        ReviewId = o.ExpReviews.Select(r => r.Id).FirstOrDefault(),
+                        ReviewId = o.ExpReviews.Select(r => (int?)r.Id).FirstOrDefault(),
                         ReviewContent = o.ExpReviews
                             .Select(r => r.ReviewContent).FirstOrDefault(),
                         CreatReviewAt = o.ExpReviews
@@ -835,7 +843,10 @@ namespace ExpServiceHelper.Service
                         UpdatedTransacAt = o.UpdatedAt,
                         Status = o.Status
                     }).ToListAsync();
+            foreach (var h in history)
+                Console.WriteLine($"OrderId={h.CourseSessionId}, ReviewId={h.ReviewId}, Rating={h.Rating}");
             return history;
+
         }
         #endregion
         #region 所有開課日-月利用
@@ -866,6 +877,7 @@ namespace ExpServiceHelper.Service
                     Title = c.CourseTemplate.Title,
                     Price = c.CourseTemplate.Price,
                     Location = c.CourseTemplate.Location,
+                    Description = c.CourseTemplate.Description,
                     ImageUrls = c.CourseTemplate.ExpCoursePhotos.Select(p => new DPhoto
                     {
                         PhotoUrl = p.PhotoUrl,
@@ -880,10 +892,10 @@ namespace ExpServiceHelper.Service
         #region 新增評論
         public async Task<string> CreateReview(DReview dto, int userId, int courseOId)
         {
-            int status = 1; //付款完是1
+           
             //先去「訂單表 (ExpCourseOrders)」確認有沒有這筆訂單，順便把 CoachId 拿回來
             var order = await _context.ExpCourseOrders
-                .Where(o => o.Id == courseOId && o.Status == status && o.UserId == userId)
+                .Where(o => o.Id == courseOId &&  o.UserId == userId)
                 .Select(o => new
                 {
                     CoachId = o.CourseSession.CoachId
@@ -920,6 +932,7 @@ namespace ExpServiceHelper.Service
             r.ReviewContent = dto.ReviewContent;
             r.Rating = dto.Rating;
             r.UpdateAt = DateTime.Now;
+           
 
 
             await _context.SaveChangesAsync();
@@ -1045,7 +1058,7 @@ namespace ExpServiceHelper.Service
                 Status = 0
             };
             //課程報名人+1
-            session.CurrentParticipants += 1;
+          //  session.CurrentParticipants += 1;
 
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();
