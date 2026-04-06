@@ -1002,6 +1002,7 @@ namespace ExpServiceHelper.Service
             //找這堂課，順便拿教練ID
             var session = await _context.ExpCourseSessions
                           .Include(s => s.CourseTemplate)
+                          .Include(s => s.CourseTemplate.Coach)
                           .FirstOrDefaultAsync(r => r.Id == dto.CourseSessionId);
             if (session == null) throw new Exception("沒有對應的資料");
 
@@ -1014,12 +1015,19 @@ namespace ExpServiceHelper.Service
             var transac = new ExpTransaction
             {
                 SenderUserId = userId,
-                ReceiveUserId = session.CoachId, // 從場次拿教練 ID
+                //ReceiveUserId = null,
+                ReceiveUserId = session.CourseTemplate.Coach.UserId,
                 Amount = session.CourseTemplate?.Price ?? 0,            // 假設金額，之後可從 Template 抓
                 Status = 0,                      // 0: 已建立/待付款
                 TypeId = 3,
                 CreatedAt = DateTime.Now
             };
+            Console.WriteLine($"session.CoachId = {session?.CoachId}");
+            Console.WriteLine($"CourseTemplate = {session?.CourseTemplate?.Id}");
+            Console.WriteLine($"Coach = {session?.CourseTemplate?.Coach?.Id}");
+            Console.WriteLine($"Coach.UserId = {session?.CourseTemplate?.Coach?.UserId}");
+            Console.WriteLine($"SenderUserId = {userId}");
+            Console.WriteLine($" ReceiveUserId={session.CoachId}");
             await _context.ExpTransactions.AddAsync(transac);
             await _context.SaveChangesAsync();
 
@@ -1038,7 +1046,7 @@ namespace ExpServiceHelper.Service
 
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();
-            return session;
+            return transac.Id;
         }
         #endregion
         #region 歷史交易紀錄 

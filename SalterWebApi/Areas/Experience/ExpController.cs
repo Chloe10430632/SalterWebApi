@@ -1,12 +1,13 @@
 ﻿using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using ExpServiceHelper.Service;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalterEFModels.EFModels;
+using System.Security.Claims;
 using TripServiceHelper.Models.DTOs;
 using static ExpServiceHelper.DTO.DCoachFav;
 
@@ -707,7 +708,9 @@ namespace SalterWebApi.Areas.Experience
                   return Ok(new { isSuccess = true, data = result });
 
                 }
-                catch (Exception ex) { return BadRequest(ex.Message); }
+                catch (Exception ex) {
+                    Console.WriteLine(ex.InnerException?.Message ?? ex.Message);
+                    return BadRequest(ex.InnerException?.Message ?? (ex.Message)); }
             }
             return BadRequest(new { message = "失敗失敗" });
         }
