@@ -344,7 +344,7 @@ namespace ExpServiceHelper.Service
             // 2. 開始找「臭味相投」的教練
             var query = _context.ExpCoaches
                 .Where(c => c.Id != thisCoachId) // 排除自己
-                .Where(c => c.DistrictId == currentCoachInfo.District &&
+                .Where(c => c.DistrictId == currentCoachInfo.District  ||
                             c.ExpCoachSpeciallityMappings.Any(s => currentCoachInfo.SpecialityIds.Contains(s.Specialities.SportsName)));
             // 3. 執行隨機排序並取前 2 名
             // 提示：在 LINQ to Entities 中，Guid.NewGuid() 常用來模擬隨機排序//
@@ -356,28 +356,28 @@ namespace ExpServiceHelper.Service
                     CoachId = c.Id,
                     CoachName = c.Name,
                     AvatarUrl = c.AvatarUrl,
-                    District = c.TripDistricts.Select(d => d.Name).ToList(),
+                    District = c.District.Name,
                     Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
                                     .ToList()
                 })
                 .ToListAsync();
 
-            if (recommendedList.Count == 0)
-            {
-                recommendedList = await _context.ExpCoaches
-                    .Where(c => c.Id != thisCoachId) 
-                    .OrderByDescending(c => c.Id)    
-                    .Take(2)
-                    .Select(c => new DCoachRecommend
-                    {
-                        CoachId = c.Id,
-                        CoachName = c.Name,
-                        AvatarUrl = c.AvatarUrl,
-                        District = c.TripDistricts.Select(d => d.Name).ToList(),
-                        Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
-                                    .ToList()
-                    }).ToListAsync();
-            }
+            //if (recommendedList.Count == 0)
+            //{
+            //    recommendedList = await _context.ExpCoaches
+            //        .Where(c => c.Id != thisCoachId) 
+            //        .OrderByDescending(c => c.Id)    
+            //        .Take(2)
+            //        .Select(c => new DCoachRecommend
+            //        {
+            //            CoachId = c.Id,
+            //            CoachName = c.Name,
+            //            AvatarUrl = c.AvatarUrl,
+            //            District = c.TripDistricts.Select(d => d.Name).ToList(),
+            //            Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
+            //                        .ToList()
+            //        }).ToListAsync();
+            //}
 
             return recommendedList;
         }
