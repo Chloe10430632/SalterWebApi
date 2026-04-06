@@ -18,6 +18,7 @@ namespace ExpServiceHelper.DTO
         public DateTime? ReviewedAt { get; set; }
         public int status { get; set; }
         public string? UserName { get; set; }
+        public string? CoachName { get; set; }
 
     }
 }

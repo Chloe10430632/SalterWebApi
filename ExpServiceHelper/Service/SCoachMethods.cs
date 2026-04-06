@@ -803,7 +803,7 @@ namespace ExpServiceHelper.Service
         #region 參加過的課
         public async Task<List<DCourseOrder>> GetUserCourseHistory(int userId) {
             var history = await _context.ExpCourseOrders
-                    //.Where(o => o.UserId == userId)
+                    .Where(o => o.UserId == userId)
                     .Select(o => new DCourseOrder
                     {
                         // --- 課程與時段資料 ---
@@ -813,11 +813,14 @@ namespace ExpServiceHelper.Service
                         Price = o.CourseSession.CourseTemplate.Price,
                         StartDate = o.CourseSession.StartDate,
                         TimeSlot = o.CourseSession.TimeSlot,
+                        Location = o.CourseSession.CourseTemplate.Location,
+                        Difficulty = o.CourseSession.CourseTemplate.Difficulty,
                         // --- 教練資料 ---
                         CoachId = o.CourseSession.CoachId,
                         CoachName = o.CourseSession.CourseTemplate.Coach.Name,
                         AvatarUrl = o.CourseSession.CourseTemplate.Coach.AvatarUrl,
                         // --- 評論資料 ---
+                        ReviewId = o.ExpReviews.Select(r => r.Id).FirstOrDefault(),
                         ReviewContent = o.ExpReviews
                             .Select(r => r.ReviewContent).FirstOrDefault(),
                         CreatReviewAt = o.ExpReviews

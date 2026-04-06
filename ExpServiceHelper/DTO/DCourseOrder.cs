@@ -15,6 +15,7 @@ namespace ExpServiceHelper.DTO
         public string? CoachName { get; set; }
         public string? AvatarUrl { get; set; }
         //評論
+        public int? ReviewId { get; set; }
         public DateTime? CreatReviewAt { get; set; }
         public DateTime? UpdateReviewAt { get; set; }
         public string? ReviewContent {  get; set; }
@@ -24,6 +25,8 @@ namespace ExpServiceHelper.DTO
         public string? Title { get; set; }
         public DateOnly? StartDate { get; set; }
         public string? TimeSlot { get; set; }
+        public string? Location { get; set; }
+        public string? Difficulty { get; set; }
         //交易
         public int? ExpTransactionId { get; set; }
         public DateTime? ReservedAt { get; set; }

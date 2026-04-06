@@ -230,7 +230,7 @@ namespace ExpServiceHelper.Service
                             var coachOrder = await _context.ExpCourseOrders
                                             .Where(o => o.ExpTransactionId == transactionId)
                                             .ToListAsync();
-                            foreach (var order in coachOrder) { order.Status = 1; }
+                            foreach (var order in coachOrder) { order.Status = "1"; order.UpdatedAt = DateTime.Now; }
                             break;
 
                         //case 1: //會員
