@@ -178,7 +178,10 @@ app.UseCors("CorsPolicy");
 app.UseAuthentication(); // »{ÃÒ
 app.UseAuthorization();  // ±ÂÅv
 
-
+app.Use(async (context, next) => {
+    context.Request.EnableBuffering();
+    await next();
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

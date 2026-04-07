@@ -58,9 +58,7 @@ namespace ExpServiceHelper.Service
             var payment = config.Send.ToApi(serviceUrl)
                             .Send.ToMerchant(merchantId) // MerchantID
                             .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
-                            .Return.ToServer($"{ngrokUrl}/api/Transac/Transaction/PayResult")//測試用
-
-                            // .Return.ToServer($"{ngrokUrl}/api/Exp/Exp/PayResult")//【ToServer】: 綠界通知你的 Server (背景)  
+                            .Return.ToServer($"{ngrokUrl}/api/Transac/Transaction/PayResult")//【ToServer】: 綠界通知你的 Server (背景) 
                             .Return.ToClient($"{ClientBackURL}/transaction/finish?orderId={transac.Id}&amount={transac.Amount}&from={fromSource}") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
@@ -122,43 +120,64 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 付款結果驗證
-        public bool CheckMacValue(Dictionary<string, string> data)
+        //private string EncodeValue(string value)
+        //{
+        //    // 綠界規格：只 encode 這些字元，其餘保留
+        //    return Uri.EscapeDataString(value)
+        //           .Replace("%20", "+")
+        //           .Replace("%2F", "/")   // ✅ 加這行
+        //           .Replace("%3A", ":")   // ✅ 加這行
+        //           .Replace("%2D", "-")
+        //           .Replace("%5F", "_")
+        //           .Replace("%2E", ".")
+        //           .Replace("%21", "!")
+        //           .Replace("%2A", "*")
+        //           .Replace("%28", "(")
+        //           .Replace("%29", ")");
+        //}
+
+        public bool CheckMacValue(string rawBody)
         {
-            var merchantId = _config["ECPay:MerchantID"];
             var hashKey = _config["ECPay:HashKey"];
             var hashIV = _config["ECPay:HashIV"];
-            var serviceUrl = _config["ECPay:ServiceUrl"];
 
-            var sorted = data.Where(x => x.Key != "CheckMacValue")
-                             .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
-                             .ToDictionary(x => x.Key, x => x.Value);
+            var pairs = rawBody.Split('&')
+                .Select(x => x.Split('=', 2))
+                .Where(x => x.Length == 2)
+                .Select(x => (Key: x[0], Value: x[1]))
+                .ToList();
 
+            if (!pairs.Any(x => x.Key == "CheckMacValue")) return false;
+            var ecpayMac = pairs.First(x => x.Key == "CheckMacValue").Value;
+
+            var sorted = pairs
+                .Where(x => x.Key != "CheckMacValue")
+                //.Where(x => !string.IsNullOrEmpty(x.Value))
+                .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase);
+
+            // ✅ value 重新 encode，空格變 %20，中文變 %XX
             var raw = $"HashKey={hashKey}&" +
-                      string.Join("&", sorted.Select(x => $"{x.Key}={x.Value}")) +
-                      $"&HashIV={hashIV}";
-            Console.WriteLine("RAW: " + raw);
+           string.Join("&", sorted.Select(x =>
+               $"{x.Key}={Uri.EscapeDataString(x.Value)
+                   .Replace("%2F", "/")
+                   .Replace("%3A", ":")
+                   .Replace("%20", "+")}")) +   // ← 空格換回 +
+           $"&HashIV={hashIV}";
 
-            var encoded = HttpUtility.UrlEncode(raw)
-                .Replace("+", "%20")
-                .ToLower()
-                .Replace("%2d", "-")
-                .Replace("%5f", "_")
-                .Replace("%2e", ".")
-                .Replace("%21", "!")
-                .Replace("%2a", "*")
-                .Replace("%28", "(")
-                .Replace("%29", ")");
-            Console.WriteLine("ENCODED: " + encoded);
+            var toLower = raw.ToLower();
+            Console.WriteLine("ENCODED: " + toLower);
 
             using var sha = SHA256.Create();
             var result = BitConverter.ToString(
-                sha.ComputeHash(Encoding.UTF8.GetBytes(encoded))
+                sha.ComputeHash(Encoding.UTF8.GetBytes(toLower))
             ).Replace("-", "").ToUpper();
-            Console.WriteLine("MY CheckMac: " + result); 
-            Console.WriteLine("ECPay CheckMac: " + data["CheckMacValue"]);
 
-            return result == data["CheckMacValue"];
+            Console.WriteLine("MY CheckMac:    " + result);
+            Console.WriteLine("ECPay CheckMac: " + ecpayMac);
+
+            return result == ecpayMac;
         }
+        
         #endregion
 
         #region   存結果並更新 ExpTransactions 表

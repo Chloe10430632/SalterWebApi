@@ -57,10 +57,14 @@ namespace SalterWebApi.Areas.Experience
         [Consumes("application/x-www-form-urlencoded")]
         public async Task<IActionResult> PayResult([FromForm] IFormCollection collection)
         {
-            // 將 IFormCollection 轉為 Dictionary
+            Request.Body.Position = 0;
+            var rawBody = await new StreamReader(Request.Body).ReadToEndAsync();
+            Console.WriteLine("RAW BODY HEX 前100字元: " +
+    string.Join(" ", System.Text.Encoding.UTF8.GetBytes(rawBody.Substring(0, Math.Min(100, rawBody.Length))).Select(b => b.ToString("X2"))));
+
             var data = collection.ToDictionary(k => k.Key, v => v.Value.ToString());
-            //  驗證來源是否真的是綠界
-            if (!_sECpay.CheckMacValue(data))
+
+            if (!_sECpay.CheckMacValue(rawBody))  // ← 傳 rawBody
             {
                 return Content("0|CheckMacValueVerifyFail");
             }
