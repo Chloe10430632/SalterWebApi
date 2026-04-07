@@ -89,9 +89,9 @@ public class TripService : ITripService
     {
         // 日期驗證
         if (dto.StartAt < DateTime.Now)
-            return ServiceResult<int>.Fail("開始日期不能早於今天");
+            return ServiceResult<int>.Fail(0,"開始日期不能早於今天");
         if (dto.EndAt.HasValue && dto.EndAt.Value < dto.StartAt)
-            return ServiceResult<int>.Fail("結束日期必須晚於開始日期");
+            return ServiceResult<int>.Fail(0,"結束日期必須晚於開始日期");
 
 
         try
@@ -120,7 +120,7 @@ public class TripService : ITripService
         }
         catch (Exception ex)
         {
-            return ServiceResult<int>.Fail($"建立失敗：{ex.InnerException?.Message ?? ex.Message}", 500);
+            return ServiceResult<int>.Fail(0,$"建立失敗：{ex.InnerException?.Message ?? ex.Message}", 500);
         }
     }
 
@@ -312,7 +312,7 @@ public class TripService : ITripService
         var isMember = await _repo.IsMemberAsync(tripId, userId);
 
         if (!isOrganizer && !isMember)
-            return ServiceResult<List<TripAnnouncementDto>>.Fail("請先加入行程才能查看公告", 403);
+            return ServiceResult<List<TripAnnouncementDto>>.Fail(null,"請先加入行程才能查看公告", 403);
 
         var list = await _repo.GetAnnouncementsAsync(tripId);
         var result = list.Select(a => new TripAnnouncementDto
@@ -404,7 +404,7 @@ public class TripService : ITripService
         var isMember = await _repo.IsMemberAsync(tripId, userId);
 
         if (!isOrganizer && !isMember)
-            return ServiceResult<List<TripGearItemDto>>.Fail("請先加入行程才能查看裝備清單", 403);
+            return ServiceResult<List<TripGearItemDto>>.Fail(null,"請先加入行程才能查看裝備清單", 403);
 
         var list = await _repo.GetGearItemsAsync(tripId);
         var result = list.Select(g => new TripGearItemDto
@@ -491,7 +491,7 @@ public class TripService : ITripService
         var isMember = await _repo.IsMemberAsync(tripId, userId);
 
         if (!isOrganizer && !isMember)
-            return ServiceResult<List<TripLocationDto>>.Fail("請先加入行程才能查看地點", 403);
+            return ServiceResult<List<TripLocationDto>>.Fail(null,"請先加入行程才能查看地點", 403);
 
         var list = await _repo.GetLocationsAsync(tripId);
         var result = list.Select(ttl => new TripLocationDto
@@ -511,14 +511,18 @@ public class TripService : ITripService
         return ServiceResult<List<TripLocationDto>>.Success(result);
     }
 
-    public async Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto, int userId)
+    public async Task<ServiceResult<int>> CreateLocationAsync(int tripId, TripLocationRequestDto dto, int userId)
     {
         try
         {
-            var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
+            if(tripId != 0)
+            {
+             var isOrganizer = await _repo.IsOrganizerAsync(tripId, userId);
             var isMember = await _repo.IsMemberAsync(tripId, userId);
             if (!isOrganizer && !isMember)
-                return ServiceResult.Fail("只有行程成員可以新增地點", 403);
+                return ServiceResult<int>.Fail(0,"只有行程成員可以新增地點", 403);
+            }
+           
             var normalizedCity = dto.CityName?.Replace("臺", "台") ?? "";
             var normalizedDistrict = dto.DistrictName?.Replace("臺", "台") ?? "";
             var city = await _repo.GetCityByNameAsync(normalizedCity);
@@ -543,6 +547,7 @@ public class TripService : ITripService
                 });
             }
             var location = await _repo.GetLocationByGooglePlaceIdAsync(dto.GooglePlaceId);
+            var newLocation = new TripLocation();
             if (location == null)
             {
                 location = new TripLocation
@@ -557,25 +562,33 @@ public class TripService : ITripService
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
-                await _repo.CreateTripLocationAsync(location);
+                newLocation =  await _repo.CreateTripLocationAsync(location);
             }
-            var entity = new TripTripLocation
+            if(tripId != 0)
             {
-                TripId = tripId,
-                LocationId = location.Id,
-                LocationRole = dto.LocationRole,
-                Note = dto.Note,
-                SortOrder = dto.SortOrder,
-                DayNumber = dto.DayNumber,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            };
-            await _repo.CreateLocationAsync(entity);
-            return ServiceResult.Success("地點新增成功");
+                var entity = new TripTripLocation
+                {
+                    TripId = tripId,
+                    LocationId = location.Id,
+                    LocationRole = dto.LocationRole,
+                    Note = dto.Note,
+                    SortOrder = dto.SortOrder,
+                    DayNumber = dto.DayNumber,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                await _repo.CreateLocationAsync(entity);
+            }
+
+            if(location != null)
+            {
+                return ServiceResult<int>.Success(location.Id, "地點已儲存過");
+            }
+            return ServiceResult<int>.Success(newLocation.Id, "地點新增成功");
         }
         catch (Exception ex)
         {
-            return ServiceResult.Fail(ex.InnerException?.Message ?? ex.Message, 500);
+            return ServiceResult<int>.Fail(0,ex.InnerException?.Message ?? ex.Message, 500);
         }
     }
 

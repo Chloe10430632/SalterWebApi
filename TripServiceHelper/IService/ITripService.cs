@@ -53,7 +53,7 @@ public interface ITripService
     Task<ServiceResult<List<TripLocationDto>>> GetLocationsAsync(int tripId, int userId);
     Task<ServiceResult> UpdateLocationAsync(int locationId, TripLocationUpdateDto dto, int userId);
     Task<ServiceResult> DeleteLocationAsync(int locationId, int userId);
-    Task<ServiceResult> CreateLocationAsync(int tripId, TripLocationRequestDto dto, int userId);
+    Task<ServiceResult<int>> CreateLocationAsync(int tripId, TripLocationRequestDto dto, int userId);
     Task<ServiceResult> UpdateLocationSortAsync(int tripId, TripLocationSortDto dto, int userId);
     Task<List<TripLocationSearchDto>> GetAllLocationsAsync(string? keyword);
 

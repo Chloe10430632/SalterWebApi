@@ -31,8 +31,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
+# 如果上面的 ENV 沒效，才需要加這行安裝指令
+RUN apt-get update && apt-get install -y tzdata
+
 # 設定環境變數 (確保容器內監聽 8081)
 ENV ASPNETCORE_URLS=http://+:8081
+ENV TZ=Asia/Taipei
 
 EXPOSE 8081
 ENTRYPOINT ["dotnet", "SalterWebApi.dll"]
