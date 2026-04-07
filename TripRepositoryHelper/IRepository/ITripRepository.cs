@@ -76,6 +76,7 @@ public interface ITripRepository
     Task<TripCity> CreateCityAsync(TripCity city);
     Task<TripDistrict> CreateDistrictAsync(TripDistrict district);
     Task UpdateLocationSortAsync(List<(int locationId, int sortOrder)> items);
+    Task<int> GetMaxSortOrderAsync(int tripId, int dayNumber);
     #endregion
 
     #region 城市

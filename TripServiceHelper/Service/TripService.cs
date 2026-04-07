@@ -589,9 +589,17 @@ public class TripService : ITripService
             var isMember = await _repo.IsMemberAsync(entity.TripId, userId);
             if (!isOrganizer && !isMember)
                 return ServiceResult.Fail("只有行程成員可以編輯地點", 403);
+
             entity.LocationRole = dto.LocationRole ?? entity.LocationRole;
             entity.Note = dto.Note ?? entity.Note;
-            entity.DayNumber = dto.DayNumber ?? entity.DayNumber;
+
+            if (dto.DayNumber.HasValue && dto.DayNumber.Value != entity.DayNumber)
+            {
+                var maxSortOrder = await _repo.GetMaxSortOrderAsync(entity.TripId, dto.DayNumber.Value);
+                entity.SortOrder = maxSortOrder + 1;
+                entity.DayNumber = dto.DayNumber.Value;
+            }
+
             entity.UpdatedAt = DateTime.Now;
             await _repo.UpdateLocationAsync(entity);
             return ServiceResult.Success("地點更新成功");
@@ -601,7 +609,6 @@ public class TripService : ITripService
             return ServiceResult.Fail(ex.InnerException?.Message ?? ex.Message, 500);
         }
     }
-
     public async Task<ServiceResult> DeleteLocationAsync(int locationId, int userId)
     {
         var entity = await _repo.GetLocationByIdAsync(locationId);

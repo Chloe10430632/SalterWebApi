@@ -28,7 +28,7 @@ public class TripRepository : ITripRepository
             .Include(t => t.TripTripLocations)
                 .ThenInclude(ttl => ttl.Location)
                     //.ThenInclude(l => l.District)
-                    //    .ThenInclude(d => d.City)
+                        //.ThenInclude(d => d.City)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(keyword))
@@ -41,9 +41,9 @@ public class TripRepository : ITripRepository
             var statuses = status.Split(',', StringSplitOptions.RemoveEmptyEntries);
             q = q.Where(t => statuses.Contains(t.Status));
         }
-        //if (cityId.HasValue)
-        //    q = q.Where(t => t.TripTripLocations.Any(
-        //        ttl => ttl.Location.District.CityId == cityId.Value));
+        if (cityId.HasValue)
+            q = q.Where(t => t.TripTripLocations.Any(
+                ttl => ttl.Location != null && ttl.Location.CityId == cityId.Value));
         if (startFrom.HasValue)
             q = q.Where(t => t.StartAt >= startFrom.Value);
         if (startTo.HasValue)
@@ -479,6 +479,12 @@ public class TripRepository : ITripRepository
                 "UPDATE TripTripLocations SET sort_order = {0}, updated_at = {1} WHERE id = {2}",
                 sortOrder, DateTime.Now, locationId);
         }
+    }
+    public async Task<int> GetMaxSortOrderAsync(int tripId, int dayNumber)
+    {
+        return await _db.TripTripLocations
+            .Where(t => t.TripId == tripId && t.DayNumber == dayNumber)
+            .MaxAsync(t => (int?)t.SortOrder) ?? 0;
     }
     #endregion
 
