@@ -598,21 +598,45 @@ namespace HomeServiceHelper.Service
         }
 
         //新增評論到指定的房型(要有預約訂單的使用者才能評論!!)
-        public async Task<bool> AddReviewAsync(ReviewCreateDTO dto)
+        public async Task<HomReview?> AddReviewAsync(ReviewCreateDTO dto)
         {
+            if (dto.BookingId <= 0)
+            {
+                var validBooking = await _context.HomBookings
+                    .Where(b => b.UserId == dto.MemberId && b.RoomTypeId == dto.RoomTypeId && b.Status == "2") 
+                    .OrderByDescending(b => b.CheckOutDate)
+                    .FirstOrDefaultAsync();
+
+                if (validBooking == null) throw new Exception("找不到符合資格的訂單紀錄");
+                dto.BookingId = validBooking.BookingId;
+            }
             var newReview = new HomReview
             {
                 RoomTypeId = dto.RoomTypeId,
                 Rating = dto.Rating,
                 Comment = dto.Comment,
                 UserId = dto.MemberId,
-                BookingId = dto.BookingId, // 關聯到訂單
-                CreatedTime = DateTime.Now
+                BookingId = dto.BookingId,
+                CreatedTime = DateTime.Now,
+
+                Booking = null!,
+                RoomType = null!
             };
 
             _context.HomReviews.Add(newReview);
-            return await _context.SaveChangesAsync() > 0;
+
+            try
+            {
+                var success = await _context.SaveChangesAsync() > 0;
+                return success ? newReview : null;
+            }
+            catch (Exception ex)
+            {
+                var msg = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception($"資料庫儲存失敗: {msg}");
+            }
         }
+
 
         //更新評論
         public async Task<bool> UpdateReviewAsync(ReviewUpdateDTO dto)
@@ -657,6 +681,22 @@ namespace HomeServiceHelper.Service
             }
 
         }
+
+        //檢查評論資格
+        public async Task<ReviewPermissionResponse> CheckReviewPermissionAsync(int userId, int roomTypeId)
+        {
+            var hasCompletedBooking = await _context.HomBookings
+                .AnyAsync(b => b.UserId == userId &&
+                b.RoomTypeId == roomTypeId &&
+                b.Status == "2");
+
+            return new ReviewPermissionResponse
+            {
+                CanReview = hasCompletedBooking,
+                Message = hasCompletedBooking ? "您可以評論此房型" : "您尚未完成此房型的預約，無法評論"
+            };
+        }
+
 
         //新增交易單
         public async Task<int> CreateTransactionForBooking(int bookingId, int userId)
