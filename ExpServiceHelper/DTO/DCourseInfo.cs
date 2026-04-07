@@ -12,10 +12,9 @@ namespace ExpServiceHelper.DTO
         public int? TempId { get; set; }
         public int? SessionId { get; set; } 
         public int? CoachId { get; set; }
-        public List<DateOnly>? SelectedDates { get; set; } = new List<DateOnly>();
         public string? TimeSlot { get; set; } = string.Empty;// 譬如 "09:00-11:00"
-        public int? MaxStudents { get; set; }
-        public int? CurrentStudents { get; set; }
+        public int? MaxParticipants { get; set; }
+        public int? CurrentParticipants { get; set; }
         public DateTime? UpdatedAt { get; set; }
         //
         public List<IFormFile>? PhotoUrls { get; set; } = new List<IFormFile>();
@@ -28,6 +27,10 @@ namespace ExpServiceHelper.DTO
         public string? Description { get; set; }
         public string? Location { get; set; }
         public string? GooglePlaceId {  get; set; }
-
+        //
+        public DateOnly? StartDate { get; set; }
+        // public DateOnly? EndDate { get; set; }
+        public int? ReviewId { get; set; }
+        public int? CoachUserId { get; set; }
     }
 }

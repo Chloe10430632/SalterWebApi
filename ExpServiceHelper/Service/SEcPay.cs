@@ -26,9 +26,11 @@ namespace ExpServiceHelper.Service
         #region 結帳
         public async Task<DAPIResponse<string>> GetPaymentForm(DTransacRequest dto)
         {
+            int fromSource = dto.TypeId;
 
             var ngrokUrl = _config["ECPay:CallbackUrl"];
             var ClientBackURL = _config["ECPay:ClientBackURL"];
+
 
             var merchantId = _config["ECPay:MerchantID"];
             var hashKey = _config["ECPay:HashKey"];
@@ -56,8 +58,10 @@ namespace ExpServiceHelper.Service
             var payment = config.Send.ToApi(serviceUrl)
                             .Send.ToMerchant(merchantId) // MerchantID
                             .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
-                            .Return.ToServer($"{ngrokUrl}/api/Home/UpdateTransacForm")//【ToServer】: 綠界通知你的 Server (背景)  
-                            .Return.ToClient($"{ClientBackURL}/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
+                            .Return.ToServer($"{ngrokUrl}/api/Transac/Transaction/PayResult")//測試用
+
+                            // .Return.ToServer($"{ngrokUrl}/api/Exp/Exp/PayResult")//【ToServer】: 綠界通知你的 Server (背景)  
+                            .Return.ToClient($"{ClientBackURL}/transaction/finish?orderId={transac.Id}&amount={transac.Amount}&from={fromSource}") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
                                 description: dto.Description ?? "SalterOrder",
@@ -226,7 +230,15 @@ namespace ExpServiceHelper.Service
                             var coachOrder = await _context.ExpCourseOrders
                                             .Where(o => o.ExpTransactionId == transactionId)
                                             .ToListAsync();
-                            foreach (var order in coachOrder) { order.Status = 1; }
+                            foreach (var order in coachOrder)
+                            {
+                                order.Status = 1;
+                                order.UpdatedAt = DateTime.Now;
+                                // 付款成功才 +1
+                                var session = await _context.ExpCourseSessions
+                                    .FirstOrDefaultAsync(s => s.Id == order.CourseSessionId);
+                                if (session != null) session.CurrentParticipants += 1;
+                            }
                             break;
 
                         //case 1: //會員
@@ -256,9 +268,11 @@ namespace ExpServiceHelper.Service
 
 
                 // 4. 儲存變更
+                if (!data.TryGetValue("RtnCode", out var rtnCode) || rtnCode != "1")
+                    return false;
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync(); // 全部成功才存檔
-                if (data["RtnCode"] != "1") return false;
+                
                 return true;
             }
             catch (Exception ex)

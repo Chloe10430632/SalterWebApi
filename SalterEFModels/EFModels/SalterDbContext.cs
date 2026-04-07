@@ -165,6 +165,7 @@ public partial class SalterDbContext : DbContext
 
     public virtual DbSet<UserUserRole> UserUserRoles { get; set; }
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CardActivityType>(entity =>
@@ -590,8 +591,9 @@ public partial class SalterDbContext : DbContext
             entity.Property(e => e.CourseTemplateId).HasColumnName("course_template_id");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.CurrentParticipants).HasColumnName("current_participants");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
             entity.Property(e => e.MaxParticipants).HasColumnName("max_participants");
-            entity.Property(e => e.SessionDate).HasColumnName("session_date");
+            entity.Property(e => e.StartDate).HasColumnName("start_date");
             entity.Property(e => e.TimeSlot)
                 .HasMaxLength(50)
                 .HasColumnName("time_slot");
