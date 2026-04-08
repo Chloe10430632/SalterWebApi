@@ -363,22 +363,22 @@ namespace ExpServiceHelper.Service
                 })
                 .ToListAsync();
 
-            //if (recommendedList.Count == 0)
-            //{
-            //    recommendedList = await _context.ExpCoaches
-            //        .Where(c => c.Id != thisCoachId) 
-            //        .OrderByDescending(c => c.Id)    
-            //        .Take(2)
-            //        .Select(c => new DCoachRecommend
-            //        {
-            //            CoachId = c.Id,
-            //            CoachName = c.Name,
-            //            AvatarUrl = c.AvatarUrl,
-            //            District = c.TripDistricts.Select(d => d.Name).ToList(),
-            //            Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
-            //                        .ToList()
-            //        }).ToListAsync();
-            //}
+            if (recommendedList.Count == 0)
+            {
+                recommendedList = await _context.ExpCoaches
+                    .Where(c => c.Id != thisCoachId)
+                    .OrderBy(c => Guid.NewGuid())
+                    .Take(2)
+                    .Select(c => new DCoachRecommend
+                    {
+                        CoachId = c.Id,
+                        CoachName = c.Name,
+                        AvatarUrl = c.AvatarUrl,
+                        District = c.District.Name,
+                        Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
+                                    .ToList()
+                    }).ToListAsync();
+            }
 
             return recommendedList;
         }

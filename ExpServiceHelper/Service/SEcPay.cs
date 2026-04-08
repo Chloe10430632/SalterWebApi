@@ -28,6 +28,106 @@ namespace ExpServiceHelper.Service
         {
             int fromSource = dto.TypeId;
 
+            var CallbackUrl = _config["ECPay:CallbackUrl"];
+            var ClientBackURL = _config["ECPay:ClientBackURL"];
+
+
+            var merchantId = _config["ECPay:MerchantID"];
+            var hashKey = _config["ECPay:HashKey"];
+            var hashIV = _config["ECPay:HashIV"];
+            var serviceUrl = _config["ECPay:ServiceUrl"];
+
+            var transac = await _context.ExpTransactions.FindAsync(dto.TransactionId);
+            if (transac == null) return new DAPIResponse<string>
+            {
+                IsSuccess = false,
+                Message = "查無該筆交易"
+            };
+
+            //給.WithItems用
+            var items = new List<Item> {
+                    new Item{
+                                Name = "TestCourse",
+                                Price = (int)transac.Amount,
+                                Quantity = 1
+                            }
+            };
+
+            string clientRedirectUrl = $"{ClientBackURL}/transaction/finish?orderId={transac.Id}&amount={transac.Amount}&from={fromSource}";
+
+            // 2. 這裡補一個 clg 檢查，這時候印出來應該要是正確的數字 (例如 orderId=123)
+            Console.WriteLine($"--- [CHECK] Redirect URL: {clientRedirectUrl}");
+
+            //設定綠界的身分證 (你的金鑰)--套件提供的入口點
+            var config = new PaymentConfiguration();
+            var payment = config.Send.ToApi(serviceUrl)
+                            .Send.ToMerchant(merchantId) // MerchantID
+                            .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
+                            .Return.ToServer($"{CallbackUrl}/api/Transac/Transaction/PayResult")//測試用
+                            .Return.ToClient(clientRedirectUrl) //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
+                            .Transaction.New(
+                                    no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
+                                description: dto.Description ?? "SalterOrder",
+                                date: DateTime.Now)
+                            .Transaction.UseMethod(EPaymentMethod.Credit)
+                            .Transaction.WithItems(items)
+                            .Generate();//封裝
+            Console.WriteLine($"套件產出的 ItemName: {payment.ItemName}");
+
+            //轉成 HTML 表單
+            var sb = new StringBuilder();
+            sb.Append($"<form id='ecpay-form' method='POST' action='{payment.URL}'>");
+
+            foreach (var prop in payment.GetType().GetProperties())
+            {
+                if (prop.Name == "URL") continue;
+
+                var value = prop.GetValue(payment)?.ToString();
+                if (value != null)
+                {
+                    // 【關鍵修正】：手動將 C# 屬性名稱轉換為綠界 API 要求的名稱
+                    string fieldName = prop.Name switch
+                    {
+                        "MerchantId" => "MerchantID",
+                        "ReturnUrl" => "ReturnURL",
+                        "OrderResultUrl" => "OrderResultURL",
+                        "ClientBackUrl" => "ClientBackURL",
+                        "MerchantTradeNo" => "MerchantTradeNo",
+                        "MerchantTradeDate" => "MerchantTradeDate",
+                        "PaymentType" => "PaymentType",
+                        "TotalAmount" => "TotalAmount",
+                        "TradeDesc" => "TradeDesc",
+                        "ItemName" => "ItemName",
+                        "ChoosePayment" => "ChoosePayment",
+                        "CheckMacValue" => "CheckMacValue",
+                        "EncryptType" => "EncryptType",
+                        _ => prop.Name // 其他欄位保持原樣
+                    };
+
+                    sb.Append($"<input type='hidden' name='{fieldName}' value='{value}' />");
+                }
+            }
+
+            sb.Append("</form>");
+            sb.Append("<script>document.getElementById('ecpay-form').submit();</script>");
+
+
+
+
+
+            return new DAPIResponse<string>
+            {
+                IsSuccess = true,
+                Message = "ECPay繳費單生成",
+                Data = sb.ToString()
+            };
+        }
+
+
+        public async Task<DAPIResponse<string>> GetPaymentForm2(DTransacRequest dto)
+        {
+            int fromSource = dto.TypeId;
+
             var ngrokUrl = _config["ECPay:CallbackUrl"];
             var ClientBackURL = _config["ECPay:ClientBackURL"];
 
@@ -58,10 +158,10 @@ namespace ExpServiceHelper.Service
             var payment = config.Send.ToApi(serviceUrl)
                             .Send.ToMerchant(merchantId) // MerchantID
                             .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
-                            .Return.ToServer($"{ngrokUrl}/api/Transac/Transaction/PayResult")//測試用
+                            .Return.ToServer($"https://sartorially-carbonylic-bennie.ngrok-free.dev/api/Home/UpdateTransacForm")//測試用
 
                             // .Return.ToServer($"{ngrokUrl}/api/Exp/Exp/PayResult")//【ToServer】: 綠界通知你的 Server (背景)  
-                            .Return.ToClient($"{ClientBackURL}/transaction/finish?orderId={transac.Id}&amount={transac.Amount}&from={fromSource}") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
+                            .Return.ToClient($"http://localhost:4200/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
                                 description: dto.Description ?? "SalterOrder",
@@ -124,41 +224,65 @@ namespace ExpServiceHelper.Service
         #region 付款結果驗證
         public bool CheckMacValue(Dictionary<string, string> data)
         {
-            var merchantId = _config["ECPay:MerchantID"];
             var hashKey = _config["ECPay:HashKey"];
             var hashIV = _config["ECPay:HashIV"];
-            var serviceUrl = _config["ECPay:ServiceUrl"];
 
-            var sorted = data.Where(x => x.Key != "CheckMacValue")
-                             .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
-                             .ToDictionary(x => x.Key, x => x.Value);
+            // STEP 1: 原始欄位清單 (確認進來的資料長怎樣)
+            Console.WriteLine("--- [STEP 1] 原始回傳欄位 ---");
+            foreach (var item in data.OrderBy(x => x.Key))
+            {
+                Console.WriteLine($"[{item.Key}] = [{item.Value}]");
+            }
 
-            var raw = $"HashKey={hashKey}&" +
-                      string.Join("&", sorted.Select(x => $"{x.Key}={x.Value}")) +
-                      $"&HashIV={hashIV}";
-            Console.WriteLine("RAW: " + raw);
+            // (1) 排序並串接成 parameters
+            var sortedData = data
+                .Where(x => x.Key != "CheckMacValue")
+                .OrderBy(x => x.Key)
+                .Select(x => $"{x.Key}={x.Value}");
+            string paramString = string.Join("&", sortedData);
 
-            var encoded = HttpUtility.UrlEncode(raw)
-                .Replace("+", "%20")
-                .ToLower()
-                .Replace("%2d", "-")
-                .Replace("%5f", "_")
-                .Replace("%2e", ".")
-                .Replace("%21", "!")
-                .Replace("%2a", "*")
-                .Replace("%28", "(")
-                .Replace("%29", ")");
-            Console.WriteLine("ENCODED: " + encoded);
+            // (2) 加上 HashKey 與 HashIV
+            string rawString = $"HashKey={hashKey}&{paramString}&HashIV={hashIV}";
+            Console.WriteLine($"\n--- [STEP 2] 組合原始字串 ---\n{rawString}");
 
-            using var sha = SHA256.Create();
-            var result = BitConverter.ToString(
-                sha.ComputeHash(Encoding.UTF8.GetBytes(encoded))
-            ).Replace("-", "").ToUpper();
-            Console.WriteLine("MY CheckMac: " + result); 
-            Console.WriteLine("ECPay CheckMac: " + data["CheckMacValue"]);
+            // (3) 將整串字串進行 URL encode
+            // 注意：HttpUtility 會把 = 編成 %3d, & 編成 %26
+            string encoded = HttpUtility.UrlEncode(rawString);
+            Console.WriteLine($"\n--- [STEP 3] URL Encoded (含 %3D, %26) ---\n{encoded}");
 
-            return result == data["CheckMacValue"];
+            // (4) 轉為小寫
+            string finalString = encoded.ToLower();
+
+            // 💡 唯一微調：綠界規範 URL 編碼中的空格必須是 +
+            // 如果 HttpUtility 編出來是 %20，手動換成 +
+            finalString = finalString.Replace("%20", "+");
+
+            Console.WriteLine($"\n--- [STEP 4] Lowercase (這是要拿去加密的最終字串) ---\n{finalString}");
+
+            // (5) 以 SHA256 加密方式產生雜湊值
+            using var sha256 = SHA256.Create();
+            byte[] sourceBytes = Encoding.UTF8.GetBytes(finalString);
+            byte[] hashBytes = sha256.ComputeHash(sourceBytes);
+
+            // (6) 再轉大寫產生 CheckMacValue
+            string myMacValue = BitConverter.ToString(hashBytes).Replace("-", "").ToUpper();
+
+            Console.WriteLine($"\n--- [STEP 5 & 6] 最終比對 ---");
+            Console.WriteLine($"MY MAC:    {myMacValue}");
+            Console.WriteLine($"ECPAY MAC: {data["CheckMacValue"]}");
+
+            bool isValid = myMacValue == data["CheckMacValue"];
+            Console.WriteLine($"驗證結果:   {(isValid ? "SUCCESS ✅" : "FAILED ❌")}");
+
+            return isValid;
         }
+
+
+
+
+
+
+
         #endregion
 
         #region   存結果並更新 ExpTransactions 表
@@ -272,7 +396,7 @@ namespace ExpServiceHelper.Service
                     return false;
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync(); // 全部成功才存檔
-                
+
                 return true;
             }
             catch (Exception ex)
