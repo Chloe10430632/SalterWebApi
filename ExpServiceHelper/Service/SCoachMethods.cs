@@ -811,7 +811,7 @@ namespace ExpServiceHelper.Service
         #region 參加過的課
         public async Task<List<DCourseOrder>> GetUserCourseHistory(int userId) {
             var history = await _context.ExpCourseOrders
-                    .Where(o => o.UserId == userId)
+                    .Where(o => o.UserId == userId && o.Status == 1)
                     .Select(o => new DCourseOrder
                     {
                         // --- 課程與時段資料 ---
