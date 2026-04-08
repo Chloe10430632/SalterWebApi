@@ -1072,7 +1072,7 @@ namespace ExpServiceHelper.Service
                 Status = 0
             };
             //課程報名人+1
-            session.CurrentParticipants += 1;
+            //session.CurrentParticipants += 1;
 
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();
