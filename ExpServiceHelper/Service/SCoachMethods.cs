@@ -850,6 +850,7 @@ namespace ExpServiceHelper.Service
 
         }
         #endregion
+
         #region 所有開課日-月利用
         public async Task<List<string>> GetCoachCourseDatesAsync(int coachId) {
             return await _context.ExpCourseSessions
@@ -860,6 +861,7 @@ namespace ExpServiceHelper.Service
         }
 
         #endregion
+
         #region 所有開的課
         public async Task<List<DCourseInfo>> GetCoursesByDateAsync(int coachId, DateOnly date)
         {
@@ -893,33 +895,44 @@ namespace ExpServiceHelper.Service
         #region 新增評論
         public async Task<string> CreateReview(DReview dto, int userId, int courseOId)
         {
-           
-            //先去「訂單表 (ExpCourseOrders)」確認有沒有這筆訂單，順便把 CoachId 拿回來
-            var order = await _context.ExpCourseOrders
-                .Where(o => o.Id == courseOId &&  o.UserId == userId)
-                .Select(o => new
+            try
+            {
+                var order = await _context.ExpCourseOrders
+                     .Where(o => o.Id == courseOId && o.UserId == userId)
+                     .Select(o => new { CoachId = o.CourseSession.CoachId })
+                     .FirstOrDefaultAsync();
+
+                if (order == null) return "沒有課程可以評論";
+
+                var newReview = new ExpReview
                 {
-                    CoachId = o.CourseSession.CoachId
-                }).FirstOrDefaultAsync();
-            if (order == null)
-            {
-                return "沒有課程可以評論" ;
+                    UserId = userId,
+                    CoachId = order.CoachId,
+                    CourseOrderId = courseOId,
+                    Rating = dto.Rating,
+                    ReviewContent = dto.ReviewContent,
+                    ReviewedAt = DateTime.Now,
+                    IsHidden = false
+                };
+
+                await _context.ExpReviews.AddAsync(newReview);
+                var result = await _context.SaveChangesAsync();
+
+                // 教練提醒：檢查 SaveChanges 回傳的數字，應該要大於 0 才算成功
+                if (result > 0)
+                {
+                    return "~感謝大大撥冗評論~";
+                }
+                else
+                {
+                    return "寫入失敗，但沒噴報錯";
+                }
             }
-
-            var newReview = new ExpReview
+            catch (Exception ex)
             {
-                UserId = userId,
-                CoachId = order.CoachId, // 從訂單帶入教練 ID
-                CourseOrderId = courseOId,
-                Rating = dto.Rating,
-                ReviewContent = dto.ReviewContent,
-                ReviewedAt = DateTime.Now, // 記得加上評論時間
-                IsHidden = false
-            };
-            await _context.ExpReviews.AddAsync(newReview);
-            await _context.SaveChangesAsync();
-
-            return "~感謝大大撥冗評論~";
+                // 這裡會告訴你到底是哪個欄位出事了！
+                return $"系統錯誤：{ex.InnerException?.Message ?? ex.Message}";
+            }
         }
         #endregion
 
