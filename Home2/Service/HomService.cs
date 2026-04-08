@@ -505,6 +505,7 @@ namespace HomeServiceHelper.Service
             // 3. 業務轉換：將 Entity 轉為 DTO
             return roomEntities.Select(rt => new HousePreviewDTO
             {
+                RoomTypeName = rt.Name,
                 HouseId = rt.HouseId,
                 RoomTypeId = rt.RoomTypeId,
                 Title = rt.Name ?? string.Empty,
