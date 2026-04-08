@@ -55,13 +55,16 @@ namespace SalterWebApi.Areas.Experience
         [IgnoreAntiforgeryToken]
         [HttpPost("PayResult")]
         [Consumes("application/x-www-form-urlencoded")]
-        public async Task<IActionResult> PayResult([FromForm] IFormCollection collection)
+        public async Task<IActionResult> PayResult()
         {
             // 將 IFormCollection 轉為 Dictionary
-            var data = collection.ToDictionary(k => k.Key, v => v.Value.ToString());
+
+            var data = Request.Form.ToDictionary(x => x.Key, x => x.Value.ToString());
+            
             //  驗證來源是否真的是綠界
             if (!_sECpay.CheckMacValue(data))
             {
+                Console.WriteLine($"驗證失敗！RtnMsg 內容為: {data["RtnMsg"]}");
                 return Content("0|CheckMacValueVerifyFail");
             }
 
