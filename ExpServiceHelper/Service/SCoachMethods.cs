@@ -200,6 +200,7 @@ namespace ExpServiceHelper.Service
                 }
             }
             await _context.SaveChangesAsync();
+            dto.CoachId = newCoach.Id;
 
             return dto;
         }
@@ -841,7 +842,7 @@ namespace ExpServiceHelper.Service
                         ExpTransactionId = o.ExpTransactionId,
                         ReservedAt = o.ReservedAt,
                         UpdatedTransacAt = o.UpdatedAt,
-                        Status = o.Status
+                        //Status = o.Status
                     }).ToListAsync();
             foreach (var h in history)
                 Console.WriteLine($"OrderId={h.CourseSessionId}, ReviewId={h.ReviewId}, Rating={h.Rating}");
@@ -1058,7 +1059,7 @@ namespace ExpServiceHelper.Service
                 Status = 0
             };
             //課程報名人+1
-          //  session.CurrentParticipants += 1;
+            session.CurrentParticipants += 1;
 
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();

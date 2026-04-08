@@ -21,6 +21,8 @@ namespace ExpServiceHelper.DTO
         public string? PublicId { get; set; }
         //
         public List<int>? SpecialityIds { get; set; } = new List<int>();
-      //  public List<string>? Specialities { get; set; } = new List<string>();
+        //  public List<string>? Specialities { get; set; } = new List<string>();
+        //
+        public int? CoachId { get; set; }
     }
 }
