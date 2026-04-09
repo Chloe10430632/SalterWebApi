@@ -564,7 +564,7 @@ namespace HomeServiceHelper.Service
                 .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.UserId == userId);
 
             // 找不到訂單或是狀態不是 "0" (待付款)，就回傳失敗
-            if (booking == null || booking.Status != "0")
+            if (booking == null || booking.Status == "2" || booking.Status == "3")
             {
                 return false;
             }
