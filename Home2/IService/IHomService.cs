@@ -36,9 +36,10 @@ namespace HomeServiceHelper.IService
         Task<IEnumerable<BookingListViewModel>> GetMemberBookingsAsync(int userId);
 
         // 留言CRUD
-        Task<bool> AddReviewAsync(ReviewCreateDTO dto);
+        Task<HomReview?> AddReviewAsync(ReviewCreateDTO dto);
         Task<bool> UpdateReviewAsync(ReviewUpdateDTO dto);
         Task<bool> DeleteReviewAsync(int reviewId, int memberId);
+        Task<ReviewPermissionResponse> CheckReviewPermissionAsync(int userId, int roomTyprId);
 
         // 訂單編號CRUD
         public Task<int> CreateBookingAsync(CreateBookingDTO dto);

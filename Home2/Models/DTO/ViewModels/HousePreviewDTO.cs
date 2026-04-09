@@ -8,6 +8,7 @@ namespace HomeServiceHelper.Models.DTO.ViewModels
 {
     public class HousePreviewDTO
     {
+        public string? RoomTypeName { get; set; }
         public int HouseId { get; set; }
         public int RoomTypeId { get; set; }
         public string Title { get; set; } = string.Empty;
