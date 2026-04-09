@@ -12,7 +12,6 @@ namespace ExpServiceHelper.IService
        /**按結帳*/
         Task<DAPIResponse<string>> GetPaymentForm(DTransacRequest dto);
 
-        Task<DAPIResponse<string>> GetPaymentForm2(DTransacRequest dto);
         /**驗證*/
         public bool CheckMacValue(Dictionary<string, string> data);
        /**交易成功改狀態*/
