@@ -28,7 +28,7 @@ namespace ExpServiceHelper.Service
         {
             int fromSource = dto.TypeId;
 
-            var ngrokUrl = _config["ECPay:CallbackUrl"];
+            var CallbackUrl = _config["ECPay:CallbackUrl"];
             var ClientBackURL = _config["ECPay:ClientBackURL"];
 
 
@@ -53,7 +53,7 @@ namespace ExpServiceHelper.Service
                             }
             };
 
-            string clientRedirectUrl = $"http://localhost:4200/transaction/finish?orderId={transac.Id}&amount={transac.Amount}&from={fromSource}";
+            string clientRedirectUrl = $"{ClientBackURL}/transaction/finish?orderId={transac.Id}&amount={transac.Amount}&from={fromSource}";
 
             // 2. 這裡補一個 clg 檢查，這時候印出來應該要是正確的數字 (例如 orderId=123)
             Console.WriteLine($"--- [CHECK] Redirect URL: {clientRedirectUrl}");
@@ -63,9 +63,7 @@ namespace ExpServiceHelper.Service
             var payment = config.Send.ToApi(serviceUrl)
                             .Send.ToMerchant(merchantId) // MerchantID
                             .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
-                            .Return.ToServer($"https://sartorially-carbonylic-bennie.ngrok-free.dev/api/Transac/Transaction/PayResult")//測試用
-
-                            // .Return.ToServer($"{ngrokUrl}/api/Exp/Exp/PayResult")//【ToServer】: 綠界通知你的 Server (背景)  
+                            .Return.ToServer($"{CallbackUrl}/api/Transac/Transaction/PayResult")//測試用
                             .Return.ToClient(clientRedirectUrl) //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
@@ -113,10 +111,6 @@ namespace ExpServiceHelper.Service
             sb.Append("</form>");
             sb.Append("<script>document.getElementById('ecpay-form').submit();</script>");
 
-
-
-
-
             return new DAPIResponse<string>
             {
                 IsSuccess = true,
@@ -155,14 +149,14 @@ namespace ExpServiceHelper.Service
                             }
             };
 
-            //設定綠界的身分證 (你的金鑰)--套件提供的入口點
+            //設定綠界的身分證(你的金鑰)--套件提供的入口點
             var config = new PaymentConfiguration();
             var payment = config.Send.ToApi(serviceUrl)
                             .Send.ToMerchant(merchantId) // MerchantID
                             .Send.UsingHash(hashKey, hashIV) // HashKey, HashIV    
                             .Return.ToServer($"https://sartorially-carbonylic-bennie.ngrok-free.dev/api/Home/UpdateTransacForm")//測試用
 
-                            // .Return.ToServer($"{ngrokUrl}/api/Exp/Exp/PayResult")//【ToServer】: 綠界通知你的 Server (背景)  
+                             .Return.ToServer($"{ngrokUrl}/api/Exp/Exp/PayResult")//【ToServer】: 綠界通知你的 Server (背景)  
                             .Return.ToClient($"http://localhost:4200/transaction/finish") //【ToClient】: 使用者付完款自動導回你的頁面 (前景)  
                             .Transaction.New(
                                     no: $"S{transac.Id}{DateTime.Now:yyMMddHHmmss}",
@@ -184,7 +178,7 @@ namespace ExpServiceHelper.Service
                 var value = prop.GetValue(payment)?.ToString();
                 if (value != null)
                 {
-                    // 【關鍵修正】：手動將 C# 屬性名稱轉換為綠界 API 要求的名稱
+                     //【關鍵修正】：手動將 C# 屬性名稱轉換為綠界 API 要求的名稱
                     string fieldName = prop.Name switch
                     {
                         "MerchantId" => "MerchantID",
@@ -398,7 +392,7 @@ namespace ExpServiceHelper.Service
                     return false;
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync(); // 全部成功才存檔
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -410,7 +404,7 @@ namespace ExpServiceHelper.Service
         }
         #endregion       
 
-        #region 結帳結果包成html
+        #region 用不到-結帳結果包成html
         private string GenerateHtmlForm(IPayment payment)
         {
             var builder = new StringBuilder();
