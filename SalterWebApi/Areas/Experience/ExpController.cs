@@ -57,6 +57,18 @@ namespace SalterWebApi.Areas.Experience
 
         #endregion
         #region 搜尋
+        #region 複合搜尋
+        [HttpGet("MultiSearch")]
+        public async Task<IActionResult> MultiSurch([FromQuery] string key)
+        {
+            try {
+                var result = await _sCoachMethods.GetMultiCoach(key);
+                return Ok(new { IsSuccess = true, data = result });
+            } 
+            catch(Exception ex) { BadRequest(new { message = ex.Message }); }
+            return BadRequest(new { message = "請檢查資料是否正確" });
+        }
+        #endregion
 
         #region~~搜尋-名字~~
         [HttpGet("NameSearch")]
@@ -575,34 +587,32 @@ namespace SalterWebApi.Areas.Experience
 
 
         #region 評論
-        //TODO尚未測試
+        
         #region 新增評論
         [Authorize]
         [HttpPost("AddReview")]
-        public async Task<IActionResult> AddReview([FromBody] DReview dto, int courseOrderId)
+        public async Task<IActionResult> AddReview([FromBody] DReview dto)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId))
             {
-                return Unauthorized(new DAPIResponse<string> { IsSuccess = false, Message = "無效的憑證，請重新登入" });
+                return Unauthorized(new DAPIResponse<string> { IsSuccess = false, Message = "請登入" });
             }
 
-            if (!ModelState.IsValid) return BadRequest(new DAPIResponse<string> { IsSuccess = false, Message = "資料格式錯誤" });
+            // 重點：從 dto 裡面把 CourseOrderId 拿出來傳給 Service
+            if (dto.CourseOrderId == null) return BadRequest("缺少訂單 ID");
+
             try
             {
-                var result = await _sCoachMethods.CreateReview(dto, currentUserId, courseOrderId);
+                // 傳入 dto.CourseOrderId.Value
+                var result = await _sCoachMethods.CreateReview(dto, currentUserId, (int)dto.CourseOrderId);
 
                 return Ok(new { isSuccess = true, data = result });
             }
             catch (Exception ex)
             {
-                return Ok(new DAPIResponse<string>
-                {
-                    IsSuccess = false,
-                    Message = ex.Message
-                });
+                return Ok(new DAPIResponse<string> { IsSuccess = false, Message = ex.Message });
             }
-            return BadRequest();
         }
 
         #endregion

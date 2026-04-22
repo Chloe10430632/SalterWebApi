@@ -42,11 +42,11 @@ namespace SalterWebApi.Areas.Experience
 
             var result = await _sECpay.GetPaymentForm(dto);
 
-                if (!result.IsSuccess)
-                    return BadRequest(result);
-                return Content(result.Data, "text/html");
-            
-         
+            if (!result.IsSuccess)
+                return BadRequest(result);
+            return Content(result.Data, "text/html");
+
+
         }
         #endregion
 
@@ -55,24 +55,27 @@ namespace SalterWebApi.Areas.Experience
         [IgnoreAntiforgeryToken]
         [HttpPost("PayResult")]
         [Consumes("application/x-www-form-urlencoded")]
-        public async Task<IActionResult> PayResult([FromForm] IFormCollection collection)
+        public async Task<IActionResult> PayResult()
         {
             // 將 IFormCollection 轉為 Dictionary
-            var data = collection.ToDictionary(k => k.Key, v => v.Value.ToString());
+
+            var data = Request.Form.ToDictionary(x => x.Key, x => x.Value.ToString());
+
             //  驗證來源是否真的是綠界
             if (!_sECpay.CheckMacValue(data))
             {
+                Console.WriteLine($"驗證失敗！RtnMsg 內容為: {data["RtnMsg"]}");
                 return Content("0|CheckMacValueVerifyFail");
             }
 
             // 成功才寫入
             if (data["RtnCode"] == "1") // 1 代表成功
-                {
-                    //DB更新
-                    await _sECpay.UpdateTransacForm(data);
+            {
+                //DB更新
+                await _sECpay.UpdateTransacForm(data);
 
-                    return Content("1|OK");
-                }
+                return Content("1|OK");
+            }
             Console.WriteLine($"收到綠界通知：單號={data["MerchantTradeNo"]}, 結果={data["RtnCode"]}");
             return Content("0|Error");
         }

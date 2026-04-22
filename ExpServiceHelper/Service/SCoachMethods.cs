@@ -64,6 +64,21 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 入口
+        #region 複合查詢
+        public  async Task<List<DCoachInfo>> GetMultiCoach(string key)
+        {
+            var query = _context.ExpCoaches.AsQueryable();
+            var result = await query
+                .Where (c => c.Name.Contains(key) || 
+                        c.District != null && c.District.Name.Contains(key) ||
+                        c.ExpCoachSpeciallityMappings.Any(s => s.Specialities.SportsName.Contains(key))
+                ) 
+                .SelectCoachInfo()
+                .ToListAsync();
+            return result;
+        }
+        #endregion
+
         #region~~搜尋-名字~~
         public async Task<List<DCoachInfo>> GetCoachName(string key)
         {
@@ -200,6 +215,7 @@ namespace ExpServiceHelper.Service
                 }
             }
             await _context.SaveChangesAsync();
+            dto.CoachId = newCoach.Id;
 
             return dto;
         }
@@ -362,22 +378,22 @@ namespace ExpServiceHelper.Service
                 })
                 .ToListAsync();
 
-            //if (recommendedList.Count == 0)
-            //{
-            //    recommendedList = await _context.ExpCoaches
-            //        .Where(c => c.Id != thisCoachId) 
-            //        .OrderByDescending(c => c.Id)    
-            //        .Take(2)
-            //        .Select(c => new DCoachRecommend
-            //        {
-            //            CoachId = c.Id,
-            //            CoachName = c.Name,
-            //            AvatarUrl = c.AvatarUrl,
-            //            District = c.TripDistricts.Select(d => d.Name).ToList(),
-            //            Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
-            //                        .ToList()
-            //        }).ToListAsync();
-            //}
+            if (recommendedList.Count == 0)
+            {
+                recommendedList = await _context.ExpCoaches
+                    .Where(c => c.Id != thisCoachId)
+                    .OrderBy(c => Guid.NewGuid())
+                    .Take(2)
+                    .Select(c => new DCoachRecommend
+                    {
+                        CoachId = c.Id,
+                        CoachName = c.Name,
+                        AvatarUrl = c.AvatarUrl,
+                        District = c.District.Name,
+                        Specialities = c.ExpCoachSpeciallityMappings.Select(s => s.Specialities.SportsName)
+                                    .ToList()
+                    }).ToListAsync();
+            }
 
             return recommendedList;
         }
@@ -810,7 +826,7 @@ namespace ExpServiceHelper.Service
         #region 參加過的課
         public async Task<List<DCourseOrder>> GetUserCourseHistory(int userId) {
             var history = await _context.ExpCourseOrders
-                    .Where(o => o.UserId == userId)
+                    .Where(o => o.UserId == userId && o.Status == 1)
                     .Select(o => new DCourseOrder
                     {
                         // --- 課程與時段資料 ---
@@ -841,7 +857,7 @@ namespace ExpServiceHelper.Service
                         ExpTransactionId = o.ExpTransactionId,
                         ReservedAt = o.ReservedAt,
                         UpdatedTransacAt = o.UpdatedAt,
-                        Status = o.Status
+                        //Status = o.Status
                     }).ToListAsync();
             foreach (var h in history)
                 Console.WriteLine($"OrderId={h.CourseSessionId}, ReviewId={h.ReviewId}, Rating={h.Rating}");
@@ -849,6 +865,7 @@ namespace ExpServiceHelper.Service
 
         }
         #endregion
+
         #region 所有開課日-月利用
         public async Task<List<string>> GetCoachCourseDatesAsync(int coachId) {
             return await _context.ExpCourseSessions
@@ -859,6 +876,7 @@ namespace ExpServiceHelper.Service
         }
 
         #endregion
+
         #region 所有開的課
         public async Task<List<DCourseInfo>> GetCoursesByDateAsync(int coachId, DateOnly date)
         {
@@ -892,33 +910,44 @@ namespace ExpServiceHelper.Service
         #region 新增評論
         public async Task<string> CreateReview(DReview dto, int userId, int courseOId)
         {
-           
-            //先去「訂單表 (ExpCourseOrders)」確認有沒有這筆訂單，順便把 CoachId 拿回來
-            var order = await _context.ExpCourseOrders
-                .Where(o => o.Id == courseOId &&  o.UserId == userId)
-                .Select(o => new
+            try
+            {
+                var order = await _context.ExpCourseOrders
+                     .Where(o => o.Id == courseOId && o.UserId == userId)
+                     .Select(o => new { CoachId = o.CourseSession.CoachId })
+                     .FirstOrDefaultAsync();
+
+                if (order == null) return "沒有課程可以評論";
+
+                var newReview = new ExpReview
                 {
-                    CoachId = o.CourseSession.CoachId
-                }).FirstOrDefaultAsync();
-            if (order == null)
-            {
-                return "沒有課程可以評論" ;
+                    UserId = userId,
+                    CoachId = order.CoachId,
+                    CourseOrderId = courseOId,
+                    Rating = dto.Rating,
+                    ReviewContent = dto.ReviewContent,
+                    ReviewedAt = DateTime.Now,
+                    IsHidden = false
+                };
+
+                await _context.ExpReviews.AddAsync(newReview);
+                var result = await _context.SaveChangesAsync();
+
+                // 教練提醒：檢查 SaveChanges 回傳的數字，應該要大於 0 才算成功
+                if (result > 0)
+                {
+                    return "~感謝大大撥冗評論~";
+                }
+                else
+                {
+                    return "寫入失敗，但沒噴報錯";
+                }
             }
-
-            var newReview = new ExpReview
+            catch (Exception ex)
             {
-                UserId = userId,
-                CoachId = order.CoachId, // 從訂單帶入教練 ID
-                CourseOrderId = courseOId,
-                Rating = dto.Rating,
-                ReviewContent = dto.ReviewContent,
-                ReviewedAt = DateTime.Now, // 記得加上評論時間
-                IsHidden = false
-            };
-            await _context.ExpReviews.AddAsync(newReview);
-            await _context.SaveChangesAsync();
-
-            return "~感謝大大撥冗評論~";
+                // 這裡會告訴你到底是哪個欄位出事了！
+                return $"系統錯誤：{ex.InnerException?.Message ?? ex.Message}";
+            }
         }
         #endregion
 
@@ -1058,7 +1087,7 @@ namespace ExpServiceHelper.Service
                 Status = 0
             };
             //課程報名人+1
-          //  session.CurrentParticipants += 1;
+            //session.CurrentParticipants += 1;
 
             await _context.ExpCourseOrders.AddAsync(reserve);
             await _context.SaveChangesAsync();
