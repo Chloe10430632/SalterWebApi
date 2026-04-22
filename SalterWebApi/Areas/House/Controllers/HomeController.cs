@@ -1,14 +1,11 @@
-﻿using CloudinaryDotNet.Actions;
-using ExpServiceHelper.DTO;
+﻿using ExpServiceHelper.DTO;
 using ExpServiceHelper.IService;
-using ExpServiceHelper.Service;
 using HomeServiceHelper.IService;
 using HomeServiceHelper.Models.DTO.ViewModels;
 using HomeServiceHelper.Models.DTO.ViewModels.Review;
-using HomeServiceHelper.Service;
-using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -21,16 +18,16 @@ namespace SalterWebApi.Areas.House.Controllers
     public class HomeController : ControllerBase
     {
         private readonly IHomService _homService;
-         private readonly ISECPay _sECpay;
+        private readonly ISECPay _sECpay;
 
-        public HomeController(IHomService homeService,ISECPay sECpay)
+        public HomeController(IHomService homeService, ISECPay sECpay)
         {
             _homService = homeService;
             _sECpay = sECpay;
         }
 
         //取得所有房型
-        [HttpGet] 
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var results = await _homService.GetAllHousesAsync();
@@ -89,32 +86,23 @@ namespace SalterWebApi.Areas.House.Controllers
         [HttpPost("reviews")]
         public async Task<IActionResult> AddReview([FromBody] ReviewCreateDTO dto)
         {
-            // 1. 檢查評分範圍
-            if (dto.Rating < 1 || dto.Rating > 5)
+            try
             {
-                return BadRequest("評分必須在 1 到 5 之間");
+                // 建議在這裡也檢查一次權限，防止被用 Postman 暴力攻擊
+                var createdReview = await _homService.AddReviewAsync(dto);
+
+                return Ok(new
+                {
+                    message = "評論新增成功！",
+                    reviewId = createdReview.ReviewId,
+                    userId = createdReview.UserId 
+                });
             }
-
-            //  安全檢查：自動抓取該用戶「真實且可用」的 BookingId
-            var validBookingId = await _homService.GetAvailableBookingIdAsync(dto.MemberId, dto.RoomTypeId);
-
-            if (validBookingId == null)
+            catch (Exception ex)
             {
-                throw new ArgumentException("您沒有可評價的訂單，或是已經評價過了喔！");
+                // 這裡會抓到 Service 拋出的 "找不到符合資格的訂單" 或 "資料庫儲存失敗"
+                return BadRequest(new { message = ex.Message });
             }
-
-            // 3. 把抓到的真實 ID 塞進 DTO
-            dto.BookingId = validBookingId.Value;
-
-            // 4. 執行新增
-            var result = await _homService.AddReviewAsync(dto);
-
-            if (result)
-            {
-                return Ok(new { message = "評論新增成功！", bookingId = dto.BookingId });
-            }
-
-            return StatusCode(500, "新增評論時發生錯誤");
         }
 
         //新增房屋
@@ -130,7 +118,7 @@ namespace SalterWebApi.Areas.House.Controllers
         }
 
         //取得房屋設備API
-        [HttpGet("amenities")] 
+        [HttpGet("amenities")]
         public async Task<IActionResult> GetAmenities()
         {
             var data = await _homService.GetAllAmenitiesAsync();
@@ -162,7 +150,7 @@ namespace SalterWebApi.Areas.House.Controllers
             }
         }
 
-        
+
         [HttpGet("search")]
         public async Task<ActionResult<IEnumerable<HousePreviewDTO>>> Search(string? city, string? keyword, int? guests)
         {
@@ -219,7 +207,7 @@ namespace SalterWebApi.Areas.House.Controllers
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (currentUserId == null) return Unauthorized();
 
-          
+
             var result = await _homService.GetMemberBookingsAsync(int.Parse(currentUserId));
 
             return Ok(result);
@@ -269,7 +257,7 @@ namespace SalterWebApi.Areas.House.Controllers
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int currentUserId)) return Unauthorized();
-            
+
 
             var success = await _homService.DeleteReviewAsync(reviewId, currentUserId);
             if (!success)
@@ -278,6 +266,17 @@ namespace SalterWebApi.Areas.House.Controllers
             }
             return Ok(new { message = "評論已刪除" });
         }
+
+        [Authorize]
+        [HttpGet("CheckPermission/{userId}/{roomTypeId}")]
+        public async Task<IActionResult> CheckPermission(int userId, int roomTypeId)
+        {
+            // 1. 呼叫 Service 取得 Response 物件
+            var permissionResponse = await _homService.CheckReviewPermissionAsync(userId, roomTypeId);
+
+            return Ok(new { canReview = permissionResponse.CanReview });
+        }
+
 
         //交易
         [Authorize]
@@ -316,10 +315,10 @@ namespace SalterWebApi.Areas.House.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-            
+
         }
 
-       //接收綠界結果用的API
+        //接收綠界結果用的API
         [HttpPost("UpdateTransacForm")]
         [AllowAnonymous]
         //[Consumes("application/x-www-form-urlencoded")] // 綠界是用表單格式傳送
@@ -341,6 +340,6 @@ namespace SalterWebApi.Areas.House.Controllers
     }
 }
 
-    
+
 
 

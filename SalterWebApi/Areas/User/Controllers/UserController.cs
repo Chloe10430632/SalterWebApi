@@ -271,71 +271,62 @@ namespace SalterWebApi.Areas.User.Controllers
         [HttpPost("AskXiaoSha")]
         public async Task<IActionResult> AskXiaoSha([FromBody] ChatRequest request)
         {
-            Console.WriteLine("======================================");
-            Console.WriteLine($"[入口] 收到前端請求！時間：{DateTime.Now:HH:mm:ss}");
-
             if (string.IsNullOrEmpty(request.Message))
                 return BadRequest(new { message = "旅伴，你想問小沙什麼呢？🌊" });
 
-            Console.WriteLine("[警告] 前端傳來的 request 或 Message 是空的！");
+            // 定義備援模型清單 (依優先順序)
+            string[] modelList = { "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro" };
+            string lastError = "";
 
-            try
+            using var httpClient = new HttpClient();
+            var fullPrompt = $"{_systemInstruction}\n\n現在有一位旅伴問了這個問題：{request.Message}";
+            var payload = new { contents = new[] { new { parts = new[] { new { text = fullPrompt } } } } };
+
+            // 嘗試不同的模型 (備援機制)
+            foreach (var modelName in modelList)
             {
-                using var httpClient = new HttpClient();
-
-                // 1. 組合 Prompt (完全照抄你的 Python 邏輯)
-                var fullPrompt = $"{_systemInstruction}\n\n現在有一位旅伴問了這個問題：{request.Message}";
-
-                // 2. 準備 Data (完全照抄你的 Python 結構)
-                var data = new
+                // 每個模型嘗試重試 3 次 (重試機制)
+                for (int retry = 0; retry < 3; retry++)
                 {
-                    contents = new[]
+                    try
                     {
-                new { parts = new[] { new { text = fullPrompt } } }
-            }
-                };
+                        var url = $"https://generativelanguage.googleapis.com/v1/models/{modelName}:generateContent?key={_apiKey}";
+                        var response = await httpClient.PostAsJsonAsync(url, payload);
 
-                // 3. 設定 URL (完全照抄你的 Python URL: v1beta + gemini-flash-latest)
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+                            string botReply = result.GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString();
 
-                var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={_apiKey}";
+                            Console.WriteLine($"[成功] 使用模型 {modelName} (重試第 {retry} 次)");
+                            return Ok(new { reply = botReply, modelUsed = modelName });
+                        }
 
-                Console.WriteLine($"[發送] 準備呼叫 Google API... 模型：gemini-1.5-pro");
+                        var errorJson = await response.Content.ReadAsStringAsync();
+                        lastError = errorJson;
 
-                // 4. 發送 POST 請求
-                var response = await httpClient.PostAsJsonAsync(url, data);
+                        // 如果是 503 (High Demand)，等待一下再重試
+                        if ((int)response.StatusCode == 503)
+                        {
+                            Console.WriteLine($"[警告] 模型 {modelName} 需求過高 (503)，等待 {Math.Pow(2, retry)} 秒後重試...");
+                            await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, retry))); // 指數退避：1s, 2s, 4s
+                            continue;
+                        }
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<JsonElement>();
-
-                    // 5. 提取回覆 (完全照抄你的 Python 提取路徑)
-                    string botReply = result.GetProperty("candidates")[0]
-                                            .GetProperty("content")
-                                            .GetProperty("parts")[0]
-                                            .GetProperty("text")
-                                            .GetString();
-
-                    Console.WriteLine("[成功] Google 正常回傳回覆了！");
-                    Console.WriteLine("======================================");
-
-                    return Ok(new { reply = botReply });
+                        // 如果是其他錯誤 (如 400, 404)，直接換下一個模型
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        lastError = ex.Message;
+                    }
                 }
-                else
-                {
-                    var errorResult = await response.Content.ReadAsStringAsync();
-                    var errorDetail = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[失敗] Google API 報錯！狀態碼：{response.StatusCode}");
-                    Console.WriteLine($"[錯誤細節]：{errorDetail}");
-                    Console.WriteLine("======================================");
+                Console.WriteLine($"[切換] 模型 {modelName} 無法使用，嘗試下一個備援模型...");
+            }
 
-                    return BadRequest(new { error = $"Gemini API 錯誤: {errorResult}" });
-                }
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = $"連線發生意外：{ex.Message}" });
-            }
+            return StatusCode(503, new { message = "小沙現在真的太忙了，所有模型都暫時無法回應...", details = lastError });
         }
+
 
     }
 
