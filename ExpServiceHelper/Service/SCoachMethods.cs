@@ -70,7 +70,7 @@ namespace ExpServiceHelper.Service
             var query = _context.ExpCoaches.AsQueryable();
             var result = await query
                 .Where (c => c.Name.Contains(key) || 
-                        c.TripDistricts.Any(d => d.Name.Contains(key)) ||
+                        c.District != null && c.District.Name.Contains(key) ||
                         c.ExpCoachSpeciallityMappings.Any(s => s.Specialities.SportsName.Contains(key))
                 ) 
                 .SelectCoachInfo()
