@@ -57,6 +57,18 @@ namespace SalterWebApi.Areas.Experience
 
         #endregion
         #region 搜尋
+        #region 複合搜尋
+        [HttpGet("MultiSearch")]
+        public async Task<IActionResult> MultiSurch([FromQuery] string key)
+        {
+            try {
+                var result = await _sCoachMethods.GetMultiCoach(key);
+                return Ok(new { IsSuccess = true, data = result });
+            } 
+            catch(Exception ex) { BadRequest(new { message = ex.Message }); }
+            return BadRequest(new { message = "請檢查資料是否正確" });
+        }
+        #endregion
 
         #region~~搜尋-名字~~
         [HttpGet("NameSearch")]

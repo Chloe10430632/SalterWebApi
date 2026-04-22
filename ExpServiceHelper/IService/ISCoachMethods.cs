@@ -15,6 +15,8 @@ namespace ExpServiceHelper.IService
     public interface ISCoachMethods
     {
         #region 入口
+        /**搜尋-複合*/
+        Task<List<DCoachInfo>> GetMultiCoach(string key);
         /**搜尋-名字*/
         Task<List<DCoachInfo>> GetCoachName(string keyName);
         /**搜尋-地區*/

@@ -64,6 +64,21 @@ namespace ExpServiceHelper.Service
         #endregion
 
         #region 入口
+        #region 複合查詢
+        public  async Task<List<DCoachInfo>> GetMultiCoach(string key)
+        {
+            var query = _context.ExpCoaches.AsQueryable();
+            var result = await query
+                .Where (c => c.Name.Contains(key) || 
+                        c.TripDistricts.Any(d => d.Name.Contains(key)) ||
+                        c.ExpCoachSpeciallityMappings.Any(s => s.Specialities.SportsName.Contains(key))
+                ) 
+                .SelectCoachInfo()
+                .ToListAsync();
+            return result;
+        }
+        #endregion
+
         #region~~搜尋-名字~~
         public async Task<List<DCoachInfo>> GetCoachName(string key)
         {
