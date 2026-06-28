@@ -153,6 +153,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("CorsPolicy", policy =>
     {
         policy.WithOrigins(allowedOrigins) // 這裡變動態了！
+              .WithOrigins("https://www.salter-ocean.online")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()
